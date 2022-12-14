@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{281037A8-8457-4E6D-9894-D94E35BFBE14}</ProjectGuid>
+    <Keyword>QtVS_v304</Keyword>
+    <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">10.0.19041.0</WindowsTargetPlatformVersion>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt_defaults.props')">
+    <Import Project="$(QtMsBuild)\qt_defaults.props" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
+    <QtInstall>6.3.1_msvc2019_64</QtInstall>
+    <QtModules>core;gui;widgets</QtModules>
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
+    <QtInstall>6.3.1_msvc2019_64</QtInstall>
+    <QtModules>core;gui;widgets</QtModules>
+    <QtBuildConfig>release</QtBuildConfig>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PostBuildEvent>
+      <Command>mkdir $(OutDir)\images
+copy $(ProjectDir)images\*.png $(OutDir)\images
+echo ======================== DOING DEPLOY ============================
+$(QTDIR)\bin\windeployqt $(OutDir)$(ProjectName).exe
+echo ===============================================================
+mkdir $(OutDir)\fields
+copy $(SolutionDir)fields\* $(OutDir)\fields\
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
+    <ClCompile>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="Configuration">
+    <ClCompile>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <QtRcc Include="XeroPathGen.qrc" />
+    <QtUic Include="XeroPathGen.ui" />
+    <QtMoc Include="XeroPathGen.h" />
+    <QtMoc Include="PathWindow.h" />
+    <ClCompile Include="GameFieldManager.cpp" />
+    <ClCompile Include="ManagerBase.cpp" />
+    <ClCompile Include="MathUtils.cpp" />
+    <ClCompile Include="PathFieldView.cpp" />
+    <ClCompile Include="PathParameters.cpp" />
+    <ClCompile Include="PathParametersWindow.cpp" />
+    <ClCompile Include="PathsDataModel.cpp" />
+    <ClCompile Include="PathWindow.cpp" />
+    <ClCompile Include="Pose2d.cpp" />
+    <ClCompile Include="Pose2dWithRotation.cpp" />
+    <ClCompile Include="Pose2dWithTrajectory.cpp" />
+    <ClCompile Include="QuinticHermiteSpline.cpp" />
+    <ClCompile Include="RobotManager.cpp" />
+    <ClCompile Include="RobotPath.cpp" />
+    <ClCompile Include="Rotation2d.cpp" />
+    <ClCompile Include="SplinePair.cpp" />
+    <ClCompile Include="Translation2d.cpp" />
+    <ClCompile Include="Twist2d.cpp" />
+    <ClCompile Include="UnitConverter.cpp" />
+    <ClCompile Include="WaypointWindow.cpp" />
+    <ClCompile Include="XeroPathGen.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="build.h" />
+    <ClInclude Include="CentripetalConstraint.h" />
+    <ClInclude Include="GameField.h" />
+    <ClInclude Include="GameFieldManager.h" />
+    <ClInclude Include="ICsv.h" />
+    <ClInclude Include="ManagerBase.h" />
+    <ClInclude Include="MathUtils.h" />
+    <ClInclude Include="MinMaxAcceleration.h" />
+    <ClInclude Include="PathConstraint.h" />
+    <QtMoc Include="PathFieldView.h" />
+    <ClInclude Include="PathGroup.h" />
+    <ClInclude Include="PathParameters.h" />
+    <QtMoc Include="PathParametersWindow.h" />
+    <QtMoc Include="PathsDataModel.h" />
+    <ClInclude Include="Pose2d.h" />
+    <ClInclude Include="Pose2dWithRotation.h" />
+    <ClInclude Include="Pose2dWithTrajectory.h" />
+    <ClInclude Include="QuinticHermiteSpline.h" />
+    <ClInclude Include="RobotManager.h" />
+    <ClInclude Include="RobotParams.h" />
+    <QtMoc Include="RobotPath.h" />
+    <ClInclude Include="Rotation2d.h" />
+    <ClInclude Include="SplinePair.h" />
+    <ClInclude Include="TrajectoryNames.h" />
+    <ClInclude Include="Translation2d.h" />
+    <ClInclude Include="Twist2d.h" />
+    <ClInclude Include="UnitConverter.h" />
+    <QtMoc Include="WaypointWindow.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
+    <Import Project="$(QtMsBuild)\qt.targets" />
+  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

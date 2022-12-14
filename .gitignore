@@ -1,0 +1,15 @@
+**/*.qhc
+**/*.qch
+**/*~
+**/x64
+**/.qmake.stash
+**/Debug
+**/Release
+**/debug
+**/release
+.vs
+docs
+.DS_Store
+XeroPathGen/GeneratedFiles
+output
+installer/xeropath*.exe
