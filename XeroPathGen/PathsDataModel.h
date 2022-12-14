@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GenerationMgr.h"
+#include "GeneratorType.h"
 #include "PathGroup.h"
 #include "SplinePair.h"
 #include <QtCore/QObject>
@@ -12,7 +14,8 @@ class PathsDataModel : public QObject
 	Q_OBJECT
 
 public:
-	PathsDataModel();
+	PathsDataModel(GenerationMgr &genmgr);
+	virtual ~PathsDataModel();
 
 	void reset();
 
@@ -53,6 +56,7 @@ public:
 	}
 
 	bool save(QString &msg);
+	bool saveToFile(const QString& filename, QString& msg);
 	bool saveAs(const QString& filename, QString &msg);
 	bool load(const QString& filename, QString& msg);
 
@@ -80,6 +84,12 @@ private:
 
 	bool readPathGroup(QFile& file, const QJsonObject& obj, QString &msg);
 
+	QJsonObject modelToObject();
+
+	void setDirty() {
+		dirty_ = true;
+	}
+
 signals:
 	void groupAdded(const QString& grname);
 	void groupDeleted(const QString& grname);
@@ -92,7 +102,9 @@ private:
 	QString filename_;
 	QString path_output_dir_;
 	QString units_;
-	QList<PathGroup> groups_;
-	QMap < RobotPath*, QVector<std::shared_ptr<SplinePair>>> splines_;
+	QList<PathGroup *> groups_;
+	QMap<RobotPath*, QVector<std::shared_ptr<SplinePair>>> splines_;
 	bool dirty_;
+	GeneratorType gen_type_;
+	GenerationMgr& gen_mgr_;
 };

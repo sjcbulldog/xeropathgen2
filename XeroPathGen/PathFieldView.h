@@ -65,8 +65,6 @@ public:
 		return selected_;
 	}
 
-	void setDemoMode(bool b);
-
 	bool isInsertWaypointValid();
 	bool isDeleteWaypointValid();
 
@@ -125,6 +123,8 @@ private:
 private:
 	void copyCoordinates();
 	void pasteCoordinates(bool rot180);
+
+	void pathChanged(const QString& grname, const QString& pathname);
 
 	void emitMouseMoved(Translation2d pos);
 	void emitWaypointSelected(size_t which);

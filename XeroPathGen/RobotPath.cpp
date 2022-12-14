@@ -8,7 +8,6 @@ RobotPath::RobotPath(const PathGroup* gr, const QString &name, const PathParamet
 	group_ = gr;
 	name_ = name;
 	params_ = params;
-
 }
 
 void RobotPath::emitPathChangedSignal()
@@ -165,6 +164,38 @@ bool RobotPath::readPoints(std::shared_ptr<RobotPath> path, const QJsonArray& ob
 	}
 
 	return true;
+}
+
+QJsonObject RobotPath::toJSONObject()
+{
+	QJsonObject obj;
+
+	obj.insert(RobotPath::NameTag, name_);
+	obj.insert(RobotPath::StartVelocityTag, params_.startVelocity());
+	obj.insert(RobotPath::EndVelocityTag, params_.endVelocity());
+	obj.insert(RobotPath::MaxVelocityTag, params_.maxVelocity());
+	obj.insert(RobotPath::MaxAccelerationTag, params_.maxAccel());
+
+	QJsonArray constraints;
+	for (auto c : constraints_) {
+		QJsonObject cobj = c->toJSON();
+		constraints.append(cobj);
+	}
+	obj.insert(RobotPath::ConstraintsTag, constraints);
+
+	QJsonArray waypoints;
+	for (const Pose2dWithRotation& pt : waypoints_) {
+		QJsonObject wobj;
+
+		wobj.insert(RobotPath::XTag, pt.getTranslation().getX());
+		wobj.insert(RobotPath::YTag, pt.getTranslation().getY());
+		wobj.insert(RobotPath::HeadingTag, pt.getRotation().toDegrees());
+		wobj.insert(RobotPath::SwerveRotationTag, pt.swrot().toDegrees());
+
+		waypoints.append(wobj);
+	}
+	obj.insert(RobotPath::PointsTag, waypoints);
+	return obj;
 }
 
 std::shared_ptr<RobotPath> RobotPath::fromJSONObject(const PathGroup *group, const QJsonObject& obj, QString &msg)

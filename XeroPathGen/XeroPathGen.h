@@ -7,6 +7,8 @@
 #include "PathWindow.h"
 #include "PathParametersWindow.h"
 #include "WaypointWindow.h"
+#include "RecentFiles.h"
+#include "GenerationMgr.h"
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QLabel>
 #include <QtCore/QSettings>
@@ -15,6 +17,8 @@
 
 class XeroPathGen : public QMainWindow
 {
+    friend class RecentFiles;
+
     Q_OBJECT
 
 public:
@@ -28,7 +32,6 @@ private:
     bool createToolbar();
     bool createStatusBar();
 
-
     // Menu related methods
     void showFileMenu();
     void fileNew();
@@ -38,6 +41,7 @@ private:
     void fileClose();
     void fileGenerateAs();
     void fileGenerate();
+    void recentOpen(const QString& filename);
 
 protected:
     void closeEvent(QCloseEvent* ev);
@@ -77,12 +81,27 @@ private:
     void setUnits(const QString &units);
     void mouseMoved(Translation2d pos);
 
+    void addLogMessage(const QString& msg) {
+        logMessages_.push_back(msg.trimmed());
+    }
+
+    void waypointSelected(size_t index);
+    void waypointStartMoving(size_t index);
+    void waypointMoving(size_t index);
+    void waypointEndMoving(size_t index);
+    void waypointInserted();
+    void waypointDeleted();
+
+private:
+    static XeroPathGen* theOne;
+
 private:
     QSettings settings_;
     QString units_;
 
     GameFieldManager& fields_;
     RobotManager& robots_;
+    GenerationMgr generator_;
     PathsDataModel paths_data_model_;
 
     std::shared_ptr<GameField> current_field_;
@@ -120,4 +139,7 @@ private:
     QLabel* ypos_text_;
     QLabel* path_filename_;
     QLabel* path_gendir_;
+
+    QStringList logMessages_;
+    RecentFiles* recents_;
 };

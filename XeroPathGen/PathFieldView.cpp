@@ -765,13 +765,26 @@ void PathFieldView::setField(std::shared_ptr<GameField> field)
 	repaint(geometry());
 }
 
+void PathFieldView::pathChanged(const QString &grname, const QString &pathname)
+{
+	repaint(geometry());
+}
+
 void PathFieldView::setPath(std::shared_ptr<RobotPath> path)
 {
+	if (path_ != nullptr) {
+		disconnect(path_.get(), &RobotPath::pathChanged, this, &PathFieldView::pathChanged);
+	}
+
 	if (path_ != path)
 	{
 		path_ = path;
 		selected_ = std::numeric_limits<size_t>::max();
 		repaint(geometry());
+
+		if (path_ != nullptr) {
+			connect(path_.get(), &RobotPath::pathChanged, this, &PathFieldView::pathChanged);
+		}
 	}
 }
 

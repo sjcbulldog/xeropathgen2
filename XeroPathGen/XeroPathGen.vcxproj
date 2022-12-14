@@ -103,6 +103,8 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <QtMoc Include="XeroPathGen.h" />
     <QtMoc Include="PathWindow.h" />
     <ClCompile Include="GameFieldManager.cpp" />
+    <ClCompile Include="GenerationMgr.cpp" />
+    <ClCompile Include="Generator.cpp" />
     <ClCompile Include="ManagerBase.cpp" />
     <ClCompile Include="MathUtils.cpp" />
     <ClCompile Include="PathFieldView.cpp" />
@@ -114,10 +116,12 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="Pose2dWithRotation.cpp" />
     <ClCompile Include="Pose2dWithTrajectory.cpp" />
     <ClCompile Include="QuinticHermiteSpline.cpp" />
+    <ClCompile Include="RecentFiles.cpp" />
     <ClCompile Include="RobotManager.cpp" />
     <ClCompile Include="RobotPath.cpp" />
     <ClCompile Include="Rotation2d.cpp" />
     <ClCompile Include="SplinePair.cpp" />
+    <ClCompile Include="TrajectoryGroup.cpp" />
     <ClCompile Include="Translation2d.cpp" />
     <ClCompile Include="Twist2d.cpp" />
     <ClCompile Include="UnitConverter.cpp" />
@@ -130,10 +134,14 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="CentripetalConstraint.h" />
     <ClInclude Include="GameField.h" />
     <ClInclude Include="GameFieldManager.h" />
+    <QtMoc Include="GenerationMgr.h" />
+    <QtMoc Include="Generator.h" />
+    <ClInclude Include="GeneratorType.h" />
     <ClInclude Include="ICsv.h" />
     <ClInclude Include="ManagerBase.h" />
     <ClInclude Include="MathUtils.h" />
     <ClInclude Include="MinMaxAcceleration.h" />
+    <ClInclude Include="NoEditDelegate.h" />
     <ClInclude Include="PathConstraint.h" />
     <QtMoc Include="PathFieldView.h" />
     <ClInclude Include="PathGroup.h" />
@@ -144,16 +152,21 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="Pose2dWithRotation.h" />
     <ClInclude Include="Pose2dWithTrajectory.h" />
     <ClInclude Include="QuinticHermiteSpline.h" />
+    <QtMoc Include="RecentFiles.h" />
     <ClInclude Include="RobotManager.h" />
     <ClInclude Include="RobotParams.h" />
     <QtMoc Include="RobotPath.h" />
     <ClInclude Include="Rotation2d.h" />
     <ClInclude Include="SplinePair.h" />
+    <ClInclude Include="TrajectoryGroup.h" />
     <ClInclude Include="TrajectoryNames.h" />
     <ClInclude Include="Translation2d.h" />
     <ClInclude Include="Twist2d.h" />
     <ClInclude Include="UnitConverter.h" />
     <QtMoc Include="WaypointWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

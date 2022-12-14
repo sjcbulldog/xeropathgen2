@@ -6,9 +6,19 @@
 #include <QtCore/QJsonArray>
 #include <stdexcept>
 
-PathsDataModel::PathsDataModel()
+PathsDataModel::PathsDataModel(GenerationMgr& genmgr) : gen_mgr_(genmgr)
 {
 	reset();
+	gen_type_ = GeneratorType::CheesyPoofs;
+}
+
+PathsDataModel::~PathsDataModel()
+{
+	for (auto group : groups_) {
+		delete group;
+	}
+
+	groups_.clear();
 }
 
 void PathsDataModel::reset()
@@ -23,8 +33,8 @@ QStringList PathsDataModel::groupNames() const
 {
 	QStringList names;
 
-	for (const PathGroup& gr : groups_) {
-		names.push_back(gr.name());
+	for (PathGroup* gr : groups_) {
+		names.push_back(gr->name());
 	}
 
 	return names;
@@ -32,28 +42,28 @@ QStringList PathsDataModel::groupNames() const
 
 bool PathsDataModel::hasGroup(const QString& grname) const
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup *g) { return g->name() == grname; });
 	return it != groups_.end();
 }
 
 void PathsDataModel::addGroup(const QString& grname)
 {
 	assert(hasGroup(grname) == false);
-	PathGroup gr(grname);
+	PathGroup *gr = new PathGroup(grname);
 	groups_.push_back(gr);
 
-	dirty_ = true;
+	setDirty();
 	emit groupAdded(grname);
 }
 
 void PathsDataModel::deleteGroup(const QString& grname)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
 		groups_.erase(it);
 	}
 
-	dirty_ = true;
+	setDirty();
 	emit groupDeleted(grname);
 }
 
@@ -61,9 +71,9 @@ QStringList PathsDataModel::pathNames(const QString& grname) const
 {
 	QStringList names;
 
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
-		names = it->pathNames();
+		names = (*it)->pathNames();
 	}
 
 	return names;
@@ -71,24 +81,24 @@ QStringList PathsDataModel::pathNames(const QString& grname) const
 
 const PathGroup* PathsDataModel::getPathGroupByName(const QString& grname)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it == groups_.end()) {
 		return nullptr;
 	}
 
-	return &(*it);
+	return *it;
 }
 
 void PathsDataModel::renameGroup(const QString& oldname, const QString& newname)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&oldname](const PathGroup& g) { return g.name() == oldname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&oldname](const PathGroup* g) { return g->name() == oldname; });
 	if (it == groups_.end()) {
 		QString msg = "group '" + oldname + "' does not exist";
 		throw std::runtime_error(msg.toStdString());
 	}
 
-	it->setName(newname);
-	dirty_ = true;
+	(*it)->setName(newname);
+	setDirty();
 	emit groupRenamed(oldname, newname);
 }
 
@@ -96,9 +106,9 @@ bool PathsDataModel::hasPath(const QString& grname, const QString& pathname) con
 {
 	bool ret = false;
 
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
-		ret = (it->getPathByName(pathname) != nullptr);
+		ret = ((*it)->getPathByName(pathname) != nullptr);
 	}
 
 	return ret;
@@ -106,11 +116,12 @@ bool PathsDataModel::hasPath(const QString& grname, const QString& pathname) con
 
 void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup& g) { return g.name() == path->pathGroup()->name(); });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup* g) { return g->name() == path->pathGroup()->name(); });
 	if (it != groups_.end()) {
-		it->addPath(path);
+		(*it)->addPath(path);
 		connect(path.get(), &RobotPath::pathChanged, this, &PathsDataModel::computeSplines);
-		dirty_ = true;
+		setDirty();
+		gen_mgr_.addPath(gen_type_, path);
 		emit pathAdded(path);
 	}
 	else {
@@ -121,10 +132,15 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 
 void PathsDataModel::deletePath(const QString& grname, const QString& pathname)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
-		it->deletePath(pathname);
-		dirty_ = true;
+		auto path = (*it)->getPathByName(pathname);
+		if (path != nullptr) {
+			gen_mgr_.removePath(path);
+		}
+
+		(*it)->deletePath(pathname);
+		setDirty();
 		emit pathDeleted(grname, pathname);
 	}
 	else {
@@ -135,39 +151,41 @@ void PathsDataModel::deletePath(const QString& grname, const QString& pathname)
 
 std::shared_ptr<RobotPath> PathsDataModel::getPathByName(const QString& grname, const QString& pathname)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it == groups_.end()) {
 		return nullptr;
 	}
 
-	return it->getPathByName(pathname);
+	return (*it)->getPathByName(pathname);
 }
 
 void PathsDataModel::renamePath(const QString& grname, const QString& oldname, const QString& newname)
 {
-	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup& g) { return g.name() == grname; });
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it == groups_.end()) {
 		QString msg = "group '" + grname + "' does not exist";
 		throw std::runtime_error(msg.toStdString());
 	}
 
-	auto path = it->getPathByName(oldname);
+	auto path = (*it)->getPathByName(oldname);
 	if (path == nullptr) {
 		QString msg = "path '" + oldname + "' in group '" + grname + "' does not exist";
 		throw std::runtime_error(msg.toStdString());
 	}
 
 	path->setName(newname);
-	dirty_ = true;
+	setDirty();
 	emit pathRenamed(grname, oldname, newname);
 }
 
 void PathsDataModel::computeSplines(const QString& grname, const QString& pathname)
 {
-	dirty_ = true;
+	setDirty();
 
 	auto path = getPathByName(grname, pathname);
 	assert(path != nullptr);
+
+	gen_mgr_.addPath(gen_type_, path);
 	computeSplinesForPath(path);
 }
 
@@ -306,6 +324,7 @@ bool PathsDataModel::load(const QString& filename, QString& msg)
 	}
 
 	filename_ = filename;
+	dirty_ = false;
 	return true;
 }
 
@@ -344,11 +363,10 @@ bool PathsDataModel::readPathGroup(QFile& file, const QJsonObject& obj, QString 
 		}
 		QJsonObject obj2 = val.toObject();
 		auto path = RobotPath::fromJSONObject(grobj, obj2, msg);
-		addPath(path);
-
 		if (msg.length() > 0) {
 			return false;
 		}
+		addPath(path);
 	}
 
 	return true;
@@ -356,19 +374,67 @@ bool PathsDataModel::readPathGroup(QFile& file, const QJsonObject& obj, QString 
 
 bool PathsDataModel::saveAs(const QString& filename, QString& msg)
 {
-	return true;
+	if (saveToFile(filename, msg)) {
+		filename_ = filename;
+		return true;
+	}
+
+	return false;
 }
 
 bool PathsDataModel::save(QString& msg)
 {
+	return saveToFile(filename_, msg);
+}
+
+bool PathsDataModel::saveToFile(const QString& filename, QString& msg)
+{
+	QJsonObject obj = modelToObject();
+	QJsonDocument doc(obj);
+	QFile file(filename);
+	if (!file.open(QIODevice::OpenModeFlag::Truncate | QIODevice::OpenModeFlag::WriteOnly))
+		return false;
+
+	file.write(doc.toJson());
+	file.close();
+	dirty_ = false;
+
 	return true;
+}
+
+QJsonObject PathsDataModel::modelToObject()
+{
+	QJsonObject obj;
+
+	QJsonArray a;
+
+	for (auto gr : groups_) {
+		QJsonObject grobj;
+		QJsonArray patharray;
+
+		for (auto path : gr->paths()) {
+			QJsonObject pathobj = path->toJSONObject();
+			patharray.append(pathobj);
+		}
+
+		grobj.insert(RobotPath::NameTag, gr->name());
+		grobj.insert(RobotPath::PathsTag, patharray);
+
+		a.append(grobj);
+	}
+
+	obj[RobotPath::VersionTag] = "2";
+	obj[RobotPath::OutputTag] = path_output_dir_;
+	obj[RobotPath::GroupsTag] = a;
+
+	return obj;
 }
 
 void PathsDataModel::convert(const QString& units)
 {
 	if (units != units_) {
 		for (auto gr : groups_) {
-			for (auto path : gr.paths()) {
+			for (auto path : gr->paths()) {
 				path->convert(units_, units);
 			}
 		}

@@ -6,10 +6,16 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QLabel>
+#include <QtGui/QCloseEvent>
 #include <QtGui/QActionGroup>
 
-XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::ofstream& ostrm, std::stringstream& sstrmm, QWidget *parent) : QMainWindow(parent), robots_(robots), fields_(fields), logstream_(ostrm), strstream_(sstrmm)
+XeroPathGen* XeroPathGen::theOne = nullptr;
+
+XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::ofstream& ostrm, std::stringstream& sstrmm, QWidget *parent)
+			: QMainWindow(parent), robots_(robots), fields_(fields), logstream_(ostrm), strstream_(sstrmm), paths_data_model_(generator_)
 {
+	theOne = this;
+
 	path_edit_win_ = nullptr;
 	path_win_ = nullptr;
 	waypoint_win_ = nullptr;
@@ -32,7 +38,17 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	setDefaultField();
 	setDefaultRobot();
 
-	setUnits("m");
+	QString units("m");
+	if (settings_.contains("units")) {
+		units = settings_.value("units").toString();
+	}
+	setUnits(units);
+
+	recents_ = new RecentFiles(settings_, *recent_menu_);
+	recents_->initialize(this);
+
+	populateFieldMenu();
+	populateRobotMenu();
 }
 
 XeroPathGen::~XeroPathGen()
@@ -58,6 +74,10 @@ bool XeroPathGen::createWindows()
 {
 	path_edit_win_ = new PathFieldView(paths_data_model_, nullptr);
 	connect(path_edit_win_, &PathFieldView::mouseMoved, this, &XeroPathGen::mouseMoved);
+	connect(path_edit_win_, &PathFieldView::waypointSelected, this, &XeroPathGen::waypointSelected);
+	connect(path_edit_win_, &PathFieldView::waypointStartMoving, this, &XeroPathGen::waypointStartMoving);
+	connect(path_edit_win_, &PathFieldView::waypointMoving, this, &XeroPathGen::waypointMoving);
+	connect(path_edit_win_, &PathFieldView::waypointEndMoving, this, &XeroPathGen::waypointEndMoving);
 	setCentralWidget(path_edit_win_);
 
 	path_win_ = new PathWindow(paths_data_model_, nullptr);
@@ -148,10 +168,10 @@ void XeroPathGen::mouseMoved(Translation2d pos)
 {
 	QString str;
 	
-	str = QString::number(pos.getX(), 'g', 2);
+	str = QString::number(pos.getX(), 'f', 2);
 	xpos_text_->setText(str);
 
-	str = QString::number(pos.getY(), 'g', 2);
+	str = QString::number(pos.getY(), 'f', 2);
 	ypos_text_->setText(str);
 }
 
@@ -213,6 +233,7 @@ void XeroPathGen::fileOpen()
 		}
 	}
 	paths_data_model_.blockSignals(false);
+	recents_->addRecentFile(this, filename);
 }
 
 void XeroPathGen::fileClose()
@@ -228,6 +249,42 @@ void XeroPathGen::fileSave()
 void XeroPathGen::fileSaveAs()
 {
 	internalFileSaveAs();
+}
+
+void XeroPathGen::recentOpen(const QString &filename)
+{
+	if (!internalFileClose())
+		return;
+
+	paths_data_model_.reset();
+
+	QFileInfo info(filename);
+	if (!info.exists()) {
+		recents_->removeRecentFile(this, filename);
+	}
+	else {
+		QString msg;
+		paths_data_model_.blockSignals(true);
+		if (!paths_data_model_.load(filename, msg))
+		{
+			QMessageBox::critical(this, "Load Failed", "The file '" + filename + "' cannot be loaded - " + msg);
+		}
+		else
+		{
+			path_win_->refresh();
+			QFileInfo info(paths_data_model_.filename());
+			path_filename_->setText(info.fileName());
+
+			if (paths_data_model_.hasOutpuDir()) {
+				path_gendir_->setText(paths_data_model_.outputDir());
+			}
+			else {
+				path_gendir_->setText("<not set>");
+			}
+		}
+		paths_data_model_.blockSignals(false);
+		recents_->addRecentFile(this, filename);
+	}
 }
 
 bool XeroPathGen::internalFileSave()
@@ -310,54 +367,44 @@ void XeroPathGen::fileGenerate()
 
 void XeroPathGen::messageLogger(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-	// theOne->messageLoggerWin(type, context, msg);
+	theOne->addLogMessage(msg);
 }
 
 void XeroPathGen::closeEvent(QCloseEvent* ev)
 {
+	if (paths_data_model_.isDirty())
+	{
+		QMessageBox::StandardButton reply;
+
+		reply = QMessageBox::question(this, "Question?", "You have unsaved changes, do you want to save?", QMessageBox::Yes | QMessageBox::No);
+		if (reply == QMessageBox::Yes)
+		{
+			if (!internalFileSave()) {
+				ev->ignore();
+			}
+			return;
+		}
+	}
+
 	settings_.setValue(GeometrySetting, saveGeometry());
 	settings_.setValue(WindowStateSetting, saveState());
+
+	QMainWindow::closeEvent(ev);
 }
 
 void XeroPathGen::showEvent(QShowEvent* ev)
 {
 	QMainWindow::showEvent(ev);
 
-	//qInstallMessageHandler(messageLogger);
+	// qInstallMessageHandler(messageLogger);
 
-	////
-	//// Copy all previous log messages to the log window
-	////
-	//std::string line;
-	//while (std::getline(strstream_, line))
-	//{
-	//	log_->append(line.c_str());
-	//}
-	//qDebug() << "Message logging transferred to application";
-
-	//readMessageTypes();
-	//std::list<QtMsgType> turnon = messages_;
-	//messages_.clear();
-
-	//for (QtMsgType t : turnon)
-	//{
-	//	switch (t)
-	//	{
-	//	case QtMsgType::QtDebugMsg:
-	//		toggleDebugLogging();
-	//		break;
-	//	case QtMsgType::QtInfoMsg:
-	//		toggleInfoLogging();
-	//		break;
-	//	case QtMsgType::QtWarningMsg:
-	//		toggleWarningLogging();
-	//		break;
-	//	default:
-	//		break;
-	//	}
-	//}
-
-	//write_messages_ = true;
+	std::string line;
+	while (std::getline(strstream_, line))
+	{
+		QString qline = QString::fromStdString(line);
+		qline = qline.trimmed();
+		this->addLogMessage(qline);
+	}
 
 	if (robots_.getRobots().size() == 0)
 	{
@@ -379,6 +426,8 @@ void XeroPathGen::pathSelected(const QString& grname, const QString& pathname)
 {
 	auto path = paths_data_model_.getPathByName(grname, pathname);
 	path_edit_win_->setPath(path);
+	waypoint_win_->setPath(path);
+	path_params_win_->setPath(path);
 }
 
 void XeroPathGen::setField(const QString &name)
@@ -541,4 +590,25 @@ void XeroPathGen::exportCurrentRobot()
 
 void XeroPathGen::importRobot()
 {
+}
+
+void XeroPathGen::waypointSelected(size_t index)
+{
+	waypoint_win_->setWaypoint(index);
+}
+
+void XeroPathGen::waypointStartMoving(size_t index)
+{
+	waypoint_win_->refresh();
+}
+
+void XeroPathGen::waypointMoving(size_t index)
+{
+	waypoint_win_->refresh();
+}
+
+void XeroPathGen::waypointEndMoving(size_t index)
+{
+	waypoint_win_->refresh();
+
 }

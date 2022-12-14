@@ -1,0 +1,12 @@
+- Generate Path Data
+- Rethink robot management
+- Rethink path generation out dir
+- Velocity Constraints
+- Centripetal Constraints
+
+- Path Parameters Window						Done
+- Fields Menu									Done
+- Robots Menu									Done
+- Save/SaveAs									Done
+- If path model dirty, warn on close			Done
+- Recent Files									Done

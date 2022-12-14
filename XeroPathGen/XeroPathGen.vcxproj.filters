@@ -100,6 +100,18 @@
     <ClCompile Include="QuinticHermiteSpline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RecentFiles.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GenerationMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Generator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TrajectoryGroup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="build.h">
@@ -171,6 +183,15 @@
     <ClInclude Include="TrajectoryNames.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NoEditDelegate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratorType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TrajectoryGroup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="PathWindow.h">
@@ -191,5 +212,17 @@
     <QtMoc Include="RobotPath.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="RecentFiles.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="GenerationMgr.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="Generator.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="TODO.txt" />
   </ItemGroup>
 </Project>

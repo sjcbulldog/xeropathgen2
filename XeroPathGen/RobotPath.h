@@ -67,6 +67,15 @@ public:
 		emitPathChangedSignal();
 	}
 
+	const PathParameters& params() const {
+		return params_;
+	}
+
+	void setParams(const PathParameters& p) {
+		params_ = p;
+		emitPathChangedSignal();
+	}
+
 	const PathGroup* pathGroup() const {
 		return group_;
 	}
@@ -109,6 +118,7 @@ public:
 	void convert(const QString& from, const QString& to);
 
 	static std::shared_ptr<RobotPath> fromJSONObject(const PathGroup *group, const QJsonObject& obj, QString &msg);
+	QJsonObject toJSONObject();
 
 signals:
 	void pathChanged(const QString& groupName, const QString& pathName);
