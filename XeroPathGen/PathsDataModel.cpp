@@ -178,6 +178,19 @@ void PathsDataModel::renamePath(const QString& grname, const QString& oldname, c
 	emit pathRenamed(grname, oldname, newname);
 }
 
+QVector<std::shared_ptr<RobotPath>> PathsDataModel::getAllPaths()
+{
+	QVector<std::shared_ptr<RobotPath>> paths;
+
+	for (auto gr : groups_) {
+		for (auto path : gr->paths()) {
+			paths.push_back(path);
+		}
+	}
+
+	return paths;
+}
+
 void PathsDataModel::computeSplines(const QString& grname, const QString& pathname)
 {
 	setDirty();

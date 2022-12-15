@@ -99,11 +99,15 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
   </ItemDefinitionGroup>
   <ItemGroup>
     <QtRcc Include="XeroPathGen.qrc" />
+    <QtUic Include="AboutDialog.ui" />
+    <QtUic Include="PropertyEditor.ui" />
     <QtUic Include="XeroPathGen.ui" />
     <QtMoc Include="XeroPathGen.h" />
     <QtMoc Include="PathWindow.h" />
+    <ClCompile Include="AboutDialog.cpp" />
     <ClCompile Include="CheesyGenerator.cpp" />
     <ClCompile Include="DistanceView.cpp" />
+    <ClCompile Include="DriveBaseData.cpp" />
     <ClCompile Include="GameFieldManager.cpp" />
     <ClCompile Include="GenerationMgr.cpp" />
     <ClCompile Include="Generator.cpp" />
@@ -118,6 +122,9 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="Pose2d.cpp" />
     <ClCompile Include="Pose2dWithRotation.cpp" />
     <ClCompile Include="Pose2dWithTrajectory.cpp" />
+    <ClCompile Include="PropertyEditor.cpp" />
+    <ClCompile Include="PropertyEditorItemDelegate.cpp" />
+    <ClCompile Include="PropertyEditorTreeModel.cpp" />
     <ClCompile Include="QuinticHermiteSpline.cpp" />
     <ClCompile Include="RecentFiles.cpp" />
     <ClCompile Include="RobotManager.cpp" />
@@ -134,10 +141,14 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="AboutDialog.h" />
     <ClInclude Include="build.h" />
     <ClInclude Include="CentripetalConstraint.h" />
     <ClInclude Include="CheesyGenerator.h" />
+    <ClInclude Include="CSVWriter.h" />
     <ClInclude Include="DistanceView.h" />
+    <ClInclude Include="DriveBaseData.h" />
+    <ClInclude Include="EditableProperty.h" />
     <ClInclude Include="GameField.h" />
     <ClInclude Include="GameFieldManager.h" />
     <QtMoc Include="GenerationMgr.h" />
@@ -159,6 +170,9 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="Pose2dConstrained.h" />
     <ClInclude Include="Pose2dWithRotation.h" />
     <ClInclude Include="Pose2dWithTrajectory.h" />
+    <QtMoc Include="PropertyEditor.h" />
+    <ClInclude Include="PropertyEditorItemDelegate.h" />
+    <ClInclude Include="PropertyEditorTreeModel.h" />
     <ClInclude Include="QuinticHermiteSpline.h" />
     <QtMoc Include="RecentFiles.h" />
     <ClInclude Include="RobotManager.h" />

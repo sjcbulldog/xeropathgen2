@@ -15,36 +15,21 @@
 //
 #pragma once
 
-#include <QSettings>
-#include <QMenu>
-#include <list>
-#include <string>
+#include <QDialog>
+#include "ui_AboutDialog.h"
 
-class XeroPathGen;
+class GeneratorManager;
+class GameFieldManager;
 
-class RecentFiles : public QObject
+class AboutDialog : public QDialog
 {
 	Q_OBJECT
 
 public:
-	RecentFiles(QSettings &settings, const QString &name, QMenu &menu);
-	virtual ~RecentFiles();
-
-	void initialize(XeroPathGen* app);
-
-	void setCount(size_t count);
-	void addRecentFile(XeroPathGen*app, QString file, bool end = false);
-	void removeRecentFile(XeroPathGen* app, QString file);
+	AboutDialog(GameFieldManager&fields, QWidget *parent = Q_NULLPTR);
+	~AboutDialog();
 
 private:
-	void adjustSize();
-	void writeRecentFiles();
-
-private:
-	size_t count_;
-	QString name_;
-	std::list<QString> files_;
-	QSettings &settings_;
-	QMenu& menu_;
+	GameFieldManager& fields_;
+	Ui::AboutDialog ui;
 };
-

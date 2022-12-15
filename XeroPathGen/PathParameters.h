@@ -9,15 +9,15 @@ public:
 	PathParameters() {
 		start_velocity_ = 0.0;
 		end_velocity_ = 0.0;
-		max_velocity_ = std::numeric_limits<double>::max();
-		max_accel_ = std::numeric_limits<double>::max();
+		max_velocity_ = 1e5;
+		max_accel_ = 1e5;
 	}
 
 	PathParameters(double vel) {
 		start_velocity_ = 0.0;
 		end_velocity_ = 0.0;
 		max_velocity_ = vel;
-		max_accel_ = std::numeric_limits<double>::max();
+		max_accel_ = 1e5;
 	}
 
 	PathParameters(double vel, double accel) {

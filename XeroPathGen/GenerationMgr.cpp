@@ -11,6 +11,19 @@ GenerationMgr::GenerationMgr()
 	timestep_ = 0.02;
 }
 
+void GenerationMgr::clear()
+{
+	pending_queue_mutex_.lock();
+	pending_queue_mutex_.unlock();
+	pending_queue_.clear();
+
+	if (thread_ != nullptr) {
+		thread_->terminate();
+		thread_ = nullptr;
+		worker_ = nullptr;
+	}
+}
+
 std::shared_ptr<TrajectoryGroup> GenerationMgr::getTrajectoryGroup(std::shared_ptr<RobotPath> path)
 {
 	std::shared_ptr<TrajectoryGroup> ret;
@@ -49,9 +62,6 @@ void GenerationMgr::removePath(std::shared_ptr<RobotPath> path)
 
 void GenerationMgr::schedulePath()
 {
-	assert(worker_ == nullptr);
-	assert(thread_ == nullptr);
-
 	pending_queue_mutex_.lock();
 	active_queue_mutex_.lock();
 

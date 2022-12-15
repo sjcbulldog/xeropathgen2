@@ -127,7 +127,8 @@ CheesyGenerator::timeParameterize(const DistanceView& view, const QVector<std::s
 
 		while (true)
 		{
-			double newmaxvel = std::sqrt(sucessor.velocity() * sucessor.velocity() + 2.0 * sucessor.accelMin() * dist);
+			double tmp = sucessor.velocity() * sucessor.velocity() + 2.0 * sucessor.accelMin() * dist;
+			double newmaxvel = std::sqrt(tmp);
 			if (newmaxvel >= state.velocity())
 				break;
 

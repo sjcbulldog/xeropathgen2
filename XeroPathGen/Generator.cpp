@@ -46,7 +46,6 @@ void Generator::generateTrajectory()
 
 void Generator::addTankDriveTrajectories()
 {
-
 	//
 	// Get the width of the robot in the same units used by the paths
 	//

@@ -46,7 +46,7 @@ public:
 		return (it == paths_.end()) ? nullptr : *it;
 	}
 
-	QList<std::shared_ptr<RobotPath>>& paths() {
+	const QList<std::shared_ptr<RobotPath>>& paths() const {
 		return paths_;
 	}
 

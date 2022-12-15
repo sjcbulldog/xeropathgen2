@@ -36,12 +36,15 @@ private:
     void showFileMenu();
     void fileNew();
     void fileOpen();
+    void fileOpenProject();
     void fileSave();
     void fileSaveAs();
     void fileClose();
     void fileGenerateAs();
     void fileGenerate();
+    void recentOpen(const QString& name, const QString& filename);
     void recentOpen(const QString& filename);
+    void recentOpenProject(const QString& filename);
 
 protected:
     void closeEvent(QCloseEvent* ev);
@@ -62,6 +65,7 @@ private:
 
     void setDefaultRobot();
     void setRobot(const QString& name);
+    void setRobot(std::shared_ptr<RobotParams> robot);
     void populateRobotMenu();
     void newRobotSelected(std::shared_ptr<RobotParams> robot);
 
@@ -89,8 +93,29 @@ private:
     void waypointStartMoving(size_t index);
     void waypointMoving(size_t index);
     void waypointEndMoving(size_t index);
-    void waypointInserted();
-    void waypointDeleted();
+
+    void generateOnePath(std::shared_ptr<RobotPath> path, std::shared_ptr<TrajectoryGroup> group);
+    void updateStatusBar();
+    void updateAllPaths(bool wait);
+    void createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path);
+
+    void showAbout();
+
+private:
+    static constexpr const char* RobotDialogName = "Name";
+    static constexpr const char *RobotDialogEWidth = "Effective Width";
+    static constexpr const char *RobotDialogELength = "Effective Length";
+    static constexpr const char *RobotDialogRWidth = "Physical Width";
+    static constexpr const char *RobotDialogRLength = "Physical Length";
+    static constexpr const char *RobotDialogWeight = "Weight";
+    static constexpr const char *RobotDialogMaxVelocity = "Max Velocity";
+    static constexpr const char *RobotDialogMaxAcceleration = "Max Acceleration";
+    static constexpr const char *RobotDialogMaxJerk = "Max Jerk";
+    static constexpr const char *RobotDialogMaxCentripetal = "Max Centripetal Force";
+    static constexpr const char *RobotDialogLengthUnits = "Units (lengths)";
+    static constexpr const char *RobotDialogWeightUnits = "Units (weights)";
+    static constexpr const char *RobotDialogDriveType = "Drive Type";
+    static constexpr const char *RobotDialogTimeStep = "Time Step";
 
 private:
     static XeroPathGen* theOne;
@@ -124,6 +149,7 @@ private:
     // Menus
     QMenu* file_menu_;
     QMenu* recent_menu_;
+    QMenu* recent_project_menu_;
     QAction* file_save_;
 
     QMenu* robot_menu_;
@@ -134,6 +160,8 @@ private:
     QMenu* field_menu_;
     QActionGroup* fields_group_;
 
+    QMenu* help_menu_;
+
     // Status bar widgets
     QLabel* xpos_text_;
     QLabel* ypos_text_;
@@ -142,4 +170,7 @@ private:
 
     QStringList logMessages_;
     RecentFiles* recents_;
+    RecentFiles* project_recents_;
+
+    bool project_mode_;
 };

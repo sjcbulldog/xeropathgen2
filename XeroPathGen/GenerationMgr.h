@@ -33,6 +33,16 @@ public:
 
 	std::shared_ptr<TrajectoryGroup> getTrajectoryGroup(std::shared_ptr<RobotPath> path);
 
+	bool isEmpty() {
+		bool ret = true;
+		pending_queue_mutex_.lock();
+		ret = pending_queue_.size() == 0 && worker_ == nullptr;
+		pending_queue_mutex_.unlock();
+		return ret;
+	}
+
+	void clear();
+
 signals:
 	void generationComplete(std::shared_ptr<RobotPath> path);
 

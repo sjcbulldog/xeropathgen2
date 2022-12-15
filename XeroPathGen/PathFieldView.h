@@ -172,4 +172,7 @@ private:
 	QPointF world_;
 
 	PathsDataModel& path_data_model_;
+
+	double robot_width_;
+	double robot_length_;
 };

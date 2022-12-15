@@ -17,9 +17,10 @@
 #include "XeroPathGen.h"
 #include <algorithm>
 
-RecentFiles::RecentFiles(QSettings &settings, QMenu &menu) : settings_(settings), menu_(menu)
+RecentFiles::RecentFiles(QSettings &settings, const QString &name, QMenu &menu) : settings_(settings), menu_(menu)
 {
 	count_ = 4;
+	name_ = name;
 }
 
 RecentFiles::~RecentFiles()
@@ -61,7 +62,7 @@ void RecentFiles::addRecentFile(XeroPathGen *app, QString file, bool end)
 	menu_.clear();
 	for (auto& file2 : files_) {
 		QAction* action = menu_.addAction(file2);
-		connect(action, &QAction::triggered, app, [app, file2] { app->recentOpen(file2); });
+		connect(action, &QAction::triggered, app, [app, this, file2] { app->recentOpen(this->name_, file2); });
 	}
 
 	if (!end)
@@ -80,7 +81,7 @@ void RecentFiles::initialize(XeroPathGen* app)
 
 	while (true)
 	{
-		QString entry = "recent/" + QString::number(i);
+		QString entry = name_ + "/" + QString::number(i);
 		if (!settings_.contains(entry))
 			break;
 		QString value = settings_.value(entry).toString();
@@ -97,7 +98,7 @@ void RecentFiles::writeRecentFiles()
 
 	while (true)
 	{
-		QString entry = "recent/" + QString::number(i);
+		QString entry = name_ + "/" + QString::number(i);
 		if (!settings_.contains(entry))
 			break;
 
@@ -108,7 +109,7 @@ void RecentFiles::writeRecentFiles()
 	i = 0;
 	for (auto& file : files_)
 	{
-		QString entry = "recent/" + QString::number(i);
+		QString entry = name_ + "/" + QString::number(i);
 		settings_.setValue(entry, QVariant(file));
 		i++;
 	}

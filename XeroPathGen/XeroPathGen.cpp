@@ -1,4 +1,10 @@
 #include "XeroPathGen.h"
+#include "CSVWriter.h"
+#include "PropertyEditor.h"
+#include "EditableProperty.h"
+#include "DriveBaseData.h"
+#include "AboutDialog.h"
+#include <QtCore/QCoreApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
@@ -8,6 +14,7 @@
 #include <QtWidgets/QLabel>
 #include <QtGui/QCloseEvent>
 #include <QtGui/QActionGroup>
+#include <fstream>
 
 XeroPathGen* XeroPathGen::theOne = nullptr;
 
@@ -44,11 +51,16 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	}
 	setUnits(units);
 
-	recents_ = new RecentFiles(settings_, *recent_menu_);
+	recents_ = new RecentFiles(settings_, "recentfiles",  *recent_menu_);
 	recents_->initialize(this);
+
+	project_recents_ = new RecentFiles(settings_, "recentprojects", *recent_project_menu_);
+	project_recents_->initialize(this);
 
 	populateFieldMenu();
 	populateRobotMenu();
+
+	setWindowTitle("Error Code Xero Path Generator (file):");
 }
 
 XeroPathGen::~XeroPathGen()
@@ -114,6 +126,8 @@ bool XeroPathGen::createMenus()
 	(void)connect(action, &QAction::triggered, this, &XeroPathGen::fileNew);
 	action = file_menu_->addAction(tr("Open ..."));
 	(void)connect(action, &QAction::triggered, this, &XeroPathGen::fileOpen);
+	action = file_menu_->addAction(tr("Open Project..."));
+	(void)connect(action, &QAction::triggered, this, &XeroPathGen::fileOpenProject);
 	file_menu_->addSeparator();
 	file_save_ = file_menu_->addAction(tr("Save"));
 	(void)connect(file_save_, &QAction::triggered, this, &XeroPathGen::fileSave);
@@ -129,6 +143,7 @@ bool XeroPathGen::createMenus()
 	(void)connect(action, &QAction::triggered, this, &XeroPathGen::fileGenerate);
 	file_menu_->addSeparator();
 	recent_menu_ = file_menu_->addMenu("Recent Files");
+	recent_project_menu_ = file_menu_->addMenu("Recent Projects");
 
 	robot_menu_ = new QMenu(tr("&Robots"));
 	menuBar()->addMenu(robot_menu_);
@@ -137,6 +152,11 @@ bool XeroPathGen::createMenus()
 	field_menu_ = new QMenu(tr("&Fields"));
 	menuBar()->addMenu(field_menu_);
 	fields_group_ = new QActionGroup(this);
+
+	help_menu_ = new QMenu(tr("&Help"));
+	menuBar()->addMenu(help_menu_);
+	action = help_menu_->addAction(tr("About"));
+	(void)connect(action, &QAction::triggered, this, &XeroPathGen::showAbout);
 
 	return true;
 }
@@ -161,6 +181,8 @@ bool XeroPathGen::createStatusBar()
 
 	path_gendir_ = new QLabel("<unknown>");
 	statusBar()->insertWidget(3, path_gendir_);
+
+	updateStatusBar();
 
 	return true;
 }
@@ -191,7 +213,68 @@ void XeroPathGen::fileNew()
 	if (!internalFileClose())
 		return;
 
+	project_mode_ = false;
 	paths_data_model_.reset();
+}
+
+void XeroPathGen::recentOpenProject(const QString& dirname)
+{
+	QString msg;
+	project_mode_ = true;
+
+	QString pathfile = dirname + "/src/main/paths/robot.paths";
+	QString robotfile = dirname + "/src/main/paths/robot.json";
+	QString outdir = dirname + "/src/main/deploy/paths";
+
+	QFileInfo info(pathfile);
+	if (info.exists())
+	{
+		paths_data_model_.blockSignals(true);
+		if (!paths_data_model_.load(pathfile, msg))
+		{
+			QMessageBox::critical(this, "Load Failed", "The file '" + pathfile + "' cannot be loaded - " + msg);
+		}
+		paths_data_model_.blockSignals(false);
+	}
+	else {
+		paths_data_model_.setFilename(pathfile);
+	}
+
+	project_recents_->addRecentFile(this, dirname);
+	paths_data_model_.setOutputDir(outdir);
+	path_win_->refresh();
+
+	updateStatusBar();
+
+	info = QFileInfo(robotfile);
+	if (info.exists())
+	{
+		QFile file(robotfile);
+		auto robot = robots_.load(file);
+		setRobot(robot);
+	}
+	else
+	{
+		//
+		// Create a new robot file, and store it
+		//
+		createEditRobot(nullptr, robotfile);
+	}
+
+	setWindowTitle("Error Code Xero Path Generator (project): " + dirname);
+}
+
+void XeroPathGen::fileOpenProject()
+{
+	if (!internalFileClose())
+		return;
+
+	QString dirname = QFileDialog::getExistingDirectory(this, tr("Load Xero1425 Project"), "");
+	if (dirname.length() == 0) {
+		return;
+	}
+
+	recentOpenProject(dirname);
 }
 
 void XeroPathGen::fileOpen()
@@ -214,6 +297,8 @@ void XeroPathGen::fileOpen()
 	QFileInfo info(filename);
 	settings_.setValue(FileLoadPathTag, info.absolutePath());
 
+	project_mode_ = false;
+
 	QString msg;
 	paths_data_model_.blockSignals(true);
 	if (!paths_data_model_.load(filename, msg)) 
@@ -224,22 +309,17 @@ void XeroPathGen::fileOpen()
 	{
 		path_win_->refresh();
 		QFileInfo info(paths_data_model_.filename());
-		path_filename_->setText(info.fileName());
 
-		if (paths_data_model_.hasOutpuDir()) {
-			path_gendir_->setText(paths_data_model_.outputDir());
-		}
-		else {
-			path_gendir_->setText("<not set>");
-		}
 	}
 	paths_data_model_.blockSignals(false);
 	recents_->addRecentFile(this, filename);
+	updateStatusBar();
 }
 
 void XeroPathGen::fileClose()
 {
 	internalFileClose();
+	project_mode_ = false;
 }
 
 void XeroPathGen::fileSave()
@@ -249,10 +329,23 @@ void XeroPathGen::fileSave()
 
 void XeroPathGen::fileSaveAs()
 {
-	internalFileSaveAs();
+	if (project_mode_) {
+		QMessageBox::information(this, "Not Allowed", "Save As is not allowed when in project mode");
+	}
+	else {
+		internalFileSaveAs();
+	}
 }
 
-void XeroPathGen::recentOpen(const QString &filename)
+void XeroPathGen::recentOpen(const QString& name, const QString& filename)
+{
+	if (name == "recentfiles")
+		recentOpen(filename);
+	else
+		recentOpenProject(filename);
+}
+
+void XeroPathGen::recentOpen(const QString& filename)
 {
 	if (!internalFileClose())
 		return;
@@ -322,6 +415,8 @@ bool XeroPathGen::internalFileSaveAs()
 		ret = false;
 	}
 
+	updateStatusBar();
+
 	return ret;
 }
 
@@ -352,12 +447,120 @@ bool XeroPathGen::internalFileClose()
 
 void XeroPathGen::fileGenerateAs()
 {
+	QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+	if (dir.length() == 0)
+		return;
 
+	QFileInfo info(dir);
+	if (!info.exists()) 
+	{
+		QMessageBox::critical(this, "Invalid Directory", "the path '" + dir + "' does not exist");
+		return;
+	}
+
+	if (!info.isDir())
+	{
+		QMessageBox::critical(this, "Invalid Directory", "the path '" + dir + "' exists but is not a directory");
+		return;
+	}
+
+	paths_data_model_.setOutputDir(dir);
+	updateStatusBar();
+
+	fileGenerate();
 }
 
 void XeroPathGen::fileGenerate()
 {
+	if (!paths_data_model_.hasOutpuDir()) 
+	{
+		fileGenerateAs();
+	}
+	else {
+		updateAllPaths(true);
 
+
+		//
+		// Now all paths have been processed
+		//
+		for (auto path : paths_data_model_.getAllPaths()) {
+			auto trajgrp = generator_.getTrajectoryGroup(path);
+			generateOnePath(path, trajgrp);
+		}
+	}
+}
+
+void XeroPathGen::generateOnePath(std::shared_ptr<RobotPath> path, std::shared_ptr<TrajectoryGroup> group)
+{
+	QVector<std::string> headers =
+	{
+		RobotPath::TimeTag,
+		RobotPath::XTag,
+		RobotPath::YTag,
+		RobotPath::PositionTag,
+		RobotPath::VelocityTag,
+		RobotPath::AccelerationTag,
+		RobotPath::JerkTag,
+		RobotPath::HeadingTag,
+		RobotPath::CurvatureTag,
+		RobotPath::RotationTag,
+	};
+
+	for (const QString& name : group->trajectoryNames())
+	{
+		auto traj = group->getTrajectory(name);
+		QDir dirobj = QDir(paths_data_model_.outputDir());
+		QString filename = dirobj.absoluteFilePath(path->pathGroup()->name() + "-" + path->name() + "-" + name + ".csv");
+
+		std::ofstream outstrm(filename.toStdString());
+		CSVWriter::write<QVector<Pose2dWithTrajectory>::const_iterator>(outstrm, headers, traj->begin(), traj->end());
+	}
+}
+
+void XeroPathGen::updateStatusBar()
+{
+	if (paths_data_model_.hasFilename()) 
+	{
+		QFileInfo info(paths_data_model_.filename());
+		path_filename_->setText("PathFile: " + info.fileName());
+	}
+	else
+	{
+		path_filename_->setText("PathFile: <not set>");
+	}
+
+	if (paths_data_model_.hasOutpuDir()) {
+		path_gendir_->setText("Output Directory: " + paths_data_model_.outputDir());
+	}
+	else {
+		path_gendir_->setText("Output Directory: <not set>");
+	}
+
+	if (!project_mode_) {
+		if (paths_data_model_.hasFilename()) {
+			setWindowTitle("Error Code Xero Path Generator (file): " + paths_data_model_.filename());
+		}
+		else {
+			setWindowTitle("Error Code Xero Path Generator (file):");
+		}
+	}
+}
+
+void XeroPathGen::updateAllPaths(bool wait)
+{
+	generator_.clear();
+
+	for (auto path : paths_data_model_.getAllPaths())
+	{
+		generator_.addPath(paths_data_model_.type(), path);
+	}
+
+	if (wait) {
+		while (!generator_.isEmpty()) {
+			QCoreApplication::processEvents();
+			QThread::msleep(10);
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -471,25 +674,43 @@ void XeroPathGen::setDefaultField()
 
 void XeroPathGen::setRobot(const QString& name)
 {
-	current_robot_ = robots_.getRobotByName(name);
+	setRobot(robots_.getRobotByName(name));
+}
+
+void XeroPathGen::setRobot(std::shared_ptr<RobotParams> robot)
+{
+	current_robot_ = robot;
 	path_edit_win_->setRobot(current_robot_);
 	generator_.setRobot(current_robot_);
 
 	//
 	// Now check the right robot in the menu
 	//
-	for (auto action : robot_menu_->actions())
+	if (project_mode_) 
 	{
-		if (action->isSeparator())
-			break;
-
-		if (action->text() == name)
+		for (auto action : robot_menu_->actions())
 		{
-			action->setChecked(true);
-			break;
+			if (!action->isSeparator() && action != edit_robot_action_)
+			{
+				action->setDisabled(true);
+			}
+		}
+	}
+	else {
+		for (auto action : robot_menu_->actions())
+		{
+			if (action->isSeparator())
+				break;
+
+			if (action->text() == robot->getName())
+			{
+				action->setChecked(true);
+				break;
+			}
 		}
 	}
 }
+
 void XeroPathGen::setDefaultRobot()
 {
 	QString robot = settings_.value("robot").toString();
@@ -567,12 +788,14 @@ void XeroPathGen::newRobotSelected(std::shared_ptr<RobotParams> robot)
 
 void XeroPathGen::newRobotAction()
 {
-
+	createEditRobot(nullptr, "");
+	updateAllPaths(false);
 }
 
 void XeroPathGen::editRobotAction()
 {
-
+	createEditRobot(current_robot_, "");
+	updateAllPaths(false);
 }
 
 void XeroPathGen::showRobotMenu()
@@ -613,4 +836,238 @@ void XeroPathGen::waypointEndMoving(size_t index)
 {
 	waypoint_win_->refresh();
 
+}
+
+void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path)
+{
+	double elength, ewidth, rlength, rwidth, rweight;
+	double velocity, accel, jerk, timestep;
+	double cent;
+	RobotParams::DriveType drivetype;
+	QString lengthunits, weightunits;
+	QString name;
+	bool create = (robot == nullptr);
+	QString title;
+
+	if (robot == nullptr)
+	{
+		//
+		// Creating a new robot, use defaults
+		//
+		elength = UnitConverter::convert(RobotParams::DefaultLength, RobotParams::DefaultLengthUnits, units_);
+		ewidth = UnitConverter::convert(RobotParams::DefaultWidth, RobotParams::DefaultLengthUnits, units_);
+		rlength = UnitConverter::convert(RobotParams::DefaultLength, RobotParams::DefaultLengthUnits, units_);
+		rwidth = UnitConverter::convert(RobotParams::DefaultWidth, RobotParams::DefaultLengthUnits, units_);
+		velocity = UnitConverter::convert(RobotParams::DefaultMaxVelocity, RobotParams::DefaultLengthUnits, units_);
+		accel = UnitConverter::convert(RobotParams::DefaultMaxAcceleration, RobotParams::DefaultLengthUnits, units_);
+		jerk = UnitConverter::convert(RobotParams::DefaultMaxJerk, RobotParams::DefaultLengthUnits, units_);
+		cent = UnitConverter::convert(RobotParams::DefaultCentripetal, RobotParams::DefaultLengthUnits, units_);
+		rweight = RobotParams::DefaultWeight;
+		timestep = RobotParams::DefaultTimestep;
+		drivetype = RobotParams::DefaultDriveType;
+		lengthunits = RobotParams::DefaultLengthUnits;
+		weightunits = RobotParams::DefaultWeightUnits;
+
+		title = "Create Robot";
+	}
+	else
+	{
+		elength = robot->getEffectiveLength();
+		ewidth = robot->getEffectiveWidth();
+		rlength = robot->getRobotLength();
+		rwidth = robot->getRobotWidth();
+		rweight = robot->getRobotWeight();
+		velocity = robot->getMaxVelocity();
+		accel = robot->getMaxAccel();
+		jerk = robot->getMaxJerk();
+		cent = robot->getMaxCentripetalForce();
+		timestep = robot->getTimestep();
+		drivetype = robot->getDriveType();
+		name = robot->getName();
+		lengthunits = robot->getLengthUnits();
+		weightunits = robot->getWeightUnits();
+		title = "Edit Robot";
+	}
+
+	while (1)
+	{
+		PropertyEditor* editor = new PropertyEditor(title, this);
+		PropertyEditorTreeModel& model = editor->getModel();
+		std::shared_ptr<EditableProperty> prop;
+
+		prop = std::make_shared<EditableProperty>(RobotDialogName, EditableProperty::PropertyType::PTString,
+			name, "The name of the robot", !create);
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogLengthUnits, EditableProperty::PropertyType::PTStringList,
+			QVariant(lengthunits), "The units of measurement for lengths, can differ from the paths");
+		auto list = UnitConverter::getAllLengthUnits();
+		for (auto& unit : list)
+			prop->addChoice(unit);
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogWeightUnits, EditableProperty::PropertyType::PTStringList,
+			QVariant(weightunits), "The units of measurement for weight");
+		list = UnitConverter::getAllWeightUnits();
+		for (auto& unit : list)
+			prop->addChoice(unit);
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogELength, EditableProperty::PropertyType::PTDouble,
+			QString::number(elength), "The effective length of the robot");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogEWidth, EditableProperty::PropertyType::PTDouble,
+			QString::number(ewidth), "The effective width of the robot");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogRLength, EditableProperty::PropertyType::PTDouble,
+			QString::number(rlength), "The physical length of the robot (outside bumper to outside bumper)");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogRWidth, EditableProperty::PropertyType::PTDouble,
+			QString::number(rwidth), "The physical width of the robot (outside bumper to outside bumpter)");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogWeight, EditableProperty::PropertyType::PTDouble,
+			QString::number(rweight), "The physical weight of the robot (including battery and bumpers)");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogMaxVelocity, EditableProperty::PropertyType::PTDouble,
+			QString::number(velocity), "The maximum velocity of the robot");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogMaxAcceleration, EditableProperty::PropertyType::PTDouble,
+			QString::number(accel), "The maximum acceleration of the robot");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogMaxJerk, EditableProperty::PropertyType::PTDouble,
+			QString::number(jerk), "The maximum jerk of the robot");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogMaxCentripetal, EditableProperty::PropertyType::PTDouble,
+			QString::number(cent), "The maximum centripetal force of the robot on turns");
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogDriveType, EditableProperty::PropertyType::PTStringList,
+			QVariant(DriveBaseData::typeToName(drivetype)), "The drive type for the robot");
+		auto drivetypes = RobotParams::getDriveTypes();
+		QList<QVariant> dtypes;
+		for (auto type : drivetypes)
+			prop->addChoice(DriveBaseData::typeToName(type));
+		model.addProperty(prop);
+
+		prop = std::make_shared<EditableProperty>(RobotDialogTimeStep, EditableProperty::PropertyType::PTDouble,
+			QString::number(timestep), "The time interval for the drive base control loop");
+		model.addProperty(prop);
+
+		if (editor->exec() == QDialog::Rejected)
+		{
+			delete editor;
+			return;
+		}
+
+		elength = model.getProperty(RobotDialogELength)->getValue().toDouble();
+		ewidth = model.getProperty(RobotDialogEWidth)->getValue().toDouble();
+		rlength = model.getProperty(RobotDialogRLength)->getValue().toDouble();
+		rwidth = model.getProperty(RobotDialogRWidth)->getValue().toDouble();
+		rweight = model.getProperty(RobotDialogWeight)->getValue().toDouble();
+		velocity = model.getProperty(RobotDialogMaxVelocity)->getValue().toDouble();
+		accel = model.getProperty(RobotDialogMaxAcceleration)->getValue().toDouble();
+		jerk = model.getProperty(RobotDialogMaxJerk)->getValue().toDouble();
+		cent = model.getProperty(RobotDialogMaxCentripetal)->getValue().toDouble();
+		drivetype = DriveBaseData::nameToType(model.getProperty(RobotDialogDriveType)->getValue().toString());
+		timestep = model.getProperty(RobotDialogTimeStep)->getValue().toDouble();
+		lengthunits = model.getProperty(RobotDialogLengthUnits)->getValue().toString();
+		weightunits = model.getProperty(RobotDialogWeightUnits)->getValue().toString();
+
+		if (create && model.getProperty(RobotDialogName)->getValue().toString().length() == 0)
+		{
+			QString msg("The robot name is empty, a robot name must be supplied.");
+			QMessageBox box(QMessageBox::Icon::Critical,
+				"Error", msg, QMessageBox::StandardButton::Ok);
+			box.exec();
+
+			delete editor;
+			continue;
+		}
+
+		if (create && robots_.exists(model.getProperty(RobotDialogName)->getValue().toString()))
+		{
+			QString msg("A robot with the name'");
+			msg += model.getProperty("name")->getValue().toString();
+			msg += "' alread exists, please choose another name";
+			QMessageBox box(QMessageBox::Icon::Critical,
+				"Error", msg, QMessageBox::StandardButton::Ok);
+			box.exec();
+
+			delete editor;
+			continue;
+		}
+
+		if (create)
+			robot = std::make_shared<RobotParams>(model.getProperty(RobotDialogName)->getValue().toString());
+
+		robot->setEffectiveWidth(ewidth);
+		robot->setEffectiveLength(elength);
+		robot->setRobotWidth(rwidth);
+		robot->setRobotLength(rlength);
+		robot->setRobotWeight(rweight);
+		robot->setMaxVelocity(velocity);
+		robot->setMaxAcceleration(accel);
+		robot->setMaxJerk(jerk);
+		robot->setMaxCentripetalForce(cent);
+		robot->setTimestep(timestep);
+		robot->setDriveType(drivetype);
+		robot->setLengthUnits(lengthunits);
+		robot->setWeightUnits(weightunits);
+
+		if (create)
+		{
+			if (!path.isEmpty()) {
+				setRobot(robot);
+				QFile file(path);
+				RobotManager::save(robot, file);
+			}
+			else {
+				if (!robots_.add(robot))
+				{
+					QMessageBox box(QMessageBox::Icon::Critical,
+						"Error", "Cannot save robot to robot direcotry",
+						QMessageBox::StandardButton::Ok);
+					return;
+				}
+				QAction* newRobotAction = new QAction(robot->getName());
+				robots_group_->addAction(newRobotAction);
+				robot_menu_->insertAction(robot_seperator_, newRobotAction);
+				newRobotAction->setCheckable(true);
+				(void)connect(newRobotAction, &QAction::triggered, this, [this, robot] { newRobotSelected(robot); });
+				setRobot(robot->getName());
+			}
+		}
+		else
+		{
+			if (!path.isEmpty()) {
+				QFile file(path);
+				RobotManager::save(robot, file);
+			}
+			else {
+				if (!robots_.save(robot))
+				{
+					QMessageBox box(QMessageBox::Icon::Critical,
+						"Error", "Cannot save robot to robot direcotry",
+						QMessageBox::StandardButton::Ok);
+					return;
+				}
+			}
+		}
+		delete editor;
+		break;
+	}
+}
+
+void XeroPathGen::showAbout()
+{
+	AboutDialog about(fields_);
+	about.exec();
 }

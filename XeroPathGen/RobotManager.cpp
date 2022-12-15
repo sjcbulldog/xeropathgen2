@@ -292,6 +292,18 @@ bool RobotManager::save(std::shared_ptr<RobotParams> robot)
 	return ret;
 }
 
+std::shared_ptr<RobotParams> RobotManager::load(QFile& file)
+{
+	if (!processJSONFile(file)) {
+		return nullptr;
+	}
+
+	auto ret = robots_.back();
+	robots_.pop_back();
+
+	return ret;
+}
+
 bool RobotManager::save(std::shared_ptr<RobotParams> robot, QFile &file)
 {
 	QJsonObject obj;

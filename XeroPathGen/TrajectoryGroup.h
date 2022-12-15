@@ -41,6 +41,10 @@ public:
 		return err_msg_.length() > 0;
 	}
 
+	QStringList trajectoryNames() const {
+		return trajectories_.keys();
+	}
+
 private:
 	GeneratorType type_;
 	std::shared_ptr<RobotPath> path_;

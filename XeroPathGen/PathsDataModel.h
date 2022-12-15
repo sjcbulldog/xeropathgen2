@@ -17,6 +17,10 @@ public:
 	PathsDataModel(GenerationMgr &genmgr);
 	virtual ~PathsDataModel();
 
+	GeneratorType type() const {
+		return gen_type_;
+	}
+
 	void reset();
 
 	const QString& units() const {
@@ -77,6 +81,8 @@ public:
 	void renamePath(const QString &grname, const QString& oldname, const QString& newname);
 
 	QVector<std::shared_ptr<SplinePair>> getSplinesForPath(std::shared_ptr<RobotPath> path);
+
+	QVector<std::shared_ptr<RobotPath>> getAllPaths();
 
 private:
 	void computeSplinesForPath(std::shared_ptr<RobotPath> path);

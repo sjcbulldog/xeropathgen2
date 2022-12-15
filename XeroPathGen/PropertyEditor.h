@@ -15,36 +15,29 @@
 //
 #pragma once
 
-#include <QSettings>
-#include <QMenu>
-#include <list>
-#include <string>
+#include "PropertyEditorTreeModel.h"
+#include <QDialog>
+#include "ui_PropertyEditor.h"
 
-class XeroPathGen;
-
-class RecentFiles : public QObject
+class PropertyEditor : public QDialog
 {
 	Q_OBJECT
 
 public:
-	RecentFiles(QSettings &settings, const QString &name, QMenu &menu);
-	virtual ~RecentFiles();
+	PropertyEditor(QString title, QWidget *parent = Q_NULLPTR);
+	~PropertyEditor();
 
-	void initialize(XeroPathGen* app);
+	PropertyEditorTreeModel& getModel() {
+		return model_;
+	}
 
-	void setCount(size_t count);
-	void addRecentFile(XeroPathGen*app, QString file, bool end = false);
-	void removeRecentFile(XeroPathGen* app, QString file);
-
-private:
-	void adjustSize();
-	void writeRecentFiles();
+protected:
 
 private:
-	size_t count_;
-	QString name_;
-	std::list<QString> files_;
-	QSettings &settings_;
-	QMenu& menu_;
+	void okPushed();
+	void cancelPushed();
+
+private:
+	Ui::PropertyEditor ui;
+	PropertyEditorTreeModel model_;
 };
-

@@ -39,8 +39,9 @@ public:
 
 	bool add(std::shared_ptr<RobotParams> robot);
 	bool save(std::shared_ptr<RobotParams> robot);
-	std::shared_ptr<RobotParams>  importRobot(QFile &file);
+	std::shared_ptr<RobotParams> importRobot(QFile &file);
 
+	std::shared_ptr<RobotParams> load(QFile& file);
 	static bool save(std::shared_ptr<RobotParams> robot, QFile& file);
 
 	bool deleteRobot(const QString& name);

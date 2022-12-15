@@ -594,8 +594,8 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 
 	if (selected)
 	{
-		double rl = robot_->getRobotLength();
-		double rw = robot_->getRobotWidth();
+		double rl = robot_length_;
+		double rw = robot_width_;
 
 		std::vector<QPointF> robot =
 		{
@@ -676,8 +676,8 @@ void PathFieldView::findSplineStep(std::shared_ptr<SplinePair> pair)
 			Translation2d loc = pair->evalPosition(t);
 			Rotation2d heading = pair->evalHeading(t);
 
-			cx = loc.getX() - robot_->getRobotWidth() * heading.getSin() / 2.0;
-			cy = loc.getY() + robot_->getRobotWidth() * heading.getCos() / 2.0;
+			cx = loc.getX() - robot_width_ * heading.getSin() / 2.0;
+			cy = loc.getY() + robot_width_ * heading.getCos() / 2.0;
 
 			current = worldToWindow(QPointF(cx, cy));
 
@@ -724,14 +724,14 @@ void PathFieldView::drawSpline(QPainter& paint, std::shared_ptr<SplinePair> pair
 		Translation2d loc = pair->evalPosition(t);
 		Rotation2d heading = pair->evalHeading(t);
 
-		px = loc.getX() - robot_->getRobotWidth() * heading.getSin() / 2.0;
-		py = loc.getY() + robot_->getRobotWidth() * heading.getCos() / 2.0;
+		px = loc.getX() - robot_width_ * heading.getSin() / 2.0;
+		py = loc.getY() + robot_width_ * heading.getCos() / 2.0;
 
 		QPointF qp = worldToWindow(QPointF(px, py));
 		paint.drawPoint(qp);
 
-		px = loc.getX() + robot_->getRobotWidth() * heading.getSin() / 2.0;
-		py = loc.getY() - robot_->getRobotWidth() * heading.getCos() / 2.0;
+		px = loc.getX() + robot_width_ * heading.getSin() / 2.0;
+		py = loc.getY() - robot_width_ * heading.getCos() / 2.0;
 
 		qp = worldToWindow(QPointF(px, py));
 		paint.drawPoint(qp);
@@ -791,6 +791,9 @@ void PathFieldView::setPath(std::shared_ptr<RobotPath> path)
 void PathFieldView::setRobot(std::shared_ptr<RobotParams> params)
 {
 	robot_ = params;
+
+	robot_width_ = UnitConverter::convert(robot_->getRobotWidth(), robot_->getLengthUnits(), units_);
+	robot_length_ = UnitConverter::convert(robot_->getRobotLength(), robot_->getLengthUnits(), units_);
 }
 
 void PathFieldView::createTransforms()
@@ -904,7 +907,7 @@ bool PathFieldView::hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRe
 		mm.translate(ppt.getTranslation().getX(), ppt.getTranslation().getY());
 		mm.rotateRadians(ppt.getRotation().toRadians());
 
-		QPointF bubble = mm.map(QPointF(0.0, robot_->getRobotWidth() * 3.0 / 4.0));
+		QPointF bubble = mm.map(QPointF(0.0, robot_width_ * 3.0 / 4.0));
 		QRectF rect(bubble.rx() - RotateBubbleHalo, bubble.ry() - RotateBubbleHalo, RotateBubbleHalo * 2.0, RotateBubbleHalo * 2.0);
 		QPointF wpt = windowToWorld(pt);
 		if (rect.contains(wpt))
