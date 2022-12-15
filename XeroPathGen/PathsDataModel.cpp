@@ -362,7 +362,7 @@ bool PathsDataModel::readPathGroup(QFile& file, const QJsonObject& obj, QString 
 			return false;
 		}
 		QJsonObject obj2 = val.toObject();
-		auto path = RobotPath::fromJSONObject(grobj, obj2, msg);
+		auto path = RobotPath::fromJSONObject(grobj, units_, obj2, msg);
 		if (msg.length() > 0) {
 			return false;
 		}

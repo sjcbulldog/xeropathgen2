@@ -11,6 +11,10 @@ public:
 	PathWindow(PathsDataModel&model, QWidget* parent);
 	void refresh();
 
+	void setUnits(const QString& units) {
+		units_ = units;
+	}
+
 signals:
 	void groupSelected(const QString& grname);
 	void pathSelected(const QString& grname, const QString& pathname);
@@ -42,4 +46,5 @@ private:
 private:
 	QTreeWidgetItem* menuItem_;
 	PathsDataModel &model_;
+	QString units_;
 };

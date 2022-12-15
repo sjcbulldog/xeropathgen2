@@ -5,7 +5,6 @@
 #include "PathParameters.h"
 #include <QtCore/QObject>
 #include <QtCore/QString>
-#include <QtCore/QList>
 #include <QtCore/QVector>
 #include <QtCore/QJsonObject>
 #include <memory>
@@ -56,7 +55,7 @@ public:
 	static constexpr const char* RotationTag = "rotation";
 
 public:
-	RobotPath(const PathGroup *gr, const QString &name, const PathParameters &params);
+	RobotPath(const PathGroup *gr, const QString &units, const QString &name, const PathParameters &params);
 
 	const QString& name() const {
 		return name_;
@@ -65,6 +64,10 @@ public:
 	void setName(const QString& name) {
 		name_ = name;
 		emitPathChangedSignal();
+	}
+
+	const QString& units() const {
+		return units_;
 	}
 
 	const PathParameters& params() const {
@@ -78,6 +81,10 @@ public:
 
 	const PathGroup* pathGroup() const {
 		return group_;
+	}
+
+	const QVector<Pose2dWithRotation> waypoints() const {
+		return waypoints_;
 	}
 
 	void addWayPoint(const Pose2dWithRotation& waypoint) {
@@ -115,9 +122,13 @@ public:
 
 	}
 
+	const QVector<std::shared_ptr<PathConstraint>>& constraints() const {
+		return constraints_;
+	}
+
 	void convert(const QString& from, const QString& to);
 
-	static std::shared_ptr<RobotPath> fromJSONObject(const PathGroup *group, const QJsonObject& obj, QString &msg);
+	static std::shared_ptr<RobotPath> fromJSONObject(const PathGroup *group, const QString &units, const QJsonObject& obj, QString &msg);
 	QJsonObject toJSONObject();
 
 signals:
@@ -137,6 +148,7 @@ private:
 	const PathGroup* group_;										// The group this path belongs to
 	QString name_;													// The name of the path
 	QVector<Pose2dWithRotation> waypoints_;							// The waypoints along the path including robot motion heading and swerve rotation
-	QList<std::shared_ptr<PathConstraint>> constraints_;			// The set of constrains to apply to the path
+	QVector<std::shared_ptr<PathConstraint>> constraints_;			// The set of constrains to apply to the path
 	PathParameters params_;											// The path velocity and acceleration parameters
+	QString units_;
 };

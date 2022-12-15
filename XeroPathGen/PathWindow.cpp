@@ -169,7 +169,7 @@ void PathWindow::addPath()
 	const PathGroup* group = model_.getPathGroupByName(menuItem_->text(0));
 
 	PathParameters params;
-	auto path = std::make_shared<RobotPath>(group, name, params);
+	auto path = std::make_shared<RobotPath>(group, units_, name, params);
 
 	//
 	// The initialize waypoints are 0, 0, and 0, 1 m, but the 1 meter is

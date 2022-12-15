@@ -4,6 +4,7 @@
 #include "GeneratorType.h"
 #include "Generator.h"
 #include "TrajectoryGroup.h"
+#include "RobotParams.h"
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
 #include <QtCore/QThread>
@@ -14,6 +15,18 @@ class GenerationMgr : public QObject
 
 public:
 	GenerationMgr();
+
+	void setTimestep(double t) {
+		timestep_ = t;
+	}
+
+	double timestep() const {
+		return timestep_;
+	}
+
+	void setRobot(std::shared_ptr<RobotParams> robot) {
+		robot_ = robot;
+	}
 
 	void addPath(GeneratorType type, std::shared_ptr<RobotPath> path);
 	void removePath(std::shared_ptr<RobotPath> path);
@@ -40,4 +53,7 @@ private:
 
 	Generator* worker_;
 	QThread *thread_;
+
+	std::shared_ptr<RobotParams> robot_;
+	double timestep_;
 };

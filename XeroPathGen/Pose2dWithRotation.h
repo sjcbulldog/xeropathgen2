@@ -24,7 +24,33 @@ public:
 		swrot_ = swrot;
 	}
 
+	void setCurvature(double d) {
+		curvature_ = d;
+	}
+
+	double curvature() const {
+		return curvature_;
+	}
+
+	static double triangleArea(const Pose2dWithRotation& a, const Pose2dWithRotation& b, const Pose2dWithRotation& c)
+	{
+		return ((b.getTranslation().getX() - a.getTranslation().getX()) * (c.getTranslation().getY() - a.getTranslation().getY())) -
+			((b.getTranslation().getY() - a.getTranslation().getY()) * (c.getTranslation().getX() - a.getTranslation().getX()));
+	}
+
+	static double curvature(const Pose2dWithRotation& a, const Pose2dWithRotation& b, const Pose2dWithRotation& c)
+	{
+		double area = triangleArea(a, b, c);
+
+		double len1 = a.distance(b);
+		double len2 = b.distance(c);
+		double len3 = a.distance(c);
+
+		return 4.0 * area / (len1 * len2 * len3);
+	}
+
 private:
 	Rotation2d swrot_;
+	double curvature_;
 };
 

@@ -102,6 +102,8 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <QtUic Include="XeroPathGen.ui" />
     <QtMoc Include="XeroPathGen.h" />
     <QtMoc Include="PathWindow.h" />
+    <ClCompile Include="CheesyGenerator.cpp" />
+    <ClCompile Include="DistanceView.cpp" />
     <ClCompile Include="GameFieldManager.cpp" />
     <ClCompile Include="GenerationMgr.cpp" />
     <ClCompile Include="Generator.cpp" />
@@ -111,6 +113,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="PathParameters.cpp" />
     <ClCompile Include="PathParametersWindow.cpp" />
     <ClCompile Include="PathsDataModel.cpp" />
+    <ClCompile Include="PathTrajectory.cpp" />
     <ClCompile Include="PathWindow.cpp" />
     <ClCompile Include="Pose2d.cpp" />
     <ClCompile Include="Pose2dWithRotation.cpp" />
@@ -122,6 +125,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="Rotation2d.cpp" />
     <ClCompile Include="SplinePair.cpp" />
     <ClCompile Include="TrajectoryGroup.cpp" />
+    <ClCompile Include="TrajectoryUtils.cpp" />
     <ClCompile Include="Translation2d.cpp" />
     <ClCompile Include="Twist2d.cpp" />
     <ClCompile Include="UnitConverter.cpp" />
@@ -132,6 +136,8 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
   <ItemGroup>
     <ClInclude Include="build.h" />
     <ClInclude Include="CentripetalConstraint.h" />
+    <ClInclude Include="CheesyGenerator.h" />
+    <ClInclude Include="DistanceView.h" />
     <ClInclude Include="GameField.h" />
     <ClInclude Include="GameFieldManager.h" />
     <QtMoc Include="GenerationMgr.h" />
@@ -148,7 +154,9 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="PathParameters.h" />
     <QtMoc Include="PathParametersWindow.h" />
     <QtMoc Include="PathsDataModel.h" />
+    <ClInclude Include="PathTrajectory.h" />
     <ClInclude Include="Pose2d.h" />
+    <ClInclude Include="Pose2dConstrained.h" />
     <ClInclude Include="Pose2dWithRotation.h" />
     <ClInclude Include="Pose2dWithTrajectory.h" />
     <ClInclude Include="QuinticHermiteSpline.h" />
@@ -160,6 +168,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="SplinePair.h" />
     <ClInclude Include="TrajectoryGroup.h" />
     <ClInclude Include="TrajectoryNames.h" />
+    <ClInclude Include="TrajectoryUtils.h" />
     <ClInclude Include="Translation2d.h" />
     <ClInclude Include="Twist2d.h" />
     <ClInclude Include="UnitConverter.h" />

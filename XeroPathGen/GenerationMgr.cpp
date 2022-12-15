@@ -8,6 +8,7 @@ GenerationMgr::GenerationMgr()
 	worker_ = nullptr;
 	thread_ = nullptr;
 	active_type_ = GeneratorType::CheesyPoofs;
+	timestep_ = 0.02;
 }
 
 std::shared_ptr<TrajectoryGroup> GenerationMgr::getTrajectoryGroup(std::shared_ptr<RobotPath> path)
@@ -22,7 +23,6 @@ std::shared_ptr<TrajectoryGroup> GenerationMgr::getTrajectoryGroup(std::shared_p
 
 	return ret;
 }
-
 
 void GenerationMgr::addPath(GeneratorType type, std::shared_ptr<RobotPath> path)
 {
@@ -65,7 +65,7 @@ void GenerationMgr::schedulePath()
 		auto traj = std::make_shared<TrajectoryGroup>(type, path);
 
 		thread_ = new QThread();
-		worker_ = new Generator(traj);
+		worker_ = new Generator(timestep_, robot_, traj);
 		worker_->moveToThread(thread_);
 
 		connect(thread_, &QThread::started, worker_, &Generator::generateTrajectory);

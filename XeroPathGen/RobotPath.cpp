@@ -3,11 +3,12 @@
 #include <QtCore/QJsonArray>
 #include <limits>
 
-RobotPath::RobotPath(const PathGroup* gr, const QString &name, const PathParameters &params)
+RobotPath::RobotPath(const PathGroup* gr, const QString& units, const QString &name, const PathParameters &params)
 {
 	group_ = gr;
 	name_ = name;
 	params_ = params;
+	units_ = units;
 }
 
 void RobotPath::emitPathChangedSignal()
@@ -198,7 +199,7 @@ QJsonObject RobotPath::toJSONObject()
 	return obj;
 }
 
-std::shared_ptr<RobotPath> RobotPath::fromJSONObject(const PathGroup *group, const QJsonObject& obj, QString &msg)
+std::shared_ptr<RobotPath> RobotPath::fromJSONObject(const PathGroup *group, const QString& units, const QJsonObject& obj, QString &msg)
 {
 	double startvel, endvel, maxvel, maxaccel;
 	QString name;
@@ -233,7 +234,7 @@ std::shared_ptr<RobotPath> RobotPath::fromJSONObject(const PathGroup *group, con
 		return nullptr;
 	}
 
-	std::shared_ptr<RobotPath> path = std::make_shared<RobotPath>(group, name, PathParameters(startvel, endvel, maxvel, maxaccel));
+	std::shared_ptr<RobotPath> path = std::make_shared<RobotPath>(group, units, name, PathParameters(startvel, endvel, maxvel, maxaccel));
 
 	QJsonArray child;
 	

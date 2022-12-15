@@ -61,6 +61,7 @@ void XeroPathGen::setUnits(const QString& units)
 	fields_.convert(units);
 	robots_.convert(units);
 	path_edit_win_->setUnits(units);
+	path_win_->setUnits(units);
 	units_ = units;
 }
 
@@ -472,6 +473,7 @@ void XeroPathGen::setRobot(const QString& name)
 {
 	current_robot_ = robots_.getRobotByName(name);
 	path_edit_win_->setRobot(current_robot_);
+	generator_.setRobot(current_robot_);
 
 	//
 	// Now check the right robot in the menu
