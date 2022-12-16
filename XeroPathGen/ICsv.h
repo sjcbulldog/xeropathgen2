@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
+#include <QtCore/qstring.h>
 
 class ICsv
 {
 public:
-	virtual double getField(const std::string& field) const = 0;
+	virtual double getField(const QString& field) const = 0;
 };

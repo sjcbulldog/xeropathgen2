@@ -38,7 +38,7 @@ public:
 	double distance(const Pose2d& other) const;
 	Pose2d mirror() const;
 
-	virtual double getField(const std::string& field) const;
+	virtual double getField(const QString& field) const;
 
 private:
 	static Translation2d intersection(const Pose2d& a, const Pose2d& b);

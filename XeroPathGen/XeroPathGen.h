@@ -5,6 +5,7 @@
 #include "PathFieldView.h"
 #include "PathsDataModel.h"
 #include "PathWindow.h"
+#include "PlotWindow.h"
 #include "PathParametersWindow.h"
 #include "WaypointWindow.h"
 #include "RecentFiles.h"
@@ -140,11 +141,13 @@ private:
     PathWindow* path_win_;
     PathParametersWindow* path_params_win_;
     WaypointWindow* waypoint_win_;
+    PlotWindow* plot_win_;
 
     // Docking windows
     QDockWidget* dock_path_win_;
     QDockWidget* dock_path_params_win_;
     QDockWidget* dock_waypoint_win_;
+    QDockWidget* dock_plot_win_;
 
     // Menus
     QMenu* file_menu_;
@@ -159,6 +162,8 @@ private:
 
     QMenu* field_menu_;
     QActionGroup* fields_group_;
+
+    QMenu* window_menu_;
 
     QMenu* help_menu_;
 

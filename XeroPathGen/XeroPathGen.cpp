@@ -4,6 +4,7 @@
 #include "EditableProperty.h"
 #include "DriveBaseData.h"
 #include "AboutDialog.h"
+#include "SelectRobotDialog.h"
 #include <QtCore/QCoreApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMenu>
@@ -85,6 +86,13 @@ void XeroPathGen::setUnits(const QString& units)
 
 bool XeroPathGen::createWindows()
 {
+	plot_win_ = new PlotWindow(nullptr);
+	dock_plot_win_ = new QDockWidget(tr("Plot"));
+	dock_plot_win_->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+	dock_plot_win_->setWidget(plot_win_);
+	addDockWidget(Qt::BottomDockWidgetArea, dock_plot_win_);
+	dock_plot_win_->hide();
+
 	path_edit_win_ = new PathFieldView(paths_data_model_, nullptr);
 	connect(path_edit_win_, &PathFieldView::mouseMoved, this, &XeroPathGen::mouseMoved);
 	connect(path_edit_win_, &PathFieldView::waypointSelected, this, &XeroPathGen::waypointSelected);
@@ -152,6 +160,13 @@ bool XeroPathGen::createMenus()
 	field_menu_ = new QMenu(tr("&Fields"));
 	menuBar()->addMenu(field_menu_);
 	fields_group_ = new QActionGroup(this);
+
+	window_menu_ = new QMenu(tr("&Windows"));
+	menuBar()->addMenu(window_menu_);
+	window_menu_->addAction(dock_path_win_->toggleViewAction());
+	window_menu_->addAction(dock_waypoint_win_->toggleViewAction());
+	window_menu_->addAction(dock_path_params_win_->toggleViewAction());
+	window_menu_->addAction(dock_plot_win_->toggleViewAction());
 
 	help_menu_ = new QMenu(tr("&Help"));
 	menuBar()->addMenu(help_menu_);
@@ -492,7 +507,7 @@ void XeroPathGen::fileGenerate()
 
 void XeroPathGen::generateOnePath(std::shared_ptr<RobotPath> path, std::shared_ptr<TrajectoryGroup> group)
 {
-	QVector<std::string> headers =
+	QVector<QString> headers =
 	{
 		RobotPath::TimeTag,
 		RobotPath::XTag,
@@ -632,6 +647,9 @@ void XeroPathGen::pathSelected(const QString& grname, const QString& pathname)
 	path_edit_win_->setPath(path);
 	waypoint_win_->setPath(path);
 	path_params_win_->setPath(path);
+
+	auto traj = generator_.getTrajectoryGroup(path);
+	plot_win_->setTrajectoryGroup(traj);
 }
 
 void XeroPathGen::setField(const QString &name)
@@ -805,16 +823,76 @@ void XeroPathGen::showRobotMenu()
 
 void XeroPathGen::deleteRobotAction()
 {
+	if (robots_.getRobots().size() == 1)
+	{
+		std::string msg = "Only a single robot exists and it cannot be deleted";
+		QMessageBox box(QMessageBox::Icon::Critical,
+			"Error", msg.c_str(), QMessageBox::StandardButton::Ok);
+		box.exec();
+	}
+	else
+	{
+		SelectRobotDialog dialog(robots_, current_robot_);
 
+		if (dialog.exec() == QDialog::Accepted)
+		{
+			QString str = dialog.getSelectedRobot();
+			if (current_robot_ != nullptr && str == current_robot_->getName())
+			{
+				QMessageBox box(QMessageBox::Icon::Critical,
+					"Error", "You cannot delete the current robot", QMessageBox::StandardButton::Ok);
+				box.exec();
+				return;
+			}
+
+			if (robots_.deleteRobot(str))
+			{
+				auto actlist = robot_menu_->actions();
+				auto it = std::find_if(actlist.begin(), actlist.end(), [str](QAction* item) { return item->text() == str; });
+				robot_menu_->removeAction(*it);
+			}
+		}
+	}
 }
 
 void XeroPathGen::exportCurrentRobot()
 {
+	QString filename = QFileDialog::getSaveFileName(this, tr("Save Robot File"), "", tr("Path File (*.robot);;All Files (*)"));
+	if (filename.length() == 0)
+		return;
 
+	QFile file(filename);
+	robots_.save(current_robot_, file);
 }
 
 void XeroPathGen::importRobot()
 {
+	QString filename = QFileDialog::getOpenFileName(this, tr("Load Path File"), "", tr("Path File (*.robot);;All Files (*)"));
+	if (filename.length() == 0)
+		return;
+
+	QFile file(filename);
+	try
+	{
+		auto robot = robots_.importRobot(file);
+		QAction* newRobotAction = new QAction(robot->getName());
+		robots_group_->addAction(newRobotAction);
+		robot_menu_->insertAction(robot_seperator_, newRobotAction);
+		newRobotAction->setCheckable(true);
+		(void)connect(newRobotAction, &QAction::triggered, this, [this, robot] { newRobotSelected(robot); });
+		setRobot(robot->getName());
+	}
+	catch (const std::runtime_error& error)
+	{
+		std::string msg = "Could not import robot file '";
+		msg += filename.toStdString();
+		msg += "' - ";
+		msg += error.what();
+
+		QMessageBox box(QMessageBox::Icon::Critical,
+			"Error", msg.c_str(), QMessageBox::StandardButton::Ok);
+		box.exec();
+	}
 }
 
 void XeroPathGen::waypointSelected(size_t index)
@@ -887,6 +965,10 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		lengthunits = robot->getLengthUnits();
 		weightunits = robot->getWeightUnits();
 		title = "Edit Robot";
+	}
+
+	if (path.length() > 0) {
+		title += ": " + path;
 	}
 
 	while (1)

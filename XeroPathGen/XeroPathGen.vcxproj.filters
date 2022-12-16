@@ -139,6 +139,18 @@
     <ClCompile Include="AboutDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SelectRobotDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PlotWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TrajectoryPlotWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NodesListWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="build.h">
@@ -249,6 +261,15 @@
     <ClInclude Include="DriveBaseData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PlotWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TrajectoryPlotWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NodesListWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="PathWindow.h">
@@ -284,6 +305,9 @@
     <QtMoc Include="AboutDialog.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="SelectRobotDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt" />
@@ -293,6 +317,9 @@
       <Filter>Form Files</Filter>
     </QtUic>
     <QtUic Include="AboutDialog.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="SelectRobotDialog.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

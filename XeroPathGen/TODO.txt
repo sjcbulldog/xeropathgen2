@@ -1,6 +1,4 @@
-- Generate Path Data
-- Rethink robot management
-- Rethink path generation out dir
+- Docking Graph Window
 - Velocity Constraints
 - Centripetal Constraints
 
@@ -10,3 +8,4 @@
 - Save/SaveAs									Done
 - If path model dirty, warn on close			Done
 - Recent Files									Done
+- Generate Path Data							Done

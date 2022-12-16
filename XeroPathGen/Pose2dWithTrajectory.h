@@ -1,5 +1,6 @@
 #pragma once
 #include "Pose2dWithRotation.h"
+#include <QtCore/QString>
 
 class Pose2dWithTrajectory : public ICsv
 {
@@ -116,7 +117,7 @@ public:
 		curvature_ = c;
 	}
 
-	double getField(const std::string& field) const;
+	double getField(const QString& field) const;
 
 	Pose2dWithTrajectory interpolate(const Pose2dWithTrajectory& other, double percent) const;
 

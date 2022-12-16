@@ -171,7 +171,7 @@ bool Pose2d::isColinear(const Pose2d& other)
 	return (MathUtils::epsilonEqual(twist.getY(), 0.0) && MathUtils::epsilonEqual(twist.getTheta(), 0.0));
 }
 
-double Pose2d::getField(const std::string& field) const
+double Pose2d::getField(const QString& field) const
 {
 	double v;
 
@@ -189,8 +189,8 @@ double Pose2d::getField(const std::string& field) const
 	}
 	else
 	{
-		std::string msg = "field '" + field + "' is not a defined field";
-		throw std::runtime_error(msg.c_str());
+		QString msg = "field '" + field + "' is not a defined field";
+		throw std::runtime_error(msg.toStdString());
 	}
 
 	return v;

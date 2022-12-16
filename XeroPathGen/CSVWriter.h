@@ -12,11 +12,11 @@ public:
 	~CSVWriter() = delete;
 
 	template<class InputIt>
-	static bool write(std::ostream& strm, const QVector<std::string>& headers, InputIt first, InputIt last)
+	static bool write(std::ostream& strm, const QVector<QString> headers, InputIt first, InputIt last)
 	{
 		for (size_t i = 0; i < headers.size(); i++)
 		{
-			strm << '"' << headers[i] << '"';
+			strm << '"' << headers[i].toStdString() << '"';
 			if (i != headers.size() - 1)
 				strm << ",";
 		}

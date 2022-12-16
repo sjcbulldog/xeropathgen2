@@ -14,7 +14,7 @@ Pose2dWithTrajectory Pose2dWithTrajectory::interpolate(const Pose2dWithTrajector
 	return Pose2dWithTrajectory(npose, ntime, npos, nvel, nacc, njerk, ncurvature, nrot);
 }
 
-double Pose2dWithTrajectory::getField(const std::string& field) const
+double Pose2dWithTrajectory::getField(const QString& field) const
 {
 	double v = std::nan("");
 

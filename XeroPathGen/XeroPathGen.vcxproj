@@ -32,12 +32,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>6.3.1_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets</QtModules>
+    <QtModules>core;gui;widgets;charts</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>6.3.1_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets</QtModules>
+    <QtModules>core;gui;widgets;charts</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -101,6 +101,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <QtRcc Include="XeroPathGen.qrc" />
     <QtUic Include="AboutDialog.ui" />
     <QtUic Include="PropertyEditor.ui" />
+    <QtUic Include="SelectRobotDialog.ui" />
     <QtUic Include="XeroPathGen.ui" />
     <QtMoc Include="XeroPathGen.h" />
     <QtMoc Include="PathWindow.h" />
@@ -113,12 +114,14 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="Generator.cpp" />
     <ClCompile Include="ManagerBase.cpp" />
     <ClCompile Include="MathUtils.cpp" />
+    <ClCompile Include="NodesListWindow.cpp" />
     <ClCompile Include="PathFieldView.cpp" />
     <ClCompile Include="PathParameters.cpp" />
     <ClCompile Include="PathParametersWindow.cpp" />
     <ClCompile Include="PathsDataModel.cpp" />
     <ClCompile Include="PathTrajectory.cpp" />
     <ClCompile Include="PathWindow.cpp" />
+    <ClCompile Include="PlotWindow.cpp" />
     <ClCompile Include="Pose2d.cpp" />
     <ClCompile Include="Pose2dWithRotation.cpp" />
     <ClCompile Include="Pose2dWithTrajectory.cpp" />
@@ -130,8 +133,10 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="RobotManager.cpp" />
     <ClCompile Include="RobotPath.cpp" />
     <ClCompile Include="Rotation2d.cpp" />
+    <ClCompile Include="SelectRobotDialog.cpp" />
     <ClCompile Include="SplinePair.cpp" />
     <ClCompile Include="TrajectoryGroup.cpp" />
+    <ClCompile Include="TrajectoryPlotWindow.cpp" />
     <ClCompile Include="TrajectoryUtils.cpp" />
     <ClCompile Include="Translation2d.cpp" />
     <ClCompile Include="Twist2d.cpp" />
@@ -158,6 +163,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="ManagerBase.h" />
     <ClInclude Include="MathUtils.h" />
     <ClInclude Include="MinMaxAcceleration.h" />
+    <ClInclude Include="NodesListWindow.h" />
     <ClInclude Include="NoEditDelegate.h" />
     <ClInclude Include="PathConstraint.h" />
     <QtMoc Include="PathFieldView.h" />
@@ -166,6 +172,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <QtMoc Include="PathParametersWindow.h" />
     <QtMoc Include="PathsDataModel.h" />
     <ClInclude Include="PathTrajectory.h" />
+    <ClInclude Include="PlotWindow.h" />
     <ClInclude Include="Pose2d.h" />
     <ClInclude Include="Pose2dConstrained.h" />
     <ClInclude Include="Pose2dWithRotation.h" />
@@ -179,9 +186,11 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="RobotParams.h" />
     <QtMoc Include="RobotPath.h" />
     <ClInclude Include="Rotation2d.h" />
+    <QtMoc Include="SelectRobotDialog.h" />
     <ClInclude Include="SplinePair.h" />
     <ClInclude Include="TrajectoryGroup.h" />
     <ClInclude Include="TrajectoryNames.h" />
+    <ClInclude Include="TrajectoryPlotWindow.h" />
     <ClInclude Include="TrajectoryUtils.h" />
     <ClInclude Include="Translation2d.h" />
     <ClInclude Include="Twist2d.h" />
