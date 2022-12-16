@@ -51,10 +51,17 @@ public:
 	bool getTimeForDistance(double dist, double& time);
 
 	double getEndTime() const {
-		if (points_.size() == 0.0)
+		if (points_.size() == 0)
 			return 0.0;
 
 		return points_[points_.size() - 1].time();
+	}
+
+	double getDistance() const {
+		if (points_.size() == 0)
+			return 0.0;
+
+		return points_[points_.size() - 1].position();
 	}
 
 private:

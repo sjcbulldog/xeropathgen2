@@ -6,7 +6,7 @@ NodesListWindow::NodesListWindow(const QVector<QString>& varnames, QWidget* pare
 	setHeaderHidden(true);
 	setDragDropMode(DragDropMode::DragOnly);
 	setDragEnabled(true);
-	setSelectionMode(SelectionMode::MultiSelection);
+	setSelectionMode(SelectionMode::SingleSelection);
 }
 
 void NodesListWindow::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)

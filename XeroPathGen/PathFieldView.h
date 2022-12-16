@@ -173,6 +173,7 @@ private:
 
 	PathsDataModel& path_data_model_;
 
+	RobotParams::DriveType drive_type_;
 	double robot_width_;
 	double robot_length_;
 };

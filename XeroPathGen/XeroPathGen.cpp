@@ -5,6 +5,7 @@
 #include "DriveBaseData.h"
 #include "AboutDialog.h"
 #include "SelectRobotDialog.h"
+#include "TrajectoryNames.h"
 #include <QtCore/QCoreApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMenu>
@@ -62,6 +63,8 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	populateRobotMenu();
 
 	setWindowTitle("Error Code Xero Path Generator (file):");
+
+	connect(&generator_, &GenerationMgr::generationComplete, this, &XeroPathGen::trajectoryGenerationComplete);
 }
 
 XeroPathGen::~XeroPathGen()
@@ -86,7 +89,17 @@ void XeroPathGen::setUnits(const QString& units)
 
 bool XeroPathGen::createWindows()
 {
-	plot_win_ = new PlotWindow(nullptr);
+	QList<int> sizes;
+
+	if (settings_.contains(PlotWindowSplitterSize))
+	{
+		QList<QVariant> stored = settings_.value(PlotWindowSplitterSize).toList();
+		for (const QVariant& v : stored) {
+			sizes.push_back(v.toInt());
+		}
+	}
+
+	plot_win_ = new PlotWindow(nullptr, sizes);
 	dock_plot_win_ = new QDockWidget(tr("Plot"));
 	dock_plot_win_->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
 	dock_plot_win_->setWidget(plot_win_);
@@ -241,7 +254,22 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 	QString robotfile = dirname + "/src/main/paths/robot.json";
 	QString outdir = dirname + "/src/main/deploy/paths";
 
-	QFileInfo info(pathfile);
+	QFileInfo info = QFileInfo(robotfile);
+	if (info.exists())
+	{
+		QFile file(robotfile);
+		auto robot = robots_.load(file);
+		setRobot(robot);
+	}
+	else
+	{
+		//
+		// Create a new robot file, and store it
+		//
+		createEditRobot(nullptr, robotfile);
+	}
+
+	info = QFileInfo(pathfile);
 	if (info.exists())
 	{
 		paths_data_model_.blockSignals(true);
@@ -260,21 +288,6 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 	path_win_->refresh();
 
 	updateStatusBar();
-
-	info = QFileInfo(robotfile);
-	if (info.exists())
-	{
-		QFile file(robotfile);
-		auto robot = robots_.load(file);
-		setRobot(robot);
-	}
-	else
-	{
-		//
-		// Create a new robot file, and store it
-		//
-		createEditRobot(nullptr, robotfile);
-	}
 
 	setWindowTitle("Error Code Xero Path Generator (project): " + dirname);
 }
@@ -456,12 +469,23 @@ bool XeroPathGen::internalFileClose()
 		}
 	}
 
+	path_edit_win_->setPath(nullptr);
 	paths_data_model_.reset();
 	return true;
 }
 
 void XeroPathGen::fileGenerateAs()
 {
+	if (current_robot_ == nullptr) {
+		QMessageBox::information(this, "Invalid Action", "You cannot generate paths until a robot is created.  Either load a project or use the Robot/Create New menu options");
+		return;
+	}
+
+	if (project_mode_) {
+		QMessageBox::information(this, "Invalid Action", "You cannot use generate as when a project is loaded.  The path files will be generated into the project in the correct locaion");
+		return;
+	}
+
 	QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 	if (dir.length() == 0)
 		return;
@@ -487,6 +511,11 @@ void XeroPathGen::fileGenerateAs()
 
 void XeroPathGen::fileGenerate()
 {
+	if (current_robot_ == nullptr) {
+		QMessageBox::information(this, "Invalid Action", "You cannot generate paths until a robot is created.  Either load a project or use the Robot/Create New menu options");
+		return;
+	}
+
 	if (!paths_data_model_.hasOutpuDir()) 
 	{
 		fileGenerateAs();
@@ -608,6 +637,12 @@ void XeroPathGen::closeEvent(QCloseEvent* ev)
 	settings_.setValue(GeometrySetting, saveGeometry());
 	settings_.setValue(WindowStateSetting, saveState());
 
+	QList<QVariant> param;
+	for (auto size : plot_win_->getSplitterPosition()) {
+		param.push_back(QVariant(size));
+	}
+
+	settings_.setValue(PlotWindowSplitterSize, param);
 	QMainWindow::closeEvent(ev);
 }
 
@@ -624,21 +659,6 @@ void XeroPathGen::showEvent(QShowEvent* ev)
 		qline = qline.trimmed();
 		this->addLogMessage(qline);
 	}
-
-	if (robots_.getRobots().size() == 0)
-	{
-		std::shared_ptr<RobotParams> robot = std::make_shared<RobotParams>("DefaultRobot");
-		robot->setEffectiveWidth(28.0);
-		robot->setEffectiveLength(28.0);
-		robot->setRobotWidth(28.0);
-		robot->setRobotLength(28.0);
-		robot->setMaxVelocity(120);
-		robot->setMaxAcceleration(120);
-		robot->setMaxJerk(1200);
-		robot->setTimestep(0.02);
-		robot->setDriveType(RobotParams::DriveType::TankDrive);
-		robots_.add(robot);
-	}
 }
 
 void XeroPathGen::pathSelected(const QString& grname, const QString& pathname)
@@ -650,6 +670,8 @@ void XeroPathGen::pathSelected(const QString& grname, const QString& pathname)
 
 	auto traj = generator_.getTrajectoryGroup(path);
 	plot_win_->setTrajectoryGroup(traj);
+
+	trajectoryGenerationComplete(path);
 }
 
 void XeroPathGen::setField(const QString &name)
@@ -700,6 +722,7 @@ void XeroPathGen::setRobot(std::shared_ptr<RobotParams> robot)
 	current_robot_ = robot;
 	path_edit_win_->setRobot(current_robot_);
 	generator_.setRobot(current_robot_);
+	path_win_->setRobot(current_robot_);
 
 	//
 	// Now check the right robot in the menu
@@ -740,6 +763,8 @@ void XeroPathGen::setDefaultRobot()
 	}
 	if (robot.length())
 		setRobot(robot);
+	else
+		setRobot(static_cast<std::shared_ptr<RobotParams>>(nullptr));
 }
 
 void XeroPathGen::populateRobotMenu()
@@ -1152,4 +1177,21 @@ void XeroPathGen::showAbout()
 {
 	AboutDialog about(fields_);
 	about.exec();
+}
+
+void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
+{
+	auto group = generator_.getTrajectoryGroup(path);
+
+	if (group != nullptr) {
+
+		if (path_params_win_->path() == path) {
+			auto traj = group->getTrajectory(TrajectoryName::Main);
+			path_params_win_->setTrajectory(traj);
+		}
+
+		if (plot_win_->group() != nullptr && plot_win_->group()->path() == path) {
+			plot_win_->setTrajectoryGroup(group);
+		}
+	}
 }

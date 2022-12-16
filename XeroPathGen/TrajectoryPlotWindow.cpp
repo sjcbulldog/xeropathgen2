@@ -16,13 +16,26 @@ TrajectoryPlotWindow::TrajectoryPlotWindow(const QVector<QString>& varnames, QWi
 
 void TrajectoryPlotWindow::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)
 {
+	if (group == nullptr || group_ == nullptr || group->path() != group_->path())
+	{
+		nodes_.clear();
+	}
+
 	group_ = group;
 
-	QFont font = chart()->titleFont();
-	font.setPointSize(16);
-	font.setBold(true);
-	chart()->setTitleFont(font);
-	chart()->setTitle("Path: " + group->path()->name());
+	clear();
+
+	if (group_ != nullptr) {
+		QFont font = chart()->titleFont();
+		font.setPointSize(16);
+		font.setBold(true);
+		chart()->setTitleFont(font);
+		chart()->setTitle("Path: " + group->path()->name());
+	}
+
+	for (const QString& node : nodes_) {
+		insertNode(node);
+	}
 }
 
 void TrajectoryPlotWindow::clear()
@@ -34,6 +47,8 @@ void TrajectoryPlotWindow::clear()
 	chart()->setTitle("");
 
 	// Legend
+	QLegend* legend = chart()->legend();
+	legend->setVisible(false);
 
 	// Axis
 	chart()->removeAxis(time_axis_);
@@ -107,9 +122,14 @@ void TrajectoryPlotWindow::dropEvent(QDropEvent* ev)
 	setBackgroundRole(QPalette::Window);
 }
 
-QValueAxis* TrajectoryPlotWindow::createYAxis(const TrajectoryPlotWindow::AxisType type)
+QValueAxis* TrajectoryPlotWindow::createYAxis(const QString &node)
 {
 	QValueAxis* axis;
+
+	int index = node.indexOf('-');
+	QString name = node.mid(0, index);
+	QString typestr = node.mid(index + 1);
+	AxisType type = mapVariableToAxis(typestr);
 
 	if (y_axis_.contains(type)) {
 		axis = y_axis_.value(type);
@@ -166,25 +186,38 @@ void TrajectoryPlotWindow::setupLegend()
 	legend->setFont(font);
 }
 
+void TrajectoryPlotWindow::setupTimeAxis()
+{
+	time_axis_ = new QValueAxis();
+	time_axis_->setLabelsVisible(true);
+	time_axis_->setVisible(true);
+	time_axis_->setTickCount(10);
+	time_axis_->setTitleText("time (s)");
+	time_axis_->setTitleVisible(true);
+	chart()->addAxis(time_axis_, Qt::AlignBottom);
+}
+
 void TrajectoryPlotWindow::insertNode(const QString& node)
 {
-	if (time_axis_ == nullptr) {
-		time_axis_ = new QValueAxis();
-		time_axis_->setLabelsVisible(true);
-		time_axis_->setVisible(true);
-		time_axis_->setTickCount(10);
-		time_axis_->setTitleText("time (s)");
-		time_axis_->setTitleVisible(true);
-		chart()->addAxis(time_axis_, Qt::AlignBottom);
-	}
+	if (nodes_.contains(node))
+		return;
+
+	nodes_.push_back(node);
 
 	int index = node.indexOf('-');
 	QString name = node.mid(0, index);
 	QString type = node.mid(index + 1);
-	AxisType axtype = mapVariableToAxis(type);
-	QValueAxis* axis = createYAxis(axtype);
 
 	auto traj = group_->getTrajectory(name);
+	if (traj == nullptr)
+		return;
+
+	if (time_axis_ == nullptr) 
+	{
+		setupTimeAxis();
+	}
+
+	QValueAxis* axis = createYAxis(node);
 
 	double minv = std::numeric_limits<double>::max();
 	double maxv = std::numeric_limits<double>::min();

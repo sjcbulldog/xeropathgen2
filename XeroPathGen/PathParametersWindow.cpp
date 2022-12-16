@@ -4,6 +4,9 @@
 
 PathParametersWindow::PathParametersWindow(QWidget* parent) : QTreeWidget(parent)
 {
+	length_item_ = nullptr;
+	duration_item_ = nullptr;
+
 	setHeaderHidden(true);
 	setColumnCount(2);
 
@@ -11,6 +14,16 @@ PathParametersWindow::PathParametersWindow(QWidget* parent) : QTreeWidget(parent
 	connect(this, &QTreeWidget::itemChanged, this, &PathParametersWindow::pathParamChanged);
 }
 
+void PathParametersWindow::setTrajectory(std::shared_ptr<PathTrajectory> traj)
+{
+	if (duration_item_ != nullptr) {
+		duration_item_->setText(1, QString::number(traj->getEndTime(), 'f', 2));
+	}
+
+	if (length_item_ != nullptr) {
+		length_item_->setText(1, QString::number(traj->getDistance(), 'f', 2));
+	}
+}
 
 void PathParametersWindow::pathParamChanged(QTreeWidgetItem* item, int column)
 {
@@ -62,6 +75,8 @@ QTreeWidgetItem* PathParametersWindow::newItem(const QString& title, bool editab
 void PathParametersWindow::refresh()
 {
 	clear();
+	length_item_ = nullptr;
+	duration_item_ = nullptr;
 
 	if (path_ != nullptr)
 	{
@@ -83,13 +98,13 @@ void PathParametersWindow::refresh()
 		item->setText(1, QString::number(path_->params().maxAccel()));
 		addTopLevelItem(item);
 
-		item = newItem(LengthTag, false);
-		item->setText(1, "<unknown>");
-		addTopLevelItem(item);
+		length_item_ = newItem(LengthTag, false);
+		length_item_->setText(1, "<unknown>");
+		addTopLevelItem(length_item_);
 
-		item = newItem(DurationTag, false);
-		item->setText(1, "<unknown>");
-		addTopLevelItem(item);
+		duration_item_ = newItem(DurationTag, false);
+		duration_item_->setText(1, "<unknown>");
+		addTopLevelItem(duration_item_);
 
 		resizeColumnToContents(0);
 		resizeColumnToContents(1);

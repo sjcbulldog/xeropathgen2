@@ -168,7 +168,10 @@ void PathWindow::addPath()
 
 	const PathGroup* group = model_.getPathGroupByName(menuItem_->text(0));
 
-	PathParameters params;
+	double maxvel = (robot_ == nullptr) ? 1.0 : robot_->getMaxVelocity();
+	double maxaccel = (robot_ == nullptr) ? 1.0 : robot_->getMaxAccel();
+	PathParameters params(0.0, 0.0, maxvel, maxaccel);
+
 	auto path = std::make_shared<RobotPath>(group, units_, name, params);
 
 	//

@@ -15,6 +15,10 @@ public:
 		units_ = units;
 	}
 
+	void setRobot(std::shared_ptr<RobotParams> robot) {
+		robot_ = robot;
+	}
+
 signals:
 	void groupSelected(const QString& grname);
 	void pathSelected(const QString& grname, const QString& pathname);
@@ -47,4 +51,5 @@ private:
 	QTreeWidgetItem* menuItem_;
 	PathsDataModel &model_;
 	QString units_;
+	std::shared_ptr<RobotParams> robot_;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RobotPath.h"
+#include "PathTrajectory.h"
 #include <QtWidgets/QTreeWidget>
 
 class PathParametersWindow : public QTreeWidget
@@ -10,10 +11,16 @@ class PathParametersWindow : public QTreeWidget
 public:
 	PathParametersWindow(QWidget* widget);
 
+	std::shared_ptr<RobotPath> path() {
+		return path_;
+	}
+
 	void setPath(std::shared_ptr<RobotPath> path) {
 		path_ = path;
 		refresh();
 	}
+
+	void setTrajectory(std::shared_ptr<PathTrajectory> traj);
 
 	void refresh();
 
@@ -31,5 +38,8 @@ private:
 
 private:
 	std::shared_ptr<RobotPath> path_;
+
+	QTreeWidgetItem *length_item_;
+	QTreeWidgetItem *duration_item_;
 };
 

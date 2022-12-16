@@ -91,6 +91,9 @@ void PathFieldView::setUnits(const QString& units)
 		arrow_[i] = QPointF(x, y);
 	}
 
+	robot_width_ = UnitConverter::convert(robot_width_, units_, units);
+	robot_length_ = UnitConverter::convert(robot_length_, units_, units);
+
 	units_ = units;
 	createTransforms();
 	repaint();
@@ -629,7 +632,7 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 		paint.drawEllipse(circle);
 	}
 
-	if (robot_->getDriveType() == RobotParams::DriveType::SwerveDrive)
+	if (drive_type_ == RobotParams::DriveType::SwerveDrive)
 	{
 		QTransform mmswrot;
 		mmswrot.translate(pt.getTranslation().getX(), pt.getTranslation().getY());
@@ -792,8 +795,16 @@ void PathFieldView::setRobot(std::shared_ptr<RobotParams> params)
 {
 	robot_ = params;
 
-	robot_width_ = UnitConverter::convert(robot_->getRobotWidth(), robot_->getLengthUnits(), units_);
-	robot_length_ = UnitConverter::convert(robot_->getRobotLength(), robot_->getLengthUnits(), units_);
+	if (robot_ != nullptr) {
+		robot_width_ = UnitConverter::convert(robot_->getRobotWidth(), robot_->getLengthUnits(), units_);
+		robot_length_ = UnitConverter::convert(robot_->getRobotLength(), robot_->getLengthUnits(), units_);
+		drive_type_ = robot_->getDriveType();
+	}
+	else {
+		robot_width_ = UnitConverter::convert(28.0, "in", units_);
+		robot_width_ = UnitConverter::convert(28.0, "in", units_);
+		drive_type_ = RobotParams::DriveType::SwerveDrive;
+	}
 }
 
 void PathFieldView::createTransforms()

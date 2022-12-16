@@ -57,6 +57,7 @@ private:
 private:
     static constexpr const char* GeometrySetting = "geometry";
     static constexpr const char* WindowStateSetting = "windowState";
+    static constexpr const char* PlotWindowSplitterSize = "plotWindowSplitterSize";
 
 private:
     void setDefaultField();
@@ -101,6 +102,8 @@ private:
     void createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path);
 
     void showAbout();
+
+    void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
 
 private:
     static constexpr const char* RobotDialogName = "Name";

@@ -32,8 +32,9 @@ private:
 private:
 	AxisType mapVariableToAxis(const QString& var);
 	void insertNode(const QString& node);
-	QValueAxis* createYAxis(AxisType type);
+	QValueAxis* createYAxis(const QString& node);
 	void setupLegend();
+	void setupTimeAxis();
 
 private:
 	std::shared_ptr<TrajectoryGroup> group_;
@@ -42,5 +43,6 @@ private:
 	QMap<AxisType, QValueAxis*> y_axis_;
 	const QVector<QString>& varnames_;
 	bool left_right_;
+	QStringList nodes_;
 };
 

@@ -39,11 +39,13 @@ std::shared_ptr<TrajectoryGroup> GenerationMgr::getTrajectoryGroup(std::shared_p
 
 void GenerationMgr::addPath(GeneratorType type, std::shared_ptr<RobotPath> path)
 {
-	removePath(path);
-	pending_queue_mutex_.lock();
-	pending_queue_.push_back(QPair<GeneratorType, std::shared_ptr<RobotPath>>(type, path));
-	pending_queue_mutex_.unlock();
-	schedulePath();
+	if (robot_ != nullptr) {
+		removePath(path);
+		pending_queue_mutex_.lock();
+		pending_queue_.push_back(QPair<GeneratorType, std::shared_ptr<RobotPath>>(type, path));
+		pending_queue_mutex_.unlock();
+		schedulePath();
+	}
 }
 
 void GenerationMgr::removePath(std::shared_ptr<RobotPath> path)
@@ -101,4 +103,6 @@ void GenerationMgr::pathFinished(std::shared_ptr<TrajectoryGroup> group)
 	trajectories_.insert(group->path(), group);
 	active_queue_mutex_.unlock();
 	schedulePath();
+
+	emit generationComplete(group->path());
 }

@@ -10,11 +10,15 @@
 class PlotWindow : public QWidget
 {
 public:
-	PlotWindow(QWidget* parent);
+	PlotWindow(QWidget* parent, QList<int> sizes);
 
+	std::shared_ptr<TrajectoryGroup> group() { return group_; }
 	void setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group);
+	QList<int> getSplitterPosition();
 
 	static QVector<QString> TrajVariableName;
+
+
 
 private:
 	std::shared_ptr<TrajectoryGroup> group_;

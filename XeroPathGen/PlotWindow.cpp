@@ -12,7 +12,7 @@ QVector<QString> PlotWindow::TrajVariableName =
 	RobotPath::RotationTag,
 };
 
-PlotWindow::PlotWindow(QWidget* parent) : QWidget(parent)
+PlotWindow::PlotWindow(QWidget* parent, QList<int> sizes) : QWidget(parent)
 {
 	layout_ = new QHBoxLayout();
 	setLayout(layout_);
@@ -24,6 +24,14 @@ PlotWindow::PlotWindow(QWidget* parent) : QWidget(parent)
 
 	left_right_splitter_->addWidget(nodes_);
 	left_right_splitter_->addWidget(plot_);
+
+	left_right_splitter_->setSizes(sizes);
+}
+
+QList<int> PlotWindow::getSplitterPosition()
+{
+	auto sizes = left_right_splitter_->sizes();
+	return sizes;
 }
 
 void PlotWindow::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)
