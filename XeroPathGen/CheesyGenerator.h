@@ -11,7 +11,7 @@
 class CheesyGenerator
 {
 public:
-	CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta);
+	CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot);
 	virtual ~CheesyGenerator();
 
 	std::shared_ptr<PathTrajectory> generate(const QVector<Pose2dWithRotation>& waypoints, const QVector<std::shared_ptr<PathConstraint>>& constraints,
@@ -32,5 +32,6 @@ private:
 	double maxDTheta_;
 	double diststep_;
 	double timestep_;
+	std::shared_ptr<RobotParams> robot_;
 };
 

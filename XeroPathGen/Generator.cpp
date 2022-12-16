@@ -23,7 +23,7 @@ void Generator::generateTrajectory()
 		double maxdy = UnitConverter::convert(0.5, "in", path->units());			// 0.5 inches works well, convert to units being used
 		double maxtheta = 0.1;														// 0.1 radians works well, we don't convert angles
 
-		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta);
+		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
 		auto traj = gen.generate(path->waypoints(), path->constraints(), path->params().startVelocity(),
 			path->params().endVelocity(), path->params().maxVelocity(), path->params().maxAccel(), 0.0);
 

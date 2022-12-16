@@ -14,6 +14,7 @@ class PathGroup;
 class RobotPath : public QObject
 {
 	friend class CentripetalConstraint;
+	friend class DistanceVelocityConstraint;
 	friend class PathsDataModel;
 
 	Q_OBJECT
@@ -119,7 +120,23 @@ public:
 	void insertPoint(size_t index, const Pose2dWithRotation& pt) {
 		waypoints_.insert(index, pt);
 		emitPathChangedSignal();
+	}
 
+	void addConstraint(std::shared_ptr<PathConstraint> c) {
+		constraints_.push_back(c);
+	}
+
+	void deleteConstraint(const QString& text) {
+		auto it = constraints_.begin();
+		while (it != constraints_.end()) {
+			if ((*it)->toString() == text) {
+				break;
+			}
+		}
+
+		if (it != constraints_.end()) {
+			constraints_.erase(it);
+		}
 	}
 
 	const QVector<std::shared_ptr<PathConstraint>>& constraints() const {

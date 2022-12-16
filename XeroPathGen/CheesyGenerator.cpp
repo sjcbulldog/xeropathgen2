@@ -5,17 +5,19 @@
 #include "PathTrajectory.h"
 #include "TrajectoryNames.h"
 #include "TrajectoryUtils.h"
+#include "RobotParams.h"
 #include <cmath>
 
 using namespace xero::paths;
 
-CheesyGenerator::CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta)
+CheesyGenerator::CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot)
 {
 	diststep_ = diststep;
 	timestep_ = timestep;
 	maxDx_ = maxdx;
 	maxDy_ = maxdy;
 	maxDTheta_ = maxtheta;
+	robot_ = robot;
 }
 
 CheesyGenerator::~CheesyGenerator()
@@ -77,7 +79,7 @@ CheesyGenerator::timeParameterize(const DistanceView& view, const QVector<std::s
 
 			for (auto constraint : constraints)
 			{
-				double convel = constraint->getMaxVelocity(state);
+				double convel = constraint->getMaxVelocity(state, robot_);
 				state.setVelocity(std::min(state.velocity(), convel));
 			}
 

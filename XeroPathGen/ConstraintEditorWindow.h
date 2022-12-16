@@ -19,7 +19,16 @@ public:
 
 	void refresh();
 
+protected:
+	void prepareCustomMenu(const QPoint& pos);
+
+private:
+	void addCentripetalConstraint();
+	void addDistanceVelocityConstraint();
+	void deleteConstraint();
+
 private:
 	std::shared_ptr<RobotPath> path_;
+	QTreeWidgetItem* menuItem_;
 };
 

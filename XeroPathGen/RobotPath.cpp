@@ -1,5 +1,7 @@
 #include "RobotPath.h"
 #include "PathGroup.h"
+#include "CentripetalConstraint.h"
+#include "DistanceVelocityConstraint.h"
 #include <QtCore/QJsonArray>
 #include <limits>
 
@@ -115,8 +117,39 @@ bool RobotPath::readConstraints(std::shared_ptr<RobotPath> path, const QJsonArra
 {
 	for (int i = 0; i < obj.count(); i++) 
 	{
-		// TODO
-		assert(false);
+		if (!obj.at(i).isObject()) {
+			msg = "Robot Path has constraints array entry that is not a json object";
+			return false;
+		}
+
+		QJsonObject cobj = obj.at(i).toObject();
+
+		std::shared_ptr<PathConstraint> constraint;
+
+		constraint = CentripetalConstraint::fromJSON(path, cobj, msg);
+		if (msg.length() > 0) {
+			return false;
+		}
+
+		if (constraint == nullptr) {
+			constraint = DistanceVelocityConstraint::fromJSON(path, cobj, msg);
+			if (msg.length() > 0) {
+				return false;
+			}
+		}
+
+		if (constraint == nullptr) {
+			if (!cobj.contains("type")) {
+				msg = "Robot Path has constraint object without 'type' field";
+				return false;
+			}
+
+			QString typestr = cobj.value("type").toString();
+			msg = "Robot Path has constraint of type '" + typestr + "' which is not a valid type";
+			return false;
+		}
+
+		path->addConstraint(constraint);
 	}
 
 	return true;
