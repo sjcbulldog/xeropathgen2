@@ -10,6 +10,7 @@
 #include "WaypointWindow.h"
 #include "RecentFiles.h"
 #include "GenerationMgr.h"
+#include "ConstraintEditorWindow.h"
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QLabel>
 #include <QtCore/QSettings>
@@ -70,6 +71,8 @@ private:
     void setRobot(std::shared_ptr<RobotParams> robot);
     void populateRobotMenu();
     void newRobotSelected(std::shared_ptr<RobotParams> robot);
+
+    void setPath(std::shared_ptr<RobotPath> path);
 
     void newRobotAction();
     void editRobotAction();
@@ -145,12 +148,15 @@ private:
     PathParametersWindow* path_params_win_;
     WaypointWindow* waypoint_win_;
     PlotWindow* plot_win_;
+    ConstraintEditorWindow* constraint_win_;
+
 
     // Docking windows
     QDockWidget* dock_path_win_;
     QDockWidget* dock_path_params_win_;
     QDockWidget* dock_waypoint_win_;
     QDockWidget* dock_plot_win_;
+    QDockWidget* dock_constraint_win_;
 
     // Menus
     QMenu* file_menu_;

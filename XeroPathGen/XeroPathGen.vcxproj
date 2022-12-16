@@ -107,6 +107,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <QtMoc Include="PathWindow.h" />
     <ClCompile Include="AboutDialog.cpp" />
     <ClCompile Include="CheesyGenerator.cpp" />
+    <ClCompile Include="ConstraintEditorWindow.cpp" />
     <ClCompile Include="DistanceView.cpp" />
     <ClCompile Include="DriveBaseData.cpp" />
     <ClCompile Include="GameFieldManager.cpp" />
@@ -150,6 +151,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="build.h" />
     <ClInclude Include="CentripetalConstraint.h" />
     <ClInclude Include="CheesyGenerator.h" />
+    <ClInclude Include="ConstraintEditorWindow.h" />
     <ClInclude Include="CSVWriter.h" />
     <ClInclude Include="DistanceView.h" />
     <ClInclude Include="DriveBaseData.h" />
@@ -182,6 +184,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="PropertyEditorTreeModel.h" />
     <ClInclude Include="QuinticHermiteSpline.h" />
     <QtMoc Include="RecentFiles.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="RobotManager.h" />
     <ClInclude Include="RobotParams.h" />
     <QtMoc Include="RobotPath.h" />
@@ -199,6 +202,9 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
   </ItemGroup>
   <ItemGroup>
     <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="XeroPathGen.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

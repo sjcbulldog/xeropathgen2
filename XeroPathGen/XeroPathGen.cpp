@@ -28,10 +28,14 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	path_edit_win_ = nullptr;
 	path_win_ = nullptr;
 	waypoint_win_ = nullptr;
+	plot_win_ = nullptr;
+	constraint_win_ = nullptr;
 
 	dock_path_params_win_ = nullptr;
 	dock_path_win_ = nullptr;
 	dock_waypoint_win_ = nullptr;
+	dock_plot_win_ = nullptr;
+	dock_constraint_win_ = nullptr;
 
 	createWindows();
 	createMenus();
@@ -128,10 +132,17 @@ bool XeroPathGen::createWindows()
 	addDockWidget(Qt::RightDockWidgetArea, dock_path_params_win_);
 
 	waypoint_win_ = new WaypointWindow(nullptr);
-	dock_waypoint_win_ = new QDockWidget(tr("Waypoint Parameters"));
+	dock_waypoint_win_ = new QDockWidget(tr("Waypoint"));
 	dock_waypoint_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	dock_waypoint_win_->setWidget(waypoint_win_);
 	addDockWidget(Qt::RightDockWidgetArea, dock_waypoint_win_);
+
+	constraint_win_ = new ConstraintEditorWindow(nullptr);
+	dock_constraint_win_ = new QDockWidget(tr("Constraints"));
+	dock_constraint_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+	dock_constraint_win_->setWidget(constraint_win_);
+	addDockWidget(Qt::BottomDockWidgetArea, dock_constraint_win_);
+	dock_constraint_win_->hide();
 
 	return true;
 }
@@ -179,6 +190,7 @@ bool XeroPathGen::createMenus()
 	window_menu_->addAction(dock_path_win_->toggleViewAction());
 	window_menu_->addAction(dock_waypoint_win_->toggleViewAction());
 	window_menu_->addAction(dock_path_params_win_->toggleViewAction());
+	window_menu_->addAction(dock_constraint_win_->toggleViewAction());
 	window_menu_->addAction(dock_plot_win_->toggleViewAction());
 
 	help_menu_ = new QMenu(tr("&Help"));
@@ -469,7 +481,8 @@ bool XeroPathGen::internalFileClose()
 		}
 	}
 
-	path_edit_win_->setPath(nullptr);
+	setPath(nullptr);
+
 	paths_data_model_.reset();
 	return true;
 }
@@ -664,14 +677,7 @@ void XeroPathGen::showEvent(QShowEvent* ev)
 void XeroPathGen::pathSelected(const QString& grname, const QString& pathname)
 {
 	auto path = paths_data_model_.getPathByName(grname, pathname);
-	path_edit_win_->setPath(path);
-	waypoint_win_->setPath(path);
-	path_params_win_->setPath(path);
-
-	auto traj = generator_.getTrajectoryGroup(path);
-	plot_win_->setTrajectoryGroup(traj);
-
-	trajectoryGenerationComplete(path);
+	setPath(path);
 }
 
 void XeroPathGen::setField(const QString &name)
@@ -710,6 +716,18 @@ void XeroPathGen::setDefaultField()
 
 	if (field.length() > 0)
 		setField(field);
+}
+
+void XeroPathGen::setPath(std::shared_ptr<RobotPath> path)
+{
+	path_edit_win_->setPath(path);
+	constraint_win_->setPath(path);
+	waypoint_win_->setPath(path);
+	path_params_win_->setPath(path);
+
+	auto traj = generator_.getTrajectoryGroup(path);
+	plot_win_->setTrajectoryGroup(traj);
+	trajectoryGenerationComplete(path);
 }
 
 void XeroPathGen::setRobot(const QString& name)
@@ -922,7 +940,14 @@ void XeroPathGen::importRobot()
 
 void XeroPathGen::waypointSelected(size_t index)
 {
-	waypoint_win_->setWaypoint(index);
+	auto dists = paths_data_model_.getDistancesForPath(waypoint_win_->path());
+	double dist = 0.0;
+	if (index < dists.size())
+	{
+		dist = dists[index];
+	}
+
+	waypoint_win_->setWaypoint(index, dist);
 }
 
 void XeroPathGen::waypointStartMoving(size_t index)

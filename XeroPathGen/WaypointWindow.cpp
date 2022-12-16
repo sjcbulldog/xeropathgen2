@@ -89,5 +89,9 @@ void WaypointWindow::refresh()
 		item = newItem(RotationTag);
 		item->setText(1, QString::number(pt.swrot().toDegrees(), 'f', 2));
 		addTopLevelItem(item);
+
+		item = newItem(DistanceTag, false);
+		item->setText(1, QString::number(dist_, 'f', 2));
+		addTopLevelItem(item);
 	}
 }

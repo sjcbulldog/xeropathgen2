@@ -2,6 +2,7 @@
 
 #include "RobotPath.h"
 #include "NoEditDelegate.h"
+#include "PathTrajectory.h"
 #include <QtWidgets/QTreeWidget>
 
 class WaypointWindow : public QTreeWidget
@@ -15,8 +16,13 @@ public:
 		path_ = path;
 	}
 
-	void setWaypoint(int index) {
+	std::shared_ptr<RobotPath> path() {
+		return path_;
+	}
+
+	void setWaypoint(int index, double dist) {
 		index_ = index;
+		dist_ = dist;
 	}
 
 	void refresh();
@@ -27,6 +33,7 @@ private:
 	static constexpr const char* HeadingTag = "Heading";
 	static constexpr const char* RotationTag = "Rotation";
 	static constexpr const char* IndexTag = "Index";
+	static constexpr const char* DistanceTag = "distance";
 
 private:
 	QTreeWidgetItem* newItem(const QString& title, bool editable = true);
@@ -35,5 +42,6 @@ private:
 private:
 	std::shared_ptr<RobotPath> path_;
 	int index_;
+	double dist_;
 };
 

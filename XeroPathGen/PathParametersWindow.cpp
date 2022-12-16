@@ -21,7 +21,7 @@ void PathParametersWindow::setTrajectory(std::shared_ptr<PathTrajectory> traj)
 	}
 
 	if (length_item_ != nullptr) {
-		length_item_->setText(1, QString::number(traj->getDistance(), 'f', 2));
+		length_item_->setText(1, QString::number(traj->getEndDistance(), 'f', 2));
 	}
 }
 

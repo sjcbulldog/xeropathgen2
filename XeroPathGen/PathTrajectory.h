@@ -57,14 +57,17 @@ public:
 		return points_[points_.size() - 1].time();
 	}
 
-	double getDistance() const {
+	double getEndDistance() const {
 		if (points_.size() == 0)
 			return 0.0;
 
 		return points_[points_.size() - 1].position();
 	}
 
+	double getDistance(int index);
+
 private:
 	QString name_;
 	QVector<Pose2dWithTrajectory> points_;
+	QVector<double> distances_;
 };

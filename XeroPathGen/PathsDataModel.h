@@ -81,6 +81,7 @@ public:
 	void renamePath(const QString &grname, const QString& oldname, const QString& newname);
 
 	QVector<std::shared_ptr<SplinePair>> getSplinesForPath(std::shared_ptr<RobotPath> path);
+	QVector<double> getDistancesForPath(std::shared_ptr<RobotPath> path);
 
 	QVector<std::shared_ptr<RobotPath>> getAllPaths();
 
@@ -109,8 +110,10 @@ private:
 	QString path_output_dir_;
 	QString units_;
 	QList<PathGroup *> groups_;
-	QMap<RobotPath*, QVector<std::shared_ptr<SplinePair>>> splines_;
 	bool dirty_;
 	GeneratorType gen_type_;
 	GenerationMgr& gen_mgr_;
+
+	QMap<std::shared_ptr<RobotPath>, QVector<std::shared_ptr<SplinePair>>> splines_;
+	QMap<std::shared_ptr<RobotPath>, QVector<double>> distances_;
 };

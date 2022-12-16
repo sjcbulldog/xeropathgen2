@@ -150,5 +150,5 @@ private:
 	QVector<Pose2dWithRotation> waypoints_;							// The waypoints along the path including robot motion heading and swerve rotation
 	QVector<std::shared_ptr<PathConstraint>> constraints_;			// The set of constrains to apply to the path
 	PathParameters params_;											// The path velocity and acceleration parameters
-	QString units_;
+	QString units_;													// The units for this path
 };

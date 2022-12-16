@@ -1,6 +1,20 @@
+- Icon
+- Installer
+- Swerve Path Generator
+
 - Docking Graph Window
+  o  Zoom
+  o  Pan
+
 - Velocity Constraints
+  o Editor
+  o Serialization
+  o Test in generation
+
 - Centripetal Constraints
+  o Editor
+  o Serialization
+  o Test in generation
 
 - Path Parameters Window						Done
 - Fields Menu									Done

@@ -213,16 +213,16 @@ void PathsDataModel::computeSplinesForPath(std::shared_ptr<RobotPath> path)
 		splines.push_back(pair);
 	}
 
-	splines_.insert(path.get(), splines);
+	splines_.insert(path, splines);
 }
 
 QVector<std::shared_ptr<SplinePair>> PathsDataModel::getSplinesForPath(std::shared_ptr<RobotPath> path)
 {
-	if (!splines_.contains(path.get())) {
+	if (!splines_.contains(path)) {
 		computeSplinesForPath(path);
 	}
 
-	QVector<std::shared_ptr<SplinePair>> splines = splines_[path.get()];
+	QVector<std::shared_ptr<SplinePair>> splines = splines_[path];
 	return splines;
 }
 
@@ -454,4 +454,42 @@ void PathsDataModel::convert(const QString& units)
 
 		units_ = units;
 	}
+}
+
+QVector<double> PathsDataModel::getDistancesForPath(std::shared_ptr<RobotPath> path)
+{
+	if (!distances_.contains(path))
+	{
+		QVector<std::shared_ptr<SplinePair>> splines = getSplinesForPath(path);
+		if (splines.length() > 0) {
+			QVector<double> dists;
+			int steps = 1000;
+
+			dists.push_back(0.0);
+			for (size_t i = 0; i < splines.size(); i++)
+			{
+				double dist = 0;
+				auto pair = splines[i];
+				bool first = true;
+				Translation2d pos, prevpos;
+				for (float t = 0.0f; t <= 1.0f; t += 1.0f / steps)
+				{
+					pos = pair->evalPosition(t);
+					if (first)
+						first = false;
+					else
+					{
+						dist += pos.distance(prevpos);
+					}
+
+					prevpos = pos;
+				}
+
+				dists.push_back(dist);
+			}
+
+			distances_.insert(path, dists);
+		}
+	}
+	return distances_.value(path);
 }

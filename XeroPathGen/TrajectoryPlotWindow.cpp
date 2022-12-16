@@ -33,7 +33,10 @@ void TrajectoryPlotWindow::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> g
 		chart()->setTitle("Path: " + group->path()->name());
 	}
 
-	for (const QString& node : nodes_) {
+	QStringList putback = nodes_;
+	nodes_.clear();
+
+	for (const QString& node : putback) {
 		insertNode(node);
 	}
 }
