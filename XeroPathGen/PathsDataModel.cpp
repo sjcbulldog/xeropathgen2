@@ -119,8 +119,8 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup* g) { return g->name() == path->pathGroup()->name(); });
 	if (it != groups_.end()) {
 		(*it)->addPath(path);
-		connect(path.get(), &RobotPath::pathChanged, this, &PathsDataModel::computeSplines);
 		setDirty();
+		connect(path.get(), &RobotPath::pathChanged, this, &PathsDataModel::pathChanged);
 		gen_mgr_.addPath(gen_type_, path);
 		emit pathAdded(path);
 	}
@@ -191,15 +191,20 @@ QVector<std::shared_ptr<RobotPath>> PathsDataModel::getAllPaths()
 	return paths;
 }
 
-void PathsDataModel::computeSplines(const QString& grname, const QString& pathname)
+void PathsDataModel::pathChanged(const QString& grname, const QString& pathname)
 {
 	setDirty();
+	computeSplines(grname, pathname);
+}
 
+void PathsDataModel::computeSplines(const QString& grname, const QString& pathname)
+{
 	auto path = getPathByName(grname, pathname);
 	assert(path != nullptr);
 
 	gen_mgr_.addPath(gen_type_, path);
 	computeSplinesForPath(path);
+	distances_.remove(path);
 }
 
 void PathsDataModel::computeSplinesForPath(std::shared_ptr<RobotPath> path)

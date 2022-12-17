@@ -124,6 +124,7 @@ public:
 
 	void addConstraint(std::shared_ptr<PathConstraint> c) {
 		constraints_.push_back(c);
+		emitPathChangedSignal();
 	}
 
 	void deleteConstraint(const QString& text) {
@@ -136,6 +137,7 @@ public:
 
 		if (it != constraints_.end()) {
 			constraints_.erase(it);
+			emitPathChangedSignal();
 		}
 	}
 

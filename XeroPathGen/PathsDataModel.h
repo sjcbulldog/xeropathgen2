@@ -97,6 +97,8 @@ private:
 		dirty_ = true;
 	}
 
+	void pathChanged(const QString& grname, const QString& pathname);
+
 signals:
 	void groupAdded(const QString& grname);
 	void groupDeleted(const QString& grname);

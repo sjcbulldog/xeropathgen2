@@ -19,6 +19,12 @@ protected:
 	void dragLeaveEvent(QDragLeaveEvent* event) override;
 	void dropEvent(QDropEvent* ev) override;
 
+	bool viewportEvent(QEvent* event);
+	void mousePressEvent(QMouseEvent* event);
+	void mouseMoveEvent(QMouseEvent* event);
+	void mouseReleaseEvent(QMouseEvent* event);
+	void keyPressEvent(QKeyEvent* event);
+
 private:
 	enum class AxisType
 	{
@@ -44,5 +50,6 @@ private:
 	const QVector<QString>& varnames_;
 	bool left_right_;
 	QStringList nodes_;
+	QPoint last_mouse_;
 };
 

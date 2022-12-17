@@ -44,20 +44,23 @@ void PathParametersWindow::pathParamChanged(QTreeWidgetItem* item, int column)
 		if (item->text(0) == StartVelocityTag)
 		{
 			params = PathParameters(value, params.endVelocity(), params.maxVelocity(), params.maxAccel());
+			path_->setParams(params);
 		}
 		else if (item->text(0) == EndVelocityTag)
 		{
 			params = PathParameters(params.startVelocity(), value, params.maxVelocity(), params.maxAccel());
+			path_->setParams(params);
 		}
 		else if (item->text(0) == MaxVelocityTag)
 		{
 			params = PathParameters(params.startVelocity(), params.endVelocity(), value, params.maxAccel());
+			path_->setParams(params);
 		}
 		else if (item->text(0) == MaxAccelerationTag)
 		{
 			params = PathParameters(params.startVelocity(), params.endVelocity(), params.maxVelocity(),value);
+			path_->setParams(params);
 		}
-		path_->setParams(params);
 	}
 }
 

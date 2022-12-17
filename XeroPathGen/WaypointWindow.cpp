@@ -4,6 +4,7 @@
 WaypointWindow::WaypointWindow(QWidget* parent) : QTreeWidget(parent)
 {
 	index_ = -1;
+	dist_ = 0.0;
 
 	setHeaderHidden(true);
 	setColumnCount(2);

@@ -2,16 +2,72 @@
 #include "RobotPath.h"
 #include <QtCore/QMimeData>
 #include <QtCharts/QLineSeries>
+#include <QtWidgets/QApplication>
 
 TrajectoryPlotWindow::TrajectoryPlotWindow(const QVector<QString>& varnames, QWidget* parent) : QChartView(parent), varnames_(varnames)
 {
-	setRenderHint(QPainter::Antialiasing);
-	setRubberBand(QChartView::RectangleRubberBand);
-	chart()->setAnimationOptions(QChart::SeriesAnimations);
+	// setRenderHint(QPainter::Antialiasing);
+	setRubberBand(QChartView::NoRubberBand);
+	chart()->setAnimationOptions(QChart::NoAnimation);
 	chart()->setDropShadowEnabled(true);
 
 	time_axis_ = nullptr;
 	left_right_ = true;
+}
+
+void TrajectoryPlotWindow::keyPressEvent(QKeyEvent* event)
+{
+	switch (event->key()) {
+	case Qt::Key_Plus:
+		chart()->zoomIn();
+		break;
+	case Qt::Key_Minus:
+		chart()->zoomOut();
+		break;
+	case Qt::Key_Home:
+		chart()->zoomReset();
+		break;
+	}
+}
+
+bool TrajectoryPlotWindow::viewportEvent(QEvent* event)
+{
+	return QChartView::viewportEvent(event);
+}
+
+void TrajectoryPlotWindow::mousePressEvent(QMouseEvent* event)
+{
+	if (event->button() == Qt::MiddleButton)
+	{
+		QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
+		last_mouse_ = event->pos();
+		event->accept();
+	}
+
+	QChartView::mousePressEvent(event);
+}
+
+void TrajectoryPlotWindow::mouseMoveEvent(QMouseEvent* event)
+{
+	// pan the chart with a middle mouse drag
+	if (event->buttons() & Qt::MiddleButton)
+	{
+		auto dPos = event->pos() - last_mouse_;
+		chart()->scroll(-dPos.x(), dPos.y());
+
+		last_mouse_ = event->pos();
+		event->accept();
+	}
+
+	QChartView::mouseMoveEvent(event);
+}
+
+void TrajectoryPlotWindow::mouseReleaseEvent(QMouseEvent* event)
+{
+	if (event->buttons() & Qt::MiddleButton)
+	{
+		QApplication::restoreOverrideCursor();
+	}
 }
 
 void TrajectoryPlotWindow::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)

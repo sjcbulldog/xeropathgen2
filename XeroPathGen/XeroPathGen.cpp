@@ -534,8 +534,16 @@ void XeroPathGen::fileGenerate()
 		fileGenerateAs();
 	}
 	else {
-		updateAllPaths(true);
 
+		QDir dirobj = QDir(paths_data_model_.outputDir());
+		if (!dirobj.exists()) {
+			if (!dirobj.mkpath(dirobj.absolutePath())) {
+				QMessageBox::critical(this, "Error!", "Cannot create the destination directory '" + dirobj.absolutePath() + "' - path generation failed");
+				return;
+			}
+		}
+
+		updateAllPaths(true);
 
 		//
 		// Now all paths have been processed
@@ -1217,6 +1225,10 @@ void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
 
 		if (plot_win_->group() != nullptr && plot_win_->group()->path() == path) {
 			plot_win_->setTrajectoryGroup(group);
+		}
+
+		if (path == waypoint_win_->path()) {
+			waypointSelected(waypoint_win_->getWaypoint());
 		}
 	}
 }

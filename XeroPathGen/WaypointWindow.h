@@ -25,6 +25,10 @@ public:
 		dist_ = dist;
 	}
 
+	int getWaypoint() const {
+		return index_;
+	}
+
 	void refresh();
 
 private:
