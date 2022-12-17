@@ -151,8 +151,6 @@ void PathFieldView::doPaint(QPainter &paint, bool printing)
 	{
 		drawPath(paint);
 	}
-
-	drawRobot(paint);
 }
 
 void PathFieldView::emitMouseMoved(Translation2d pos)
@@ -527,36 +525,6 @@ std::vector<QPointF> PathFieldView::transformPoints(QTransform& trans, const std
 	}
 
 	return result;
-}
-
-void PathFieldView::drawRobot(QPainter& paint)
-{
-	if (path_ == nullptr)
-		return;
-
-	Translation2d fl, fr, bl, br;
-	// model_->getLocation(fl, fr, bl, br);
-	std::vector<QPointF> corners;
-	corners.push_back(QPointF(fl.getX(), fl.getY()));
-	corners.push_back(QPointF(fr.getX(), fr.getY()));
-	corners.push_back(QPointF(bl.getX(), bl.getY()));
-	corners.push_back(QPointF(br.getX(), br.getY()));
-
-	auto winloc = worldToWindow(corners);
-
-	QPen pen(QColor(0xff, 0xff, 0x00, 0xff));
-	pen.setWidthF(2.0f);
-	paint.setPen(pen);
-
-	paint.drawLine(winloc[1], winloc[3]);
-	paint.drawLine(winloc[2], winloc[3]);
-	paint.drawLine(winloc[2], winloc[0]);
-
-	pen = QPen(QColor(0x00, 0x00, 0xff, 0xff));
-	pen.setWidthF(2.0f);
-	paint.setPen(pen);
-
-	paint.drawLine(winloc[0], winloc[1]);
 }
 
 void PathFieldView::drawPath(QPainter &paint)

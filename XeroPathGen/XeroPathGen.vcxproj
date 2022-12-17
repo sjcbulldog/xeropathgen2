@@ -98,6 +98,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="XeroSwerveGenerator.cpp" />
     <QtRcc Include="XeroPathGen.qrc" />
     <QtUic Include="AboutDialog.ui" />
     <QtUic Include="PropertyEditor.ui" />
@@ -148,6 +149,7 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="XeroSwerveGenerator.h" />
     <QtMoc Include="AboutDialog.h" />
     <ClInclude Include="build.h" />
     <ClInclude Include="CentripetalConstraint.h" />

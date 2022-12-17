@@ -864,6 +864,7 @@ void XeroPathGen::newRobotAction()
 void XeroPathGen::editRobotAction()
 {
 	createEditRobot(current_robot_, "");
+	setRobot(current_robot_) ;
 	updateAllPaths(false);
 }
 

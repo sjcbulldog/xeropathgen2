@@ -157,6 +157,9 @@
     <ClCompile Include="DistanceVelocityConstraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="XeroSwerveGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="build.h">
@@ -283,6 +286,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DistanceVelocityConstraint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XeroSwerveGenerator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
