@@ -17,14 +17,33 @@ public:
 	PathsDataModel(GenerationMgr &genmgr);
 	virtual ~PathsDataModel();
 
-	GeneratorType type() const {
+	void setGeneratorType(GeneratorType type) {
+		gen_type_ = type;
+		dirty_ = true;
+		emit trajectoryGeneratorChanged();
+	}
+
+	GeneratorType generatorType() const {
 		return gen_type_;
 	}
 
 	void reset();
 
+	const QString& setDefaultUnits(const QString units) {
+		default_units_ = units;
+	}
+
+	const QString& defaultUnits() const {
+		return default_units_;
+	}
+
 	const QString& units() const {
 		return units_;
+	}
+
+	void setUnits(const QString& units) {
+		convert(units);
+		emit unitsChanged(units_);
 	}
 
 	bool isDirty() const {
@@ -106,16 +125,22 @@ signals:
 	void pathAdded(std::shared_ptr<RobotPath> path);
 	void pathDeleted(const QString& grname, const QString& pathname);
 	void pathRenamed(const QString &grname, const QString& oldname, const QString& newname);
+	void unitsChanged(const QString& units);
+	void trajectoryGeneratorChanged();
 
 private:
-	QString filename_;
-	QString path_output_dir_;
-	QString units_;
-	QList<PathGroup *> groups_;
-	bool dirty_;
-	GeneratorType gen_type_;
-	GenerationMgr& gen_mgr_;
+	QString filename_;						// The filename for the path JSON file
+	QString path_output_dir_;				// The directory for the output of trajectory (.csv) files
+	QString units_;							// The units for the current data model
+	QString default_units_;					// The units to use if a data file being read does not have units
+	QList<PathGroup *> groups_;				// The path groups (auto modes) that are stored here
+	bool dirty_;							// If true, unsaved changes exist
+	GeneratorType gen_type_;				// The generator type that goes with these paths
+	GenerationMgr& gen_mgr_;				// The generator manager to actually do the work of generating trajectories
 
+	// A mapping of paths to splines
 	QMap<std::shared_ptr<RobotPath>, QVector<std::shared_ptr<SplinePair>>> splines_;
+
+	// A mapping of paths to distances
 	QMap<std::shared_ptr<RobotPath>, QVector<double>> distances_;
 };

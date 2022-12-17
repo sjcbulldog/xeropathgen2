@@ -44,6 +44,7 @@ private:
     void fileClose();
     void fileGenerateAs();
     void fileGenerate();
+    void fileExit();
     void recentOpen(const QString& name, const QString& filename);
     void recentOpen(const QString& filename);
     void recentOpenProject(const QString& filename);
@@ -87,7 +88,7 @@ private:
     bool internalFileSaveAs();
     bool internalFileClose();
 
-    void setUnits(const QString &units);
+    void setUnits(const QString &);
     void mouseMoved(Translation2d pos);
 
     void addLogMessage(const QString& msg) {
@@ -107,6 +108,7 @@ private:
     void showAbout();
 
     void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
+    void trajectoryGeneratorChanged();
 
 private:
     static constexpr const char* RobotDialogName = "Name";
@@ -129,7 +131,6 @@ private:
 
 private:
     QSettings settings_;
-    QString units_;
 
     GameFieldManager& fields_;
     RobotManager& robots_;

@@ -2,6 +2,7 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QMessageBox>
+#include <QtGui/QActionGroup>
 
 PathWindow::PathWindow(PathsDataModel& model, QWidget* parent) : QTreeWidget(parent), model_(model)
 {
@@ -127,8 +128,44 @@ void PathWindow::prepareCustomMenu(const QPoint& pos)
 		menu.addAction(act);
 	}
 
+	act = new QAction(tr("Change Path Units"));
+	connect(act, &QAction::triggered, this, &PathWindow::changePathUnits);
+	menu.addAction(act);
+
+	QMenu* genmenu = menu.addMenu("Generator");
+	QActionGroup* group = new QActionGroup(this);
+	auto gens = getGeneratorTypes();
+	for (const GeneratorDescriptor& desc : gens) {
+		act = new QAction(desc.desc_);
+		genmenu->addAction(act);
+		group->addAction(act);
+		act->setCheckable(true);
+
+		if (desc.type_ == model_.generatorType()) {
+			act->setChecked(true);
+		}
+
+		connect(act, &QAction::triggered, [this, desc]() { model_.setGeneratorType(desc.type_); });
+	}
+
 	menu.exec(this->mapToGlobal(pos));
 	menuItem_ = nullptr;
+}
+
+void PathWindow::changePathUnits()
+{
+	QStringList units = UnitConverter::getAllLengthUnits();
+	QString newunits = QInputDialog::getText(this, "New Units", "Length Units");
+	if (!units.contains(newunits)) 
+	{
+		QString possible = units.join(",");
+		QString msg = "The units '" + newunits + "' are not valid.  Only the units " + possible + " are supported.";
+		QMessageBox::critical(this, "Bad Length Units", msg);
+	}
+	else 
+	{
+		model_.setUnits(newunits);
+	}
 }
 
 void PathWindow::addGroup()

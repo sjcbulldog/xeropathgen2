@@ -60,12 +60,6 @@ std::shared_ptr<RobotParams> RobotManager::importRobot(QFile &file)
 	return robot;
 }
 
-void RobotManager::convert(const QString& units)
-{
-	for (auto robot : robots_)
-		robot->convert(units);
-}
-
 bool RobotManager::exists(const QString& name)
 {
 	for (auto robot : robots_)

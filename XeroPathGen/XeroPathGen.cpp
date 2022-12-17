@@ -25,6 +25,12 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 {
 	theOne = this;
 
+	QString exedir = QCoreApplication::applicationDirPath();
+	QString imagepath = exedir + "/images/icon.png";
+	QPixmap image(imagepath);
+	QIcon icon(image);
+	setWindowIcon(icon);
+
 	path_edit_win_ = nullptr;
 	path_win_ = nullptr;
 	waypoint_win_ = nullptr;
@@ -55,6 +61,7 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	if (settings_.contains("units")) {
 		units = settings_.value("units").toString();
 	}
+	paths_data_model_.convert(units);
 	setUnits(units);
 
 	recents_ = new RecentFiles(settings_, "recentfiles",  *recent_menu_);
@@ -69,6 +76,8 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	setWindowTitle("Error Code Xero Path Generator (file):");
 
 	connect(&generator_, &GenerationMgr::generationComplete, this, &XeroPathGen::trajectoryGenerationComplete);
+	connect(&paths_data_model_, &PathsDataModel::unitsChanged, this, &XeroPathGen::setUnits);
+	connect(&paths_data_model_, &PathsDataModel::trajectoryGeneratorChanged, this, &XeroPathGen::trajectoryGeneratorChanged);
 }
 
 XeroPathGen::~XeroPathGen()
@@ -77,12 +86,22 @@ XeroPathGen::~XeroPathGen()
 
 void XeroPathGen::setUnits(const QString& units)
 {
-	paths_data_model_.convert(units);
+	assert(units == paths_data_model_.units());
+
+	//
+	// Set everything else to use these units
+	//
 	fields_.convert(units);
-	robots_.convert(units);
 	path_edit_win_->setUnits(units);
 	path_win_->setUnits(units);
-	units_ = units;
+
+	path_params_win_->refresh();
+	constraint_win_->refresh();
+	if (waypoint_win_->getWaypoint() != -1) {
+		waypointSelected(waypoint_win_->getWaypoint());
+	}
+
+	dock_path_win_->setWindowTitle("Paths: units '" + units + "'");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +138,7 @@ bool XeroPathGen::createWindows()
 	setCentralWidget(path_edit_win_);
 
 	path_win_ = new PathWindow(paths_data_model_, nullptr);
-	dock_path_win_ = new QDockWidget(tr("Path Groups"));
+	dock_path_win_ = new QDockWidget(tr("Paths"));
 	dock_path_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	dock_path_win_->setWidget(path_win_);
 	addDockWidget(Qt::RightDockWidgetArea, dock_path_win_);
@@ -176,6 +195,9 @@ bool XeroPathGen::createMenus()
 	file_menu_->addSeparator();
 	recent_menu_ = file_menu_->addMenu("Recent Files");
 	recent_project_menu_ = file_menu_->addMenu("Recent Projects");
+	file_menu_->addSeparator();
+	action = file_menu_->addAction(tr("Exit"));
+	(void)connect(action, &QAction::triggered, this, &XeroPathGen::fileExit);
 
 	robot_menu_ = new QMenu(tr("&Robots"));
 	menuBar()->addMenu(robot_menu_);
@@ -248,6 +270,11 @@ void XeroPathGen::showFileMenu()
 {
 }
 
+void XeroPathGen::fileExit()
+{
+	QCoreApplication::quit();
+}
+
 void XeroPathGen::fileNew()
 {
 	if (!internalFileClose())
@@ -262,7 +289,7 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 	QString msg;
 	project_mode_ = true;
 
-	QString pathfile = dirname + "/src/main/paths/robot.paths";
+	QString pathfile = dirname + "/src/main/paths/robot.xeropath";
 	QString robotfile = dirname + "/src/main/paths/robot.json";
 	QString outdir = dirname + "/src/main/deploy/paths";
 
@@ -290,6 +317,7 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 			QMessageBox::critical(this, "Load Failed", "The file '" + pathfile + "' cannot be loaded - " + msg);
 		}
 		paths_data_model_.blockSignals(false);
+		setUnits(paths_data_model_.units());
 	}
 	else {
 		paths_data_model_.setFilename(pathfile);
@@ -349,7 +377,7 @@ void XeroPathGen::fileOpen()
 	{
 		path_win_->refresh();
 		QFileInfo info(paths_data_model_.filename());
-
+		setUnits(paths_data_model_.units());
 	}
 	paths_data_model_.blockSignals(false);
 	recents_->addRecentFile(this, filename);
@@ -405,6 +433,7 @@ void XeroPathGen::recentOpen(const QString& filename)
 		}
 		else
 		{
+			setUnits(paths_data_model_.units());
 			path_win_->refresh();
 			QFileInfo info(paths_data_model_.filename());
 			path_filename_->setText(info.fileName());
@@ -445,7 +474,7 @@ bool XeroPathGen::internalFileSaveAs()
 
 	QFileDialog dialog;
 
-	QString filename = QFileDialog::getSaveFileName(this, tr("Save Path File"), "", tr("Path File (*.path);;All Files (*)"));
+	QString filename = QFileDialog::getSaveFileName(this, tr("Save Path File"), "", tr("Path File (*.xeropath);;All Files (*)"));
 	if (filename.length() == 0)
 		return false;
 
@@ -482,8 +511,9 @@ bool XeroPathGen::internalFileClose()
 	}
 
 	setPath(nullptr);
-
 	paths_data_model_.reset();
+	path_win_->refresh();
+
 	return true;
 }
 
@@ -617,7 +647,7 @@ void XeroPathGen::updateAllPaths(bool wait)
 
 	for (auto path : paths_data_model_.getAllPaths())
 	{
-		generator_.addPath(paths_data_model_.type(), path);
+		generator_.addPath(paths_data_model_.generatorType(), path);
 	}
 
 	if (wait) {
@@ -643,15 +673,24 @@ void XeroPathGen::closeEvent(QCloseEvent* ev)
 {
 	if (paths_data_model_.isDirty())
 	{
-		QMessageBox::StandardButton reply;
+		int reply;
 
-		reply = QMessageBox::question(this, "Question?", "You have unsaved changes, do you want to save?", QMessageBox::Yes | QMessageBox::No);
-		if (reply == QMessageBox::Yes)
+		QMessageBox question;
+		question.setText("The paths have been modified.");
+		question.setInformativeText("Do you want to save your changes?");
+		question.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+		question.setDefaultButton(QMessageBox::Save);
+		reply = question.exec();
+		if (reply == QMessageBox::Cancel) {
+			ev->ignore();
+			return;
+		}
+		else if (reply == QMessageBox::Save)
 		{
 			if (!internalFileSave()) {
 				ev->ignore();
+				return;
 			}
-			return;
 		}
 	}
 
@@ -870,7 +909,6 @@ void XeroPathGen::editRobotAction()
 
 void XeroPathGen::showRobotMenu()
 {
-
 }
 
 void XeroPathGen::deleteRobotAction()
@@ -991,14 +1029,14 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		//
 		// Creating a new robot, use defaults
 		//
-		elength = UnitConverter::convert(RobotParams::DefaultLength, RobotParams::DefaultLengthUnits, units_);
-		ewidth = UnitConverter::convert(RobotParams::DefaultWidth, RobotParams::DefaultLengthUnits, units_);
-		rlength = UnitConverter::convert(RobotParams::DefaultLength, RobotParams::DefaultLengthUnits, units_);
-		rwidth = UnitConverter::convert(RobotParams::DefaultWidth, RobotParams::DefaultLengthUnits, units_);
-		velocity = UnitConverter::convert(RobotParams::DefaultMaxVelocity, RobotParams::DefaultLengthUnits, units_);
-		accel = UnitConverter::convert(RobotParams::DefaultMaxAcceleration, RobotParams::DefaultLengthUnits, units_);
-		jerk = UnitConverter::convert(RobotParams::DefaultMaxJerk, RobotParams::DefaultLengthUnits, units_);
-		cent = UnitConverter::convert(RobotParams::DefaultCentripetal, RobotParams::DefaultLengthUnits, units_);
+		elength = RobotParams::DefaultLength;
+		ewidth = RobotParams::DefaultWidth;
+		rlength = RobotParams::DefaultLength;
+		rwidth = RobotParams::DefaultWidth;
+		velocity = RobotParams::DefaultMaxVelocity;
+		accel = RobotParams::DefaultMaxAcceleration;
+		jerk = RobotParams::DefaultMaxJerk;
+		cent = RobotParams::DefaultCentripetal;
 		rweight = RobotParams::DefaultWeight;
 		timestep = RobotParams::DefaultTimestep;
 		drivetype = RobotParams::DefaultDriveType;
@@ -1213,6 +1251,19 @@ void XeroPathGen::showAbout()
 	about.exec();
 }
 
+void XeroPathGen::trajectoryGeneratorChanged()
+{
+	generator_.clear();
+	generator_.removeAllTrajectories();
+
+	//
+	// This will reset all of the various windows to
+	// reflect the udpated data
+	//
+	setPath(path_edit_win_->getPath());
+	updateAllPaths(false);
+}
+
 void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
 {
 	auto group = generator_.getTrajectoryGroup(path);
@@ -1221,7 +1272,9 @@ void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
 
 		if (path_params_win_->path() == path) {
 			auto traj = group->getTrajectory(TrajectoryName::Main);
-			path_params_win_->setTrajectory(traj);
+			if (traj != nullptr) {
+				path_params_win_->setTrajectory(traj);
+			}
 		}
 
 		if (plot_win_->group() != nullptr && plot_win_->group()->path() == path) {

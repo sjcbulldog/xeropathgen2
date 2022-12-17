@@ -6,6 +6,7 @@
 #include "Pose2dWithTrajectory.h"
 #include "SplinePair.h"
 #include "DistanceView.h"
+#include "CheesyGenerator.h"
 #include <QtCore/QVector>
 
 class XeroSwerveGenerator
@@ -16,5 +17,8 @@ public:
 
 	std::shared_ptr<PathTrajectory> generate(const QVector<Pose2dWithRotation>& waypoints, const QVector<std::shared_ptr<PathConstraint>>& constraints,
 		double startvel, double endvel, double maxvel, double maxaccel, double maxjerk);
+
+private:
+	CheesyGenerator* cheesy_gen_;
 };
 

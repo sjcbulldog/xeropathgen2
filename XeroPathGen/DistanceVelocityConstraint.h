@@ -11,6 +11,14 @@ public:
 	DistanceVelocityConstraint(std::shared_ptr<RobotPath> path, double after, double before, double velocity);
 	virtual ~DistanceVelocityConstraint();
 
+	void update(double after, double before, double velocity) {
+		after_distance_ = after;
+		before_distance_ = before;
+		velocity_ = velocity;
+
+		path()->constraintChanged();
+	}
+
 	double getMaxVelocity(const Pose2dWithTrajectory& state, std::shared_ptr<RobotParams> robot) override ;
 	MinMaxAcceleration getMinMaxAccel(const Pose2dWithTrajectory& state, double velocity, std::shared_ptr<RobotParams> robot) override ;
 

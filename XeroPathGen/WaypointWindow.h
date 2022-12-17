@@ -23,6 +23,7 @@ public:
 	void setWaypoint(int index, double dist) {
 		index_ = index;
 		dist_ = dist;
+		refresh();
 	}
 
 	int getWaypoint() const {

@@ -14,8 +14,8 @@ GenerationMgr::GenerationMgr()
 void GenerationMgr::clear()
 {
 	pending_queue_mutex_.lock();
-	pending_queue_mutex_.unlock();
 	pending_queue_.clear();
+	pending_queue_mutex_.unlock();
 
 	if (thread_ != nullptr) {
 		thread_->terminate();

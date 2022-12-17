@@ -43,6 +43,12 @@ public:
 
 	void clear();
 
+	void removeAllTrajectories() {
+		trajectory_group_mutex_.lock();
+		trajectories_.clear();
+		trajectory_group_mutex_.unlock();
+	}
+
 signals:
 	void generationComplete(std::shared_ptr<RobotPath> path);
 

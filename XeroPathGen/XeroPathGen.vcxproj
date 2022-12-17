@@ -71,6 +71,18 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PostBuildEvent>
+      <Command>mkdir $(OutDir)\images
+copy $(ProjectDir)images\*.png $(OutDir)\images
+echo ======================== DOING DEPLOY ============================
+$(QTDIR)\bin\windeployqt $(OutDir)$(ProjectName).exe
+echo ===============================================================
+mkdir $(OutDir)\fields
+copy $(SolutionDir)fields\* $(OutDir)\fields\
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>

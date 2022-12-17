@@ -37,6 +37,8 @@ void RobotPath::convert(const QString& from, const QString& to)
 
 		replacePoint(i, newpt);
 	}
+
+	units_ = to;
 	
 	blockSignals(save);
 

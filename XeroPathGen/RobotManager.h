@@ -35,7 +35,6 @@ public:
 
 	std::shared_ptr<RobotParams> getRobotByName(const QString& name);
 	std::shared_ptr<RobotParams> getDefaultRobot();
-	void convert(const QString& units);
 
 	bool add(std::shared_ptr<RobotParams> robot);
 	bool save(std::shared_ptr<RobotParams> robot);

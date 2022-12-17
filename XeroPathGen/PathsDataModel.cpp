@@ -10,6 +10,7 @@ PathsDataModel::PathsDataModel(GenerationMgr& genmgr) : gen_mgr_(genmgr)
 {
 	reset();
 	gen_type_ = GeneratorType::CheesyPoofs;
+	default_units_ = "m";
 }
 
 PathsDataModel::~PathsDataModel()
@@ -278,7 +279,7 @@ bool PathsDataModel::load(const QString& filename, QString& msg)
 		}
 	}
 
-	if (version > 2)
+	if (version > 3)
 	{
 		//
 		// When we create a version 2, here is where the logic will go to read both version 1 and version 2 files.
@@ -299,9 +300,10 @@ bool PathsDataModel::load(const QString& filename, QString& msg)
 	if (units_.length() == 0) {
 		//
 		// Older versions of the file did not store units in the paths file.  This is a
-		// problem, but since most of our recent path files are in meters, we assume meters.
+		// problem so we set the units to the default.  For now the default is meters, but eventually
+		// we want to make this user editable
 		//
-		units_ = "m";
+		units_ = default_units_;
 	}
 
 	if (obj.contains(RobotPath::OutputTag))
@@ -441,7 +443,8 @@ QJsonObject PathsDataModel::modelToObject()
 		a.append(grobj);
 	}
 
-	obj[RobotPath::VersionTag] = "2";
+	obj[RobotPath::VersionTag] = "3";
+	obj[RobotPath::UnitsTag] = units_;
 	obj[RobotPath::OutputTag] = path_output_dir_;
 	obj[RobotPath::GroupsTag] = a;
 
@@ -457,6 +460,8 @@ void PathsDataModel::convert(const QString& units)
 			}
 		}
 
+		distances_.clear();
+		splines_.clear();
 		units_ = units;
 	}
 }

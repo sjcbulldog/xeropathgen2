@@ -27,8 +27,13 @@ private:
 	void addDistanceVelocityConstraint();
 	void deleteConstraint();
 
+	void constraintDoubleClicked(QTreeWidgetItem* item, int column);
+	void addConstraintToTree(std::shared_ptr<PathConstraint> c);
+
 private:
+	int index_;
 	std::shared_ptr<RobotPath> path_;
 	QTreeWidgetItem* menuItem_;
+	QMap<int, std::shared_ptr<PathConstraint>> constraint_index_map_;
 };
 

@@ -127,18 +127,16 @@ public:
 		emitPathChangedSignal();
 	}
 
-	void deleteConstraint(const QString& text) {
-		auto it = constraints_.begin();
-		while (it != constraints_.end()) {
-			if ((*it)->toString() == text) {
-				break;
-			}
-		}
-
+	void deleteConstraint(std::shared_ptr<PathConstraint> c) {
+		auto it = std::find(constraints_.begin(), constraints_.end(), c);
 		if (it != constraints_.end()) {
 			constraints_.erase(it);
 			emitPathChangedSignal();
 		}
+	}
+
+	void constraintChanged() {
+		emitPathChangedSignal();
 	}
 
 	const QVector<std::shared_ptr<PathConstraint>>& constraints() const {

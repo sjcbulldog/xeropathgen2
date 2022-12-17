@@ -1,22 +1,24 @@
-- Icon
-- Installer
-
 - Swerve Path Generator
+- Remember node list for plot window
+- Remember if constraint window was visible
+- Generator Type
+  o  Set in Path Win
+  o  Store in path data file
 
+- Double click constraint edit					Done
+- Icon											Done
+- Installer										Done
 - Docking Graph Window
   o  Zoom										Done
   o  Pan										Done
-
 - Velocity Constraints
   o Editor										Done
   o Serialization								Done
   o Test in generation							Done
-
 - Centripetal Constraints
   o Editor										Done
   o Serialization								Done
   o Test in generation							Done
-
 - Path Parameters Window						Done
 - Fields Menu									Done
 - Robots Menu									Done

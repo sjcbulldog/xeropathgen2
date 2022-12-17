@@ -18,6 +18,11 @@ public:
 		maxcen_ = maxcen;
 	}
 
+	void setMaxCenForce(double c) {
+		maxcen_ = c;
+		path()->constraintChanged();
+	}
+
 	double getMaxVelocity(const Pose2dWithTrajectory& state, std::shared_ptr<RobotParams> robot) override {
 		//
 		// The conastraint value is in Newtons.  To compute a velocity, we need to convert the units to the
