@@ -6,6 +6,7 @@
 
 enum class GeneratorType
 {
+	None,
 	CheesyPoofs,
 	ErrorCodeXeroSwerve
 };
@@ -31,4 +32,30 @@ inline QVector<GeneratorDescriptor> getGeneratorTypes()
 	ret.push_back(GeneratorDescriptor(GeneratorType::ErrorCodeXeroSwerve, "errorcodexeroswerve", "Error Code Xero Swerve Drive Generator"));
 
 	return ret;
+}
+
+inline GeneratorType keyToType(const QString& key)
+{
+	for (const auto& desc : getGeneratorTypes())
+	{
+		if (desc.jsonKey_ == key)
+		{
+			return desc.type_;
+		}
+	}
+
+	return GeneratorType::None;
+}
+
+inline QString typeToKey(GeneratorType type)
+{
+	for (const auto& desc : getGeneratorTypes())
+	{
+		if (desc.type_ == type)
+		{
+			return desc.jsonKey_;
+		}
+	}
+
+	return "";
 }

@@ -11,6 +11,7 @@ PathsDataModel::PathsDataModel(GenerationMgr& genmgr) : gen_mgr_(genmgr)
 	reset();
 	gen_type_ = GeneratorType::CheesyPoofs;
 	default_units_ = "m";
+	gen_type_ = GeneratorType::None;
 }
 
 PathsDataModel::~PathsDataModel()
@@ -306,6 +307,20 @@ bool PathsDataModel::load(const QString& filename, QString& msg)
 		units_ = default_units_;
 	}
 
+	if (obj.contains(RobotPath::GeneratorTag))
+	{
+		QJsonValue vobj = obj[RobotPath::GeneratorTag];
+		if (vobj.isString())
+		{
+			gen_type_ = keyToType(vobj.toString());
+		}
+	}
+
+	if (gen_type_ == GeneratorType::None)
+	{
+		gen_type_ = GeneratorType::ErrorCodeXeroSwerve;
+	}
+
 	if (obj.contains(RobotPath::OutputTag))
 	{
 		QJsonValue vobj = obj[RobotPath::OutputTag];
@@ -445,6 +460,7 @@ QJsonObject PathsDataModel::modelToObject()
 
 	obj[RobotPath::VersionTag] = "3";
 	obj[RobotPath::UnitsTag] = units_;
+	obj[RobotPath::GeneratorTag] = typeToKey(gen_type_);
 	obj[RobotPath::OutputTag] = path_output_dir_;
 	obj[RobotPath::GroupsTag] = a;
 

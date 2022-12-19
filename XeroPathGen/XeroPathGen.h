@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Logger.h"
+#include "LoggerWindow.h"
 #include "GameFieldManager.h"
 #include "RobotManager.h"
 #include "PathFieldView.h"
@@ -24,7 +26,7 @@ class XeroPathGen : public QMainWindow
     Q_OBJECT
 
 public:
-    XeroPathGen(RobotManager &robots, GameFieldManager &fields, std::ofstream& ostrm, std::stringstream& sstrmm, QWidget *parent = nullptr);
+    XeroPathGen(RobotManager &robots, GameFieldManager &fields, std::stringstream& sstrmm, QWidget *parent = nullptr);
     ~XeroPathGen();
 
 private:
@@ -60,6 +62,7 @@ private:
     static constexpr const char* GeometrySetting = "geometry";
     static constexpr const char* WindowStateSetting = "windowState";
     static constexpr const char* PlotWindowSplitterSize = "plotWindowSplitterSize";
+    static constexpr const char* PlotWindowNodeList = "plotWindowNodeList";
 
 private:
     void setDefaultField();
@@ -90,10 +93,6 @@ private:
 
     void setUnits(const QString &);
     void mouseMoved(Translation2d pos);
-
-    void addLogMessage(const QString& msg) {
-        logMessages_.push_back(msg.trimmed());
-    }
 
     void waypointSelected(size_t index);
     void waypointStartMoving(size_t index);
@@ -140,7 +139,6 @@ private:
     std::shared_ptr<GameField> current_field_;
     std::shared_ptr<RobotParams> current_robot_;
 
-    std::ofstream& logstream_;
     std::stringstream& strstream_;
 
     // Windows
@@ -150,7 +148,7 @@ private:
     WaypointWindow* waypoint_win_;
     PlotWindow* plot_win_;
     ConstraintEditorWindow* constraint_win_;
-
+    LoggerWindow* logwin_;
 
     // Docking windows
     QDockWidget* dock_path_win_;
@@ -158,6 +156,7 @@ private:
     QDockWidget* dock_waypoint_win_;
     QDockWidget* dock_plot_win_;
     QDockWidget* dock_constraint_win_;
+    QDockWidget* dock_logwin_;
 
     // Menus
     QMenu* file_menu_;
@@ -183,9 +182,9 @@ private:
     QLabel* path_filename_;
     QLabel* path_gendir_;
 
-    QStringList logMessages_;
     RecentFiles* recents_;
     RecentFiles* project_recents_;
 
     bool project_mode_;
+    Logger logger_;
 };

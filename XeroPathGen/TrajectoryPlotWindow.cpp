@@ -3,16 +3,70 @@
 #include <QtCore/QMimeData>
 #include <QtCharts/QLineSeries>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QMenu>
 
 TrajectoryPlotWindow::TrajectoryPlotWindow(const QVector<QString>& varnames, QWidget* parent) : QChartView(parent), varnames_(varnames)
 {
-	// setRenderHint(QPainter::Antialiasing);
 	setRubberBand(QChartView::NoRubberBand);
 	chart()->setAnimationOptions(QChart::NoAnimation);
 	chart()->setDropShadowEnabled(true);
 
+	setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, &TrajectoryPlotWindow::customContextMenuRequested, this, &TrajectoryPlotWindow::prepareCustomMenu);
+
 	time_axis_ = nullptr;
 	left_right_ = true;
+}
+
+void TrajectoryPlotWindow::setNodeList(const QStringList& list)
+{
+	removeAll();
+	if (group_ != nullptr) {
+		for (const QString& node : list) {
+			insertNode(node);
+		}
+	}
+}
+
+void TrajectoryPlotWindow::prepareCustomMenu(const QPoint& pos)
+{
+	QMenu menu(this);
+	QAction* act;
+
+	//
+	// This is a group item: delete group, add path
+	//
+	act = new QAction(tr("Remove All"));
+	connect(act, &QAction::triggered, this, &TrajectoryPlotWindow::removeAll);
+	menu.addAction(act);
+
+	for (const QString& node : nodes_) {
+		act = new QAction("Remove '" + node + "'");
+		connect(act, &QAction::triggered, [this, node]() { this->removeOne(node); });
+		menu.addAction(act);
+	}
+
+	menu.exec(this->mapToGlobal(pos));
+}
+
+void TrajectoryPlotWindow::removeOne(const QString &node)
+{
+	if (nodes_.contains(node))
+	{
+		nodes_.removeAll(node);
+		for (auto series : chart()->series()) {
+			if (series->name() == node) {
+				chart()->removeSeries(series);
+				break;
+			}
+		}
+	}
+}
+
+void TrajectoryPlotWindow::removeAll()
+{
+	nodes_.clear();
+	clear();
 }
 
 void TrajectoryPlotWindow::keyPressEvent(QKeyEvent* event)
@@ -211,6 +265,8 @@ QValueAxis* TrajectoryPlotWindow::createYAxis(const QString &node)
 		}
 		else if (type == AxisType::Angle) {
 			axis->setTitleText("angle (degrees)");
+			axis->setMin(-180.0);
+			axis->setMax(180.0);
 		}
 		else if (type == AxisType::Curvature) {
 			axis->setTitleText("curvature");
@@ -261,6 +317,7 @@ void TrajectoryPlotWindow::insertNode(const QString& node)
 	if (nodes_.contains(node))
 		return;
 
+	setupLegend();
 	nodes_.push_back(node);
 
 	int index = node.indexOf('-');
@@ -303,4 +360,6 @@ void TrajectoryPlotWindow::insertNode(const QString& node)
 	chart()->addSeries(series);
 	series->attachAxis(time_axis_);
 	series->attachAxis(axis);
+
+	axis->applyNiceNumbers();
 }

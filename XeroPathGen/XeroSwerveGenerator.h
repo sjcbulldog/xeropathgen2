@@ -9,16 +9,24 @@
 #include "CheesyGenerator.h"
 #include <QtCore/QVector>
 
-class XeroSwerveGenerator
+class XeroSwerveGenerator : public CheesyGenerator
 {
 public:
 	XeroSwerveGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot);
 	virtual ~XeroSwerveGenerator();
 
-	std::shared_ptr<PathTrajectory> generate(const QVector<Pose2dWithRotation>& waypoints, const QVector<std::shared_ptr<PathConstraint>>& constraints,
-		double startvel, double endvel, double maxvel, double maxaccel, double maxjerk);
+	std::shared_ptr<PathTrajectory> generate(std::shared_ptr<RobotPath> path);
 
 private:
-	CheesyGenerator* cheesy_gen_;
+	QVector<double> generateDistances(const QVector<std::shared_ptr<SplinePair>> &splines);
+
+	bool isSegmentValid(std::shared_ptr<PathTrajectory> traj, double start, double end);
+	void adjustConstraints(QVector<std::shared_ptr<PathConstraint>>& constraints, const QVector<bool>& segvalid);
+
+	double linearToRotational(double value);
+
+private:
+	double rot_max_accel_;
+	double rot_max_velocity_;
 };
 

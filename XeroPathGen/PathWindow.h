@@ -32,7 +32,6 @@ private:
 	void addPath();
 	void deletePath();
 	void changePathUnits();
-	void setGeneratorType();
 
 	QString newGroupName();
 	QString newPathName(const QString& grname);

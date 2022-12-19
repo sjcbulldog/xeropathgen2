@@ -20,8 +20,8 @@
 
 XeroPathGen* XeroPathGen::theOne = nullptr;
 
-XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::ofstream& ostrm, std::stringstream& sstrmm, QWidget *parent)
-			: QMainWindow(parent), robots_(robots), fields_(fields), logstream_(ostrm), strstream_(sstrmm), paths_data_model_(generator_)
+XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::stringstream& sstrmm, QWidget *parent)
+			: QMainWindow(parent), robots_(robots), fields_(fields), strstream_(sstrmm), paths_data_model_(generator_)
 {
 	theOne = this;
 
@@ -36,12 +36,14 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::of
 	waypoint_win_ = nullptr;
 	plot_win_ = nullptr;
 	constraint_win_ = nullptr;
+	logwin_ = nullptr;
 
 	dock_path_params_win_ = nullptr;
 	dock_path_win_ = nullptr;
 	dock_waypoint_win_ = nullptr;
 	dock_plot_win_ = nullptr;
 	dock_constraint_win_ = nullptr;
+	dock_logwin_ = nullptr;
 
 	createWindows();
 	createMenus();
@@ -124,10 +126,21 @@ bool XeroPathGen::createWindows()
 
 	plot_win_ = new PlotWindow(nullptr, sizes);
 	dock_plot_win_ = new QDockWidget(tr("Plot"));
+	dock_plot_win_->setObjectName("plot");
 	dock_plot_win_->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
 	dock_plot_win_->setWidget(plot_win_);
 	addDockWidget(Qt::BottomDockWidgetArea, dock_plot_win_);
 	dock_plot_win_->hide();
+
+	if (settings_.contains(PlotWindowNodeList)) {
+		QStringList list;
+		QList<QVariant> stored = settings_.value(PlotWindowNodeList).toList();
+		for (const QVariant& v : stored) {
+			list.push_back(v.toString());
+		}
+		plot_win_->setNodeList(list);
+	}
+
 
 	path_edit_win_ = new PathFieldView(paths_data_model_, nullptr);
 	connect(path_edit_win_, &PathFieldView::mouseMoved, this, &XeroPathGen::mouseMoved);
@@ -139,6 +152,7 @@ bool XeroPathGen::createWindows()
 
 	path_win_ = new PathWindow(paths_data_model_, nullptr);
 	dock_path_win_ = new QDockWidget(tr("Paths"));
+	dock_path_win_->setObjectName("paths");
 	dock_path_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	dock_path_win_->setWidget(path_win_);
 	addDockWidget(Qt::RightDockWidgetArea, dock_path_win_);
@@ -146,22 +160,34 @@ bool XeroPathGen::createWindows()
 
 	path_params_win_ = new PathParametersWindow(nullptr);
 	dock_path_params_win_ = new QDockWidget(tr("Path Parameters"));
+	dock_path_params_win_->setObjectName("path-params");
 	dock_path_params_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	dock_path_params_win_->setWidget(path_params_win_);
 	addDockWidget(Qt::RightDockWidgetArea, dock_path_params_win_);
 
 	waypoint_win_ = new WaypointWindow(nullptr);
 	dock_waypoint_win_ = new QDockWidget(tr("Waypoint"));
+	dock_waypoint_win_->setObjectName("waypoint");
 	dock_waypoint_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	dock_waypoint_win_->setWidget(waypoint_win_);
 	addDockWidget(Qt::RightDockWidgetArea, dock_waypoint_win_);
 
 	constraint_win_ = new ConstraintEditorWindow(nullptr);
 	dock_constraint_win_ = new QDockWidget(tr("Constraints"));
+	dock_constraint_win_->setObjectName("constraints");
 	dock_constraint_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
 	dock_constraint_win_->setWidget(constraint_win_);
 	addDockWidget(Qt::BottomDockWidgetArea, dock_constraint_win_);
 	dock_constraint_win_->hide();
+
+	logwin_ = new LoggerWindow(nullptr);
+	dock_logwin_ = new QDockWidget(tr("LogWindow"));
+	dock_logwin_->setObjectName("loginw");
+	dock_logwin_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+	dock_logwin_->setWidget(logwin_);
+	addDockWidget(Qt::BottomDockWidgetArea, dock_logwin_);
+	dock_logwin_->hide();
+	logger_.setLogWindow(logwin_);
 
 	return true;
 }
@@ -214,6 +240,7 @@ bool XeroPathGen::createMenus()
 	window_menu_->addAction(dock_path_params_win_->toggleViewAction());
 	window_menu_->addAction(dock_constraint_win_->toggleViewAction());
 	window_menu_->addAction(dock_plot_win_->toggleViewAction());
+	window_menu_->addAction(dock_logwin_->toggleViewAction());
 
 	help_menu_ = new QMenu(tr("&Help"));
 	menuBar()->addMenu(help_menu_);
@@ -666,7 +693,29 @@ void XeroPathGen::updateAllPaths(bool wait)
 
 void XeroPathGen::messageLogger(QtMsgType type, const QMessageLogContext& context, const QString& msg)
 {
-	theOne->addLogMessage(msg);
+	const char* file = context.file ? context.file : "";
+	const char* function = context.function ? context.function : "";
+	QString complete;
+
+	switch (type) {
+	case QtDebugMsg:
+		complete += "Debug: ";
+		break;
+	case QtInfoMsg:
+		complete += "Info: ";
+		break;
+	case QtWarningMsg:
+		complete += "Warning: ";
+		break;
+	case QtCriticalMsg:
+		complete += "Critical: ";
+		break;
+	case QtFatalMsg:
+		complete += "Error: ";
+		break;
+	}
+	complete += msg;
+	theOne->logger_.addMessage(complete);
 }
 
 void XeroPathGen::closeEvent(QCloseEvent* ev)
@@ -701,8 +750,15 @@ void XeroPathGen::closeEvent(QCloseEvent* ev)
 	for (auto size : plot_win_->getSplitterPosition()) {
 		param.push_back(QVariant(size));
 	}
-
 	settings_.setValue(PlotWindowSplitterSize, param);
+
+	param.clear();
+	const QStringList& list = plot_win_->nodeList();
+	for (const QString& node : list) {
+		param.push_back(QVariant(node));
+	}
+	settings_.setValue(PlotWindowNodeList, param);
+
 	QMainWindow::closeEvent(ev);
 }
 
@@ -710,14 +766,14 @@ void XeroPathGen::showEvent(QShowEvent* ev)
 {
 	QMainWindow::showEvent(ev);
 
-	// qInstallMessageHandler(messageLogger);
+	qInstallMessageHandler(messageLogger);
 
 	std::string line;
 	while (std::getline(strstream_, line))
 	{
 		QString qline = QString::fromStdString(line);
 		qline = qline.trimmed();
-		this->addLogMessage(qline);
+		logger_.addMessage(qline);
 	}
 }
 
@@ -1047,10 +1103,10 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 	}
 	else
 	{
-		elength = robot->getEffectiveLength();
-		ewidth = robot->getEffectiveWidth();
-		rlength = robot->getRobotLength();
-		rwidth = robot->getRobotWidth();
+		elength = robot->getWheelBaseLength();
+		ewidth = robot->getWheelBaseWidth();
+		rlength = robot->getBumberLength();
+		rwidth = robot->getBumberWidth();
 		rweight = robot->getRobotWeight();
 		velocity = robot->getMaxVelocity();
 		accel = robot->getMaxAccel();
@@ -1187,10 +1243,10 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		if (create)
 			robot = std::make_shared<RobotParams>(model.getProperty(RobotDialogName)->getValue().toString());
 
-		robot->setEffectiveWidth(ewidth);
-		robot->setEffectiveLength(elength);
-		robot->setRobotWidth(rwidth);
-		robot->setRobotLength(rlength);
+		robot->setWheelBaseWidth(ewidth);
+		robot->setWheelBaseLength(elength);
+		robot->setBumberWidth(rwidth);
+		robot->setBumberLength(rlength);
 		robot->setRobotWeight(rweight);
 		robot->setMaxVelocity(velocity);
 		robot->setMaxAcceleration(accel);

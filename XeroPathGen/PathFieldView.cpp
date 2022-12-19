@@ -764,8 +764,8 @@ void PathFieldView::setRobot(std::shared_ptr<RobotParams> params)
 	robot_ = params;
 
 	if (robot_ != nullptr) {
-		robot_width_ = UnitConverter::convert(robot_->getRobotWidth(), robot_->getLengthUnits(), units_);
-		robot_length_ = UnitConverter::convert(robot_->getRobotLength(), robot_->getLengthUnits(), units_);
+		robot_width_ = UnitConverter::convert(robot_->getBumberWidth(), robot_->getLengthUnits(), units_);
+		robot_length_ = UnitConverter::convert(robot_->getBumberLength(), robot_->getLengthUnits(), units_);
 		drive_type_ = robot_->getDriveType();
 	}
 	else {

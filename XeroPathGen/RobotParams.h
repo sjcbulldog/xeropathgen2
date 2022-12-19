@@ -118,27 +118,27 @@ public:
 		length_units_ = units;
 	}
 
-	double getEffectiveWidth() const {
+	double getWheelBaseWidth() const {
 		return ewidth_;
 	}
 
-	void setEffectiveWidth(double v) {
+	void setWheelBaseWidth(double v) {
 		ewidth_ = v;
 	}
 
-	double getEffectiveLength() const {
+	double getWheelBaseLength() const {
 		return elength_;
 	}
 
-	void setEffectiveLength(double v) {
+	void setWheelBaseLength(double v) {
 		elength_ = v;
 	}
 
-	double getRobotWidth() const {
+	double getBumberWidth() const {
 		return rwidth_;
 	}
 
-	void setRobotWidth(double v) {
+	void setBumberWidth(double v) {
 		rwidth_ = v;
 	}
 
@@ -150,11 +150,11 @@ public:
 		weight_ = v;
 	}
 
-	double getRobotLength() const {
+	double getBumberLength() const {
 		return rlength_;
 	}
 
-	void setRobotLength(double v) {
+	void setBumberLength(double v) {
 		rlength_ = v;
 	}
 

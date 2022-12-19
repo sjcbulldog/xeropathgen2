@@ -6,9 +6,8 @@
 #include "TrajectoryNames.h"
 #include "TrajectoryUtils.h"
 #include "RobotParams.h"
+#include "TrapezoidalProfile.h"
 #include <cmath>
-
-using namespace xero::paths;
 
 CheesyGenerator::CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot)
 {
@@ -251,31 +250,36 @@ QVector<Pose2dWithTrajectory> CheesyGenerator::convertToUniformTime(const QVecto
 }
 
 std::shared_ptr<PathTrajectory> 
-CheesyGenerator::generate(const QVector<Pose2dWithRotation>& waypoints, const QVector<std::shared_ptr<PathConstraint>>& constraints,
-	double startvel, double endvel, double maxvel, double maxaccel, double maxjerk)
+CheesyGenerator::generateInternal(std::shared_ptr<RobotPath> path, double maxvel)
 {
+	double maxDxPath = UnitConverter::convert(maxDx_, robot_->getLengthUnits(), path->units());
+	double maxDyPath = UnitConverter::convert(maxDy_, robot_->getLengthUnits(), path->units());
+	double distSteppath = UnitConverter::convert(diststep_, robot_->getLengthUnits(), path->units());
+
 	//
 	// Step 1: generate a set of splines that represent the path
 	//         (taken from the cheesy poofs code)
 	//
-	QVector<std::shared_ptr<SplinePair>> splines = generateSplines(waypoints);
+	QVector<std::shared_ptr<SplinePair>> splines = generateSplines(path->waypoints());
 
 	//
 	// Step 2: generate a set of points that represent the path where the curvature, x, and y do not 
 	//         differ to an amount greater than maxDx_, maxDy_, maxDTheta_
 	//         (taken from the cheesy poofs code)
 	//
-	QVector<Pose2dWithRotation> paramtraj = TrajectoryUtils::parameterize(splines, maxDx_, maxDy_, maxDTheta_);
+	QVector<Pose2dWithRotation> paramtraj = TrajectoryUtils::parameterize(splines, maxDxPath, maxDyPath, maxDTheta_);
 
 	//
 	// Step 3: generate a set of points that are equi-distant apart (diststep_).
 	//
-	DistanceView distview(paramtraj, diststep_);
+	DistanceView distview(paramtraj, distSteppath);
 
 	//
 	// Step 4: generate a timing view that meets the constraints of the system
 	//
-	QVector<Pose2dWithTrajectory> pts = timeParameterize(distview, constraints, startvel, endvel, maxvel, maxaccel);
+	const PathParameters& params = path->params();
+	QVector<Pose2dWithTrajectory> pts = timeParameterize(distview, path->constraints(), params.startVelocity(),
+										params.endVelocity(), maxvel, params.maxAccel());
 
 	//
 	// Step 5: convert the timeview view to a uniform timeing view
@@ -288,3 +292,315 @@ CheesyGenerator::generate(const QVector<Pose2dWithRotation>& waypoints, const QV
 	return std::make_shared<PathTrajectory>(TrajectoryName::Main, uniform);
 }
 
+size_t CheesyGenerator::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc)
+{
+	static double tol = 0.05;
+
+	for (size_t i = start; i < traj->size(); i++)
+	{
+		auto pt = (*traj)[i];
+		if (std::abs(pt.x() - loc.getX()) < tol && std::abs(pt.y() - loc.getY()) < tol)
+		{
+			return i;
+		}
+	}
+
+	return std::numeric_limits<size_t>::max();
+}
+
+QVector<QPair<size_t, double>> CheesyGenerator::getRotationTransitions(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj)
+{
+	QVector<std::pair<size_t, double>> ret;
+	size_t index = 0;
+
+	if (traj) {
+		for (int i = 0; i < path->size(); i++)
+		{
+			const Pose2dWithRotation& pose = path->getPoint(i);
+			size_t which = findIndexFromLocation(traj, index, pose.getTranslation());
+			if (which == std::numeric_limits<size_t>::max()) {
+				//
+				// Something failed, signal the caller
+				//
+				return QVector<std::pair<size_t, double>>();
+			}
+
+			ret.push_back(QPair<size_t, double>(which, pose.swrot().toDegrees()));
+
+			index = which + 1;
+		}
+	}
+
+	return ret;
+}
+
+Translation2d CheesyGenerator::getWheelPerpendicularVector(Wheel w, double magnitude)
+{
+	double dx = 0.0, dy = 0.0;
+
+	switch (w)
+	{
+	case Wheel::FL:
+		dx = robot_length_ / 2.0;
+		dy = robot_width_ / 2.0;
+		break;
+
+	case Wheel::FR:
+		dx = robot_length_ / 2.0;
+		dy = -robot_width_ / 2.0;
+		break;
+
+	case Wheel::BL:
+		dx = -robot_length_ / 2.0;
+		dy = robot_width_ / 2.0;
+		break;
+
+	case Wheel::BR:
+		dx = -robot_length_ / 2.0;
+		dy = -robot_width_ / 2.0;
+		break;
+	}
+
+	double dist = std::sqrt(dx * dx + dy * dy);
+	Translation2d pt(-dy / dist * magnitude, dx / dist * magnitude);
+	return pt;
+}
+
+bool CheesyGenerator::modifyForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent)
+{
+	std::shared_ptr<TrapezoidalProfile> tp;
+	QVector<Pose2dWithTrajectory> flpts, frpts, blpts, brpts;
+	bool first = true;
+
+	Translation2d prevfl, prevfr, prevbl, prevbr;
+	double fldist = 0, frdist = 0, bldist = 0, brdist = 0;
+
+	//
+	// Get the indexes in the trajectory where the rotation of the swerve must change
+	//
+	QVector<QPair<size_t, double>> rotpoints = getRotationTransitions(path, traj);
+
+	size_t rotindex = 0;
+	double startrotangle = 0.0;			// Starting angle for this segment of rotation
+	double startrottime = 0.0;			// Starting time for this segment of rotation
+
+	for (size_t i = 0; i < traj->size(); i++)
+	{
+		const Pose2dWithTrajectory& pt = (*traj)[i];
+		double time = pt.time();
+
+		Rotation2d angle;
+
+		//
+		// Compute the desired angle at the current point on the trajectory
+		//
+		if (tp == nullptr)
+		{
+			//
+			// We need a rotational profile to move us from the current point to the
+			// next point in the rotpoints vector.  This is a vector of trajectory indices
+			// and an associated angle.  If this is entry 0 or N - 1, we must also account for
+			// the start and end delay
+			//
+			double duration;
+			double diff;
+
+			if (rotindex >= rotpoints.size() - 1)
+			{
+				duration = traj->getEndTime() - time;
+				diff = 0.0;
+				startrotangle = rotpoints[rotpoints.size() - 1].second;
+			}
+			else
+			{
+				duration = (*traj)[rotpoints[rotindex + 1].first].time() - (*traj)[rotpoints[rotindex].first].time();
+				diff = rotpoints[rotindex + 1].second - rotpoints[rotindex].second;
+				startrotangle = rotpoints[rotindex].second;
+			}
+
+			double accel = TrajectoryUtils::linearToRotational(robot_, path->params().maxAccel() * percent);
+			double maxvel = TrajectoryUtils::linearToRotational(robot_, path->params().maxVelocity() * percent);
+
+			if (diff > 180.0)
+				diff -= 360.0;
+			else if (diff <= -180.0)
+				diff += 360.0;
+
+			tp = std::make_shared<TrapezoidalProfile>(accel, -accel, maxvel);
+			if (!tp->update(diff, 0.0, 0.0))
+				return false;
+
+			if (tp->getTotalTime() > duration)
+				return false;
+
+			startrottime = time;
+		}
+
+		if (rotindex == rotpoints.size() - 1)
+		{
+			angle = Rotation2d::fromDegrees(rotpoints[rotpoints.size() - 1].second);
+		}
+		else
+		{
+			angle = Rotation2d::fromDegrees(MathUtils::boundDegrees(startrotangle + tp->getDistance(time - startrottime)));
+		}
+
+		//
+		// This is the linear velocity needed to rotate the robot per the
+		// rotational speed profile.  This needs to be combined with the
+		// translational velocity to set the final velocity for each wheel
+		//
+		double rv = TrajectoryUtils::rotationalToLinear(robot_, tp->getVelocity(time));
+
+		//
+		// This is the linear acceleration needed to rotate the robot per the
+		// rotational speed profile.  This needs to be combined with the
+		// translational acceleration to set the final acceleration for each wheel.
+		//
+		double ra = TrajectoryUtils::rotationalToLinear(robot_, tp->getAccel(time));
+
+		Translation2d rotflvel = getWheelPerpendicularVector(Wheel::FL, rv).rotateBy(angle);
+		Translation2d rotfrvel = getWheelPerpendicularVector(Wheel::FR, rv).rotateBy(angle);
+		Translation2d rotblvel = getWheelPerpendicularVector(Wheel::BL, rv).rotateBy(angle);
+		Translation2d rotbrvel = getWheelPerpendicularVector(Wheel::BR, rv).rotateBy(angle);
+
+		if (rotflvel.normalize() > robot_max_velocity_)
+			return false;
+
+		if (rotfrvel.normalize() > robot_max_velocity_)
+			return false;
+
+		if (rotblvel.normalize() > robot_max_velocity_)
+			return false;
+
+		if (rotbrvel.normalize() > robot_max_velocity_)
+			return false;
+
+		Translation2d rotflacc = getWheelPerpendicularVector(Wheel::FL, ra).rotateBy(angle);
+		Translation2d rotfracc = getWheelPerpendicularVector(Wheel::FR, ra).rotateBy(angle);
+		Translation2d rotblacc = getWheelPerpendicularVector(Wheel::BL, ra).rotateBy(angle);
+		Translation2d rotbracc = getWheelPerpendicularVector(Wheel::BR, ra).rotateBy(angle);
+
+		if (rotflacc.normalize() > robot_max_accel_)
+			return false;
+
+		if (rotfracc.normalize() > robot_max_accel_)
+			return false;
+
+		if (rotblacc.normalize() > robot_max_accel_)
+			return false;
+
+		if (rotbracc.normalize() > robot_max_accel_)
+			return false;
+
+		Rotation2d heading = pt.rotation();
+		Translation2d pathvel = Translation2d(heading, pt.velocity()).rotateBy(Rotation2d::fromDegrees(-angle.toDegrees()));
+		Translation2d pathacc = Translation2d(heading, pt.acceleration()).rotateBy(Rotation2d::fromDegrees(-angle.toDegrees()));
+
+		Translation2d flv = rotflvel + pathvel;
+		Translation2d frv = rotfrvel + pathvel;
+		Translation2d blv = rotblvel + pathvel;
+		Translation2d brv = rotbrvel + pathvel;
+
+		Translation2d fla = rotflacc + pathacc;
+		Translation2d fra = rotfracc + pathacc;
+		Translation2d bla = rotblacc + pathacc;
+		Translation2d bra = rotbracc + pathacc;
+
+		Translation2d flpos = Translation2d(robot_length_ / 2.0, robot_width_ / 2.0).rotateBy(angle).translateBy(pt.translation());
+		Translation2d frpos = Translation2d(robot_length_ / 2.0, -robot_width_ / 2.0).rotateBy(angle).translateBy(pt.translation());
+		Translation2d blpos = Translation2d(-robot_length_ / 2.0, robot_width_ / 2.0).rotateBy(angle).translateBy(pt.translation());
+		Translation2d brpos = Translation2d(-robot_length_ / 2.0, -robot_width_ / 2.0).rotateBy(angle).translateBy(pt.translation());
+
+		if (!first)
+		{
+			fldist += flpos.distance(prevfl);
+			frdist += frpos.distance(prevfr);
+			bldist += blpos.distance(prevbl);
+			brdist += brpos.distance(prevbr);
+		}
+		else
+		{
+			first = false;
+		}
+
+		Pose2d flpose(flpos, flv.toRotation());
+		Pose2dWithTrajectory fltraj(flpose, time, fldist, flv.normalize(), fla.normalize(), 0.0, 0.0, angle.toDegrees());
+		flpts.push_back(fltraj);
+
+		Pose2d frpose(frpos, frv.toRotation());
+		Pose2dWithTrajectory frtraj(frpose, time, frdist, frv.normalize(), fra.normalize(), 0.0, 0.0, angle.toDegrees());
+		frpts.push_back(frtraj);
+
+		Pose2d blpose(blpos, blv.toRotation());
+		Pose2dWithTrajectory bltraj(blpose, time, bldist, blv.normalize(), bla.normalize(), 0.0, 0.0, angle.toDegrees());
+		blpts.push_back(bltraj);
+
+		Pose2d brpose(brpos, brv.toRotation());
+		Pose2dWithTrajectory brtraj(brpose, time, brdist, brv.normalize(), bra.normalize(), 0.0, 0.0, angle.toDegrees());
+		brpts.push_back(brtraj);
+
+		prevfl = flpos;
+		prevfr = frpos;
+		prevbl = blpos;
+		prevbr = brpos;
+
+		double d = angle.toDegrees();
+		(void)d;
+		(*traj)[i].setSwRotation(angle.toDegrees());
+
+		//
+		// See if we are done with the current profile
+		//
+		if (time - startrottime >= tp->getTotalTime()) {
+			rotindex++;
+			tp = nullptr;
+		}
+	}
+
+	return true;
+}
+
+std::shared_ptr<PathTrajectory>
+CheesyGenerator::generateSwerve(std::shared_ptr<RobotPath> path)
+{
+	std::shared_ptr<PathTrajectory> traj;
+	double percent = 1.0;
+	double maxvel = robot_max_velocity_;
+
+	while (percent > 0.0)
+	{
+		traj = generateInternal(path, percent * maxvel);
+
+		if (modifyForRotation(path, traj, 1.0 - percent)) {
+			break;
+		}
+
+		percent -= 0.01;
+	}
+
+	return (percent <= 0.0) ? nullptr : traj;
+}
+
+std::shared_ptr<PathTrajectory>
+CheesyGenerator::generate(std::shared_ptr<RobotPath> path)
+{
+	double percent = 1.0;
+	std::shared_ptr<PathTrajectory> traj;
+
+	robot_width_ = UnitConverter::convert(robot_->getWheelBaseWidth(), robot_->getLengthUnits(), path->units());
+	robot_length_ = UnitConverter::convert(robot_->getWheelBaseLength(), robot_->getLengthUnits(), path->units());
+	robot_max_velocity_ = UnitConverter::convert(robot_->getMaxVelocity(), robot_->getLengthUnits(), path->units());
+	robot_max_accel_ = UnitConverter::convert(robot_->getMaxAccel(), robot_->getLengthUnits(), path->units());
+
+	if (robot_->getDriveType() == RobotParams::DriveType::TankDrive)
+	{
+		traj = generateInternal(path, robot_max_velocity_);
+	}
+	else
+	{
+		traj = generateSwerve(path);
+	}
+
+	return traj;
+}

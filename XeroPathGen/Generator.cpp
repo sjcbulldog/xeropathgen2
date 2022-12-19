@@ -2,6 +2,7 @@
 #include "RobotPath.h"
 #include "PathGroup.h"
 #include "CheesyGenerator.h"
+#include "XeroSwerveGenerator.h"
 #include "TrajectoryNames.h"
 #include <QtCore/QThread>
 
@@ -14,23 +15,29 @@ Generator::Generator(double timestep, std::shared_ptr<RobotParams> robot, std::s
 
 void Generator::generateTrajectory()
 {
+	auto path = group_->path();
 	std::shared_ptr<PathTrajectory> traj;
 
-	auto path = group_->path();
+	double diststep = UnitConverter::convert(1.0, "in", path->units());			// 1 inch works well, convert to units being used
+	double maxdx = UnitConverter::convert(2.0, "in", path->units());			// 2 inches works well, convert to units being used
+	double maxdy = UnitConverter::convert(0.5, "in", path->units());			// 0.5 inches works well, convert to units being used
+	double maxtheta = 0.1;
+
 	if (group_->type() == GeneratorType::CheesyPoofs) {
-		double diststep = UnitConverter::convert(1.0, "in", path->units());			// 1 inch works well, convert to units being used
-		double maxdx = UnitConverter::convert(2.0, "in", path->units());			// 2 inches works well, convert to units being used
-		double maxdy = UnitConverter::convert(0.5, "in", path->units());			// 0.5 inches works well, convert to units being used
-		double maxtheta = 0.1;														// 0.1 radians works well, we don't convert angles
-
 		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
-		auto traj = gen.generate(path->waypoints(), path->constraints(), path->params().startVelocity(),
-			path->params().endVelocity(), path->params().maxVelocity(), path->params().maxAccel(), 0.0);
+		auto traj = gen.generate(path);
 
-		group_->addTrajectory(traj);
+		if (traj != nullptr) {
+			group_->addTrajectory(traj);
+		}
 	}
 	else if (group_->type() == GeneratorType::ErrorCodeXeroSwerve) {
-		group_->setErrorMessage("generator type 'ErrorCodeXeroSwerve' not supported (yet)");
+		XeroSwerveGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
+		auto traj = gen.generate(path);
+
+		if (traj != nullptr) {
+			group_->addTrajectory(traj);
+		}
 	}
 
 	if (!group_->hasError()) {
@@ -49,7 +56,7 @@ void Generator::addTankDriveTrajectories()
 	//
 	// Get the width of the robot in the same units used by the paths
 	//
-	double width = UnitConverter::convert(robot_->getEffectiveWidth(), robot_->getLengthUnits(), group_->path()->units());
+	double width = UnitConverter::convert(robot_->getWheelBaseWidth(), robot_->getLengthUnits(), group_->path()->units());
 
 	auto traj = group_->getTrajectory(TrajectoryName::Main);
 	if (traj == nullptr) {

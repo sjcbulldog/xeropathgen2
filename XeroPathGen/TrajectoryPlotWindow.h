@@ -13,6 +13,12 @@ public:
 	void clear();
 	void setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group);
 
+	const QStringList& nodeList() const { 
+		return nodes_;  
+	}
+
+	void setNodeList(const QStringList& list);
+
 protected:
 	void dragEnterEvent(QDragEnterEvent* event) override;
 	void dragMoveEvent(QDragMoveEvent* event) override;
@@ -41,6 +47,10 @@ private:
 	QValueAxis* createYAxis(const QString& node);
 	void setupLegend();
 	void setupTimeAxis();
+
+	void prepareCustomMenu(const QPoint& pos);
+	void removeAll();
+	void removeOne(const QString& name);
 
 private:
 	std::shared_ptr<TrajectoryGroup> group_;

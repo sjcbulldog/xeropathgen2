@@ -12,7 +12,6 @@
 #include <thread>
 
 
-std::ofstream logfilestream;
 std::stringstream log2stream;
 
 void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg)
@@ -22,27 +21,21 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
 	const char* function = context.function ? context.function : "";
 	switch (type) {
 	case QtDebugMsg:
-		logfilestream << "Debug: ";
 		log2stream << "Debug: ";
 		break;
 	case QtInfoMsg:
-		logfilestream << "Info: ";
 		log2stream << "Info: ";
 		break;
 	case QtWarningMsg:
-		logfilestream << "Warning: ";
 		log2stream << "Warning: ";
 		break;
 	case QtCriticalMsg:
-		logfilestream << "Critical: ";
 		log2stream << "Critical: ";
 		break;
 	case QtFatalMsg:
-		logfilestream << "Error: ";
 		log2stream << "Error: ";
 		break;
 	}
-	logfilestream << localMsg.constData() << "(" << file << ":" << context.line << ", " << function << std::endl;
 	log2stream << localMsg.constData() << std::endl;
 }
 
@@ -64,40 +57,11 @@ static void pruneLogFiles(QDir& logdir)
 	qDebug() << "Pruning old log files, " << count << "deleted";
 }
 
-static bool createLogFile()
-{
-	QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::AppLocalDataLocation);
-	QString dir = dirs.front();
-	if (dir.length() == 0)
-		return false;
-
-	dir += "/logs";
-	QDir logdir(dir);
-	if (!logdir.exists())
-	{
-		if (!QDir().mkpath(dir))
-			return false;
-	}
-
-	QDateTime now = QDateTime::currentDateTime();
-	QString log = dir + "/" + now.toString("dd_MM_yyyy_hh_mm_ss_zzz.'log'");
-	logfilestream.open(log.toStdString());
-
-	log = "Version";
-	log += " " + QString::number(XERO_MAJOR_VERSION);
-	log += "." + QString::number(XERO_MINOR_VERSION);
-	log += "." + QString::number(XERO_MICRO_VERSION);
-	log += "." + QString::number(XERO_BUILD_VERSION);
-	logfilestream.open(log.toStdString());
-
-	pruneLogFiles(logdir);
-
-	return true;
-}
-
-
 int main(int argc, char *argv[])
 {
+	qInstallMessageHandler(myMessageOutput);
+	qDebug() << "starting XeroPathGen";
+
 	QCoreApplication::setOrganizationName("ErrorCodeXero");
 	QCoreApplication::setOrganizationDomain("www.wilsonvillerobotics.com");
 	QCoreApplication::setApplicationName("XeroPathGenerator");
@@ -119,13 +83,6 @@ int main(int argc, char *argv[])
 	splash.show();
 	splash.showMessage("Initializing ...");
 	a.processEvents();
-
-	if (createLogFile())
-	{
-		QDateTime now = QDateTime::currentDateTime();
-		qInstallMessageHandler(myMessageOutput);
-		qDebug() << "Starting Xero Path Generator, " << now.toString("dd/MM/yyyy @ hh:mm:ss");
-	}
 
 	QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::AppLocalDataLocation);
 	QString appdir = dirs.front();
@@ -198,7 +155,7 @@ int main(int argc, char *argv[])
 	robots.dumpSearchPath("Robots");
 
 	try {
-		XeroPathGen w(robots, fields, logfilestream, log2stream);
+		XeroPathGen w(robots, fields, log2stream);
 		w.show();
 		splash.finish(&w);
 		return a.exec();
