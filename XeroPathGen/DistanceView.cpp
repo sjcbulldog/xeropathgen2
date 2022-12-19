@@ -1,4 +1,5 @@
 #include "DistanceView.h"
+#include "TrajectoryUtils.h"
 
 DistanceView::DistanceView(const QVector<Pose2dWithRotation>& points, double step)
 {
@@ -25,8 +26,7 @@ DistanceView::DistanceView(const QVector<Pose2dWithRotation>& points, double ste
 	for (size_t i = 1; i < points_.size(); i++)
 		distances_.push_back(points_[i].distance(points_[i - 1]) + distances_[i - 1]);
 
-	for (int i = 1; i < points_.size() - 1; i++)
-		points_[i].setCurvature(Pose2dWithRotation::curvature(points_[i - 1], points_[i], points_[i + 1]));
+	TrajectoryUtils::computeCurvature(points_);
 
 }
 

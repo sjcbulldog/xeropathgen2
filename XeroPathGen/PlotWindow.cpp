@@ -35,6 +35,13 @@ PlotWindow::PlotWindow(QWidget* parent, QList<int> sizes) : QWidget(parent)
 	left_right_splitter_->addWidget(plot_);
 
 	left_right_splitter_->setSizes(sizes);
+
+	isSplitterPositionValid_ = false;
+}
+
+void PlotWindow::showEvent(QShowEvent*)
+{
+	isSplitterPositionValid_ = true;
 }
 
 QList<int> PlotWindow::getSplitterPosition()

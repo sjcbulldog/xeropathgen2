@@ -3,15 +3,12 @@
 
 Pose2dWithTrajectory Pose2dWithTrajectory::interpolate(const Pose2dWithTrajectory& other, double percent) const
 {
-	Pose2d npose = pose_.interpolate(other.pose(), percent);
+	Pose2dWithRotation npose = pose_.interpolate(other.pose(), percent);
 	double ntime = (other.time() - time()) * percent + time();
 	double npos = (other.position() - position()) * percent + position();
 	double nvel = (other.velocity() - velocity()) * percent + velocity();
 	double nacc = (other.acceleration() - acceleration()) * percent + acceleration();
-	double njerk = (other.jerk() - jerk()) * percent + jerk();
-	double ncurvature = (other.curvature() - curvature()) * percent + curvature();
-	double nrot = (other.swrotation() - swrotation()) * percent + swrotation();
-	return Pose2dWithTrajectory(npose, ntime, npos, nvel, nacc, njerk, ncurvature, nrot);
+	return Pose2dWithTrajectory(npose, ntime, npos, nvel, nacc);
 }
 
 double Pose2dWithTrajectory::getField(const QString& field) const
@@ -46,17 +43,13 @@ double Pose2dWithTrajectory::getField(const QString& field) const
 	{
 		v = acceleration();
 	}
-	else if (field == "jerk")
-	{
-		v = jerk();
-	}
 	else if (field == "curvature")
 	{
 		v = curvature();
 	}
 	else if (field == "rotation")
 	{
-		v = swrotation();
+		v = swrot().toDegrees();
 	}
 
 	return v;

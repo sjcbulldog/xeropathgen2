@@ -11,10 +11,12 @@ public:
 	Pose2dWithRotation(const Translation2d& pos);
 	Pose2dWithRotation(const Rotation2d& pos);
 	Pose2dWithRotation(const Translation2d& pos, const Rotation2d& rot);
-	Pose2dWithRotation(const Translation2d& pos, const Rotation2d& rot, const Rotation2d& swrot);
+	Pose2dWithRotation(const Translation2d& pos, const Rotation2d& rot, const Rotation2d& swrot, double cur = 0.0);
 	Pose2dWithRotation(const Pose2d& other);
 	Pose2dWithRotation(const Pose2dWithRotation& other);
 	virtual ~Pose2dWithRotation();
+
+	Pose2dWithRotation interpolate(const Pose2dWithRotation& other, double percent) const;
 
 	const Rotation2d& swrot() const {
 		return swrot_;

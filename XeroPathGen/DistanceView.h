@@ -23,7 +23,7 @@ public:
 	}
 
 private:
-	std::vector<double> distances_;
-	std::vector<Pose2dWithRotation> points_;
+	QVector<double> distances_;
+	QVector<Pose2dWithRotation> points_;
 };
 

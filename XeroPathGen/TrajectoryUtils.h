@@ -3,6 +3,7 @@
 #include "SplinePair.h"
 #include "Pose2dWithRotation.h"
 #include "RobotParams.h"
+#include "PathTrajectory.h"
 #include <QtCore/QVector>
 
 class TrajectoryUtils
@@ -16,6 +17,10 @@ public:
 
 	static double linearToRotational(std::shared_ptr<RobotParams> robot, double v);
 	static double rotationalToLinear(std::shared_ptr<RobotParams> robot, double v);
+
+	static void computeCurvature(std::shared_ptr<PathTrajectory> traj);
+
+	static void computeCurvature(QVector<Pose2dWithRotation>& points);
 
 private:
 	static void getSegmentArc(std::shared_ptr<SplinePair> pair, QVector<Pose2dWithRotation>& results,

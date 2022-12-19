@@ -4,6 +4,7 @@
 #include "CheesyGenerator.h"
 #include "XeroSwerveGenerator.h"
 #include "TrajectoryNames.h"
+#include "TrajectoryUtils.h"
 #include <QtCore/QThread>
 
 Generator::Generator(double timestep, std::shared_ptr<RobotParams> robot, std::shared_ptr<TrajectoryGroup> group)
@@ -43,8 +44,10 @@ void Generator::generateTrajectory()
 	if (!group_->hasError()) {
 		if (robot_->getDriveType() == RobotParams::DriveType::TankDrive) {
 			//
-			// Add in trajectories for the left and right wheels
+			// Add in trajectories for the left and right wheels.  These are here
+			// as they will always be independent of how the main trajectory is generated
 			//
+			addTankDriveTrajectories();
 		}
 	}
 
@@ -67,8 +70,8 @@ void Generator::addTankDriveTrajectories()
 	QVector<Pose2dWithTrajectory> rightpts;
 
 	double lcurv = 0, rcurv = 0;
-	double lvel = 0, lacc = 0, lpos = 0, ljerk = 0;
-	double rvel = 0, racc = 0, rpos = 0, rjerk = 0;
+	double lvel = 0, lacc = 0, lpos = 0;
+	double rvel = 0, racc = 0, rpos = 0;
 	double plx = 0, ply = 0, prx = 0, pry = 0;
 	double plvel = 0, prvel = 0;
 	double placc = 0, pracc = 0;
@@ -90,12 +93,10 @@ void Generator::addTankDriveTrajectories()
 			lvel = 0.0;
 			lacc = 0.0;
 			lpos = 0.0;
-			ljerk = 0.0;
 
 			rvel = 0.0;
 			racc = 0.0;
 			rpos = 0.0;
-			rjerk = 0.0;
 		}
 		else
 		{
@@ -109,21 +110,18 @@ void Generator::addTankDriveTrajectories()
 			lacc = (lvel - plvel) / dt;
 			racc = (rvel - prvel) / dt;
 
-			ljerk = (lacc - placc) / dt;
-			rjerk = (racc - pracc) / dt;
-
 			lpos += ldist;
 			rpos += rdist;
 		}
 
 		Translation2d lpt(lx, ly);
 		Pose2d l2d(lpt, pt.rotation());
-		Pose2dWithTrajectory ltraj(l2d, time, lpos, lvel, lacc, ljerk, lcurv, 0.0);
+		Pose2dWithTrajectory ltraj(l2d, time, lpos, lvel, lacc);
 		leftpts.push_back(ltraj);
 
 		Translation2d rpt(rx, ry);
 		Pose2d r2d(rpt, pt.rotation());
-		Pose2dWithTrajectory rtraj(r2d, time, rpos, rvel, racc, rjerk, rcurv, 0.0);
+		Pose2dWithTrajectory rtraj(r2d, time, rpos, rvel, racc);
 		rightpts.push_back(rtraj);
 
 		plx = lx;
@@ -137,21 +135,13 @@ void Generator::addTankDriveTrajectories()
 	}
 
 	assert(leftpts.size() == rightpts.size());
-	for (int i = 0; i < leftpts.size(); i++) {
-		if (i == 0 || i == leftpts.size() - 1)
-		{
-			lcurv = 0.0;
-			rcurv = 0.0;
-		}
-		else
-		{
-			leftpts[i].setCurvature(Pose2dWithRotation::curvature(leftpts[i - 1].pose(), leftpts[i].pose(), leftpts[i + 1].pose()));
-			rightpts[i].setCurvature(Pose2dWithRotation::curvature(rightpts[i - 1].pose(), rightpts[i].pose(), rightpts[i + 1].pose()));
-		}
-	}
 
 	std::shared_ptr<PathTrajectory> left = std::make_shared<PathTrajectory>(TrajectoryName::Left, leftpts);
+	TrajectoryUtils::computeCurvature(left);
+
 	std::shared_ptr<PathTrajectory> right = std::make_shared<PathTrajectory>(TrajectoryName::Right, rightpts);
+	TrajectoryUtils::computeCurvature(right);
+
 
 	group_->addTrajectory(left);
 	group_->addTrajectory(right);

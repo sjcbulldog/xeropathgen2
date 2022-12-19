@@ -118,8 +118,6 @@ private:
     static constexpr const char *RobotDialogWeight = "Weight";
     static constexpr const char *RobotDialogMaxVelocity = "Max Velocity";
     static constexpr const char *RobotDialogMaxAcceleration = "Max Acceleration";
-    static constexpr const char *RobotDialogMaxJerk = "Max Jerk";
-    static constexpr const char *RobotDialogMaxCentripetal = "Max Centripetal Force";
     static constexpr const char *RobotDialogLengthUnits = "Units (lengths)";
     static constexpr const char *RobotDialogWeightUnits = "Units (weights)";
     static constexpr const char *RobotDialogDriveType = "Drive Type";

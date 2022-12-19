@@ -35,6 +35,7 @@ protected:
 
 	std::shared_ptr<PathTrajectory> generateInternal(std::shared_ptr<RobotPath> path, double maxvel);
 	std::shared_ptr<PathTrajectory> generateSwerve(std::shared_ptr<RobotPath> path);
+	std::shared_ptr<PathTrajectory> generateTankDrive(std::shared_ptr<RobotPath> path);
 
 	Translation2d getWheelPerpendicularVector(Wheel w, double magnitude);
 	size_t findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc);

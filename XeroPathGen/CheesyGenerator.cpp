@@ -59,7 +59,6 @@ CheesyGenerator::timeParameterize(const DistanceView& view, const QVector<std::s
 	{
 		Pose2dConstrained state;
 		state.setPose(view[i]);
-		state.setCurvature(view[i].curvature());
 		state.setPosition(view.getPosition(i));
 
 		double dist = predecessor.pose().distance(state.pose());
@@ -191,7 +190,7 @@ CheesyGenerator::timeParameterize(const DistanceView& view, const QVector<std::s
 		v = state.velocity();
 		s = state.position();
 
-		Pose2dWithTrajectory trajpt(view[i], t, s, v, accel, 0.0, state.curvature(), 0.0);
+		Pose2dWithTrajectory trajpt(view[i], t, s, v, accel);
 		result.push_back(trajpt);
 	}
 	return result;
@@ -286,10 +285,17 @@ CheesyGenerator::generateInternal(std::shared_ptr<RobotPath> path, double maxvel
 	//
 	QVector<Pose2dWithTrajectory> uniform = convertToUniformTime(pts, timestep_);
 
+
+	//
+	// Step 6: compute the curvature for the path
+	//
+	auto traj = std::make_shared<PathTrajectory>(TrajectoryName::Main, uniform);
+	TrajectoryUtils::computeCurvature(traj);
+
 	//
 	// Return a trajectory
 	//
-	return std::make_shared<PathTrajectory>(TrajectoryName::Main, uniform);
+	return traj;
 }
 
 size_t CheesyGenerator::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc)
@@ -525,19 +531,19 @@ bool CheesyGenerator::modifyForRotation(std::shared_ptr<RobotPath> path, std::sh
 		}
 
 		Pose2d flpose(flpos, flv.toRotation());
-		Pose2dWithTrajectory fltraj(flpose, time, fldist, flv.normalize(), fla.normalize(), 0.0, 0.0, angle.toDegrees());
+		Pose2dWithTrajectory fltraj(flpose, time, fldist, flv.normalize(), fla.normalize());
 		flpts.push_back(fltraj);
 
 		Pose2d frpose(frpos, frv.toRotation());
-		Pose2dWithTrajectory frtraj(frpose, time, frdist, frv.normalize(), fra.normalize(), 0.0, 0.0, angle.toDegrees());
+		Pose2dWithTrajectory frtraj(frpose, time, frdist, frv.normalize(), fra.normalize());
 		frpts.push_back(frtraj);
 
 		Pose2d blpose(blpos, blv.toRotation());
-		Pose2dWithTrajectory bltraj(blpose, time, bldist, blv.normalize(), bla.normalize(), 0.0, 0.0, angle.toDegrees());
+		Pose2dWithTrajectory bltraj(blpose, time, bldist, blv.normalize(), bla.normalize());
 		blpts.push_back(bltraj);
 
 		Pose2d brpose(brpos, brv.toRotation());
-		Pose2dWithTrajectory brtraj(brpose, time, brdist, brv.normalize(), bra.normalize(), 0.0, 0.0, angle.toDegrees());
+		Pose2dWithTrajectory brtraj(brpose, time, brdist, brv.normalize(), bra.normalize());
 		brpts.push_back(brtraj);
 
 		prevfl = flpos;
@@ -545,9 +551,7 @@ bool CheesyGenerator::modifyForRotation(std::shared_ptr<RobotPath> path, std::sh
 		prevbl = blpos;
 		prevbr = brpos;
 
-		double d = angle.toDegrees();
-		(void)d;
-		(*traj)[i].setSwRotation(angle.toDegrees());
+		(*traj)[i].setSwRotation(angle);
 
 		//
 		// See if we are done with the current profile
@@ -583,6 +587,24 @@ CheesyGenerator::generateSwerve(std::shared_ptr<RobotPath> path)
 }
 
 std::shared_ptr<PathTrajectory>
+CheesyGenerator::generateTankDrive(std::shared_ptr<RobotPath> path)
+{
+	std::shared_ptr<PathTrajectory> traj;
+
+	traj = generateInternal(path, path->params().maxVelocity());
+
+	//
+	// Now, set the "swerve" rotation, which is meaningless for a tank drive, to the
+	// heading so that it still represents the direction the robot is pointing
+	//
+	for (int i = 0; i < traj->size(); i++) {
+		(*traj)[i].setSwRotation((*traj)[i].rotation());
+	}
+
+	return traj;
+}
+
+std::shared_ptr<PathTrajectory>
 CheesyGenerator::generate(std::shared_ptr<RobotPath> path)
 {
 	double percent = 1.0;
@@ -595,7 +617,7 @@ CheesyGenerator::generate(std::shared_ptr<RobotPath> path)
 
 	if (robot_->getDriveType() == RobotParams::DriveType::TankDrive)
 	{
-		traj = generateInternal(path, robot_max_velocity_);
+		traj = generateTankDrive(path);
 	}
 	else
 	{

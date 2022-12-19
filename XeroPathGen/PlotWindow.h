@@ -14,6 +14,10 @@ public:
 	PlotWindow(QWidget* parent, QList<int> sizes);
 
 	std::shared_ptr<TrajectoryGroup> group() { return group_; }
+
+	bool isSplitterPositionValid() const {
+		return isSplitterPositionValid_;
+	}
 	void setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group);
 	QList<int> getSplitterPosition();
 
@@ -27,6 +31,9 @@ public:
 
 	static QVector<QString> TrajVariableName;
 
+protected:
+	void showEvent(QShowEvent*) override;
+
 private:
 	std::shared_ptr<TrajectoryGroup> group_;
 	QHBoxLayout* layout_;
@@ -34,5 +41,6 @@ private:
 	NodesListWindow* nodes_;
 	QFrame* nodes_frame_;
 	TrajectoryPlotWindow* plot_;
+	bool isSplitterPositionValid_;
 };
 

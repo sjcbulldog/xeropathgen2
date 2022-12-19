@@ -1,8 +1,11 @@
 
-- Swerve Path Generator
-- Left and right trajectories for talk drive
-- Make sure swrot matches heading for tank drive
+- New Swerve Path Generator
 
+- Make sure swrot matches heading for tank drive
+- Add distances for centripetal force constraints
+
+- Splitter distances										Done
+- Left and right trajectories for tank drive				Done
 - Remember node list for plot window						Done
 - Remove All nodes in plot window							Done
 - Remove One node in plot window							Done

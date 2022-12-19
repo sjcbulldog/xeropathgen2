@@ -47,6 +47,13 @@ o Replaced the multiple logger files that are generated and never cleaned up wit
   a single logger file that is overwritten each run.  This file is stored in the
   file C:/Users/USERNAME/AppData/Local/ErrorCodeXero/XeroPathGenerator/logfile.txt.
 
+o Moved the centripetal force value from a robot characteristice to a constraint.  This
+  constraint will be updated in the future to be applicable only to certain regions of
+  a path.
+
+o Removed 'jerk' as a robot parameter or a path parameter since it is not used anywhere
+  in the path generation process.
+
 Program Design Changes
 ----------------------
 

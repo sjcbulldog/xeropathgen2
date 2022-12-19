@@ -23,7 +23,6 @@ public:
 	static constexpr const char* EffectiveWidthTag = "effwidth";
 	static constexpr const char* MaxVelocityTag = "maxvelocity";
 	static constexpr const char* MaxAccelerationTag = "maxacceleration";
-	static constexpr const char* MaxJerkTag = "maxjerk";
 	static constexpr const char* MaxCentripetalTag = "maxcentripetal";
 	static constexpr const char* TimeStepTag = "timestep";
 	static constexpr const char* DriveTypeTag = "drivetype";
@@ -31,12 +30,11 @@ public:
 	static constexpr const char* WeightUnitsTag = "weightunits";
 
 public:
-	static constexpr double DefaultLength = 30.0;
-	static constexpr double DefaultWidth = 24.0;
+	static constexpr double DefaultLength = 0.762;
+	static constexpr double DefaultWidth = 0.6096;
 	static constexpr double DefaultWeight = 180.0;
-	static constexpr double DefaultMaxVelocity = 180.0;
-	static constexpr double DefaultMaxAcceleration = 180.0;
-	static constexpr double DefaultMaxJerk = 1800.0;
+	static constexpr double DefaultMaxVelocity = 4.0;
+	static constexpr double DefaultMaxAcceleration = 4.0;
 	static constexpr double DefaultCentripetal = 100000.0;
 	static constexpr double DefaultTimestep = 0.02;
 	static constexpr DriveType DefaultDriveType = DriveType::TankDrive;
@@ -53,11 +51,9 @@ public:
 		ewidth_ = DefaultWidth;
 		max_velocity_ = DefaultMaxVelocity;
 		max_acceleration_ = DefaultMaxAcceleration;
-		max_jerk_ = DefaultMaxJerk;
 		length_units_ = "in";
 		weight_units_ = "lbs";
 		timestep_ = 0.02;
-		max_centripetal_force_ = 1100;
 	}
 
 	virtual ~RobotParams() {
@@ -114,7 +110,6 @@ public:
 		rwidth_ = UnitConverter::convert(rwidth_, length_units_, units);
 		max_velocity_ = UnitConverter::convert(max_velocity_, length_units_, units);
 		max_acceleration_ = UnitConverter::convert(max_acceleration_, length_units_, units);
-		max_jerk_ = UnitConverter::convert(max_jerk_, length_units_, units);
 		length_units_ = units;
 	}
 
@@ -174,28 +169,12 @@ public:
 		max_acceleration_ = v;
 	}
 
-	double getMaxJerk() const {
-		return max_jerk_;
-	}
-
-	void setMaxJerk(double v) {
-		max_jerk_ = v;
-	}
-
 	double getTimestep() const {
 		return timestep_;
 	}
 
 	void setTimestep(double v) {
 		timestep_ = v;
-	}
-
-	double getMaxCentripetalForce() const {
-		return max_centripetal_force_;
-	}
-
-	void setMaxCentripetalForce(double m) {
-		max_centripetal_force_ = m;
 	}
 
 private:
@@ -206,8 +185,6 @@ private:
 	double elength_;
 	double max_velocity_;
 	double max_acceleration_;
-	double max_jerk_;
-	double max_centripetal_force_;
 	QString length_units_;
 	QString weight_units_;
 	QString name_;

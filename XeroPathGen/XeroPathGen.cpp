@@ -622,7 +622,6 @@ void XeroPathGen::generateOnePath(std::shared_ptr<RobotPath> path, std::shared_p
 		RobotPath::PositionTag,
 		RobotPath::VelocityTag,
 		RobotPath::AccelerationTag,
-		RobotPath::JerkTag,
 		RobotPath::HeadingTag,
 		RobotPath::CurvatureTag,
 		RobotPath::RotationTag,
@@ -745,12 +744,14 @@ void XeroPathGen::closeEvent(QCloseEvent* ev)
 
 	settings_.setValue(GeometrySetting, saveGeometry());
 	settings_.setValue(WindowStateSetting, saveState());
-
 	QList<QVariant> param;
-	for (auto size : plot_win_->getSplitterPosition()) {
-		param.push_back(QVariant(size));
+
+	if (plot_win_->isSplitterPositionValid()) {
+		for (auto size : plot_win_->getSplitterPosition()) {
+			param.push_back(QVariant(size));
+		}
+		settings_.setValue(PlotWindowSplitterSize, param);
 	}
-	settings_.setValue(PlotWindowSplitterSize, param);
 
 	param.clear();
 	const QStringList& list = plot_win_->nodeList();
@@ -1072,7 +1073,7 @@ void XeroPathGen::waypointEndMoving(size_t index)
 void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path)
 {
 	double elength, ewidth, rlength, rwidth, rweight;
-	double velocity, accel, jerk, timestep;
+	double velocity, accel, timestep;
 	double cent;
 	RobotParams::DriveType drivetype;
 	QString lengthunits, weightunits;
@@ -1091,7 +1092,6 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		rwidth = RobotParams::DefaultWidth;
 		velocity = RobotParams::DefaultMaxVelocity;
 		accel = RobotParams::DefaultMaxAcceleration;
-		jerk = RobotParams::DefaultMaxJerk;
 		cent = RobotParams::DefaultCentripetal;
 		rweight = RobotParams::DefaultWeight;
 		timestep = RobotParams::DefaultTimestep;
@@ -1110,8 +1110,6 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		rweight = robot->getRobotWeight();
 		velocity = robot->getMaxVelocity();
 		accel = robot->getMaxAccel();
-		jerk = robot->getMaxJerk();
-		cent = robot->getMaxCentripetalForce();
 		timestep = robot->getTimestep();
 		drivetype = robot->getDriveType();
 		name = robot->getName();
@@ -1176,14 +1174,6 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 			QString::number(accel), "The maximum acceleration of the robot");
 		model.addProperty(prop);
 
-		prop = std::make_shared<EditableProperty>(RobotDialogMaxJerk, EditableProperty::PropertyType::PTDouble,
-			QString::number(jerk), "The maximum jerk of the robot");
-		model.addProperty(prop);
-
-		prop = std::make_shared<EditableProperty>(RobotDialogMaxCentripetal, EditableProperty::PropertyType::PTDouble,
-			QString::number(cent), "The maximum centripetal force of the robot on turns");
-		model.addProperty(prop);
-
 		prop = std::make_shared<EditableProperty>(RobotDialogDriveType, EditableProperty::PropertyType::PTStringList,
 			QVariant(DriveBaseData::typeToName(drivetype)), "The drive type for the robot");
 		auto drivetypes = RobotParams::getDriveTypes();
@@ -1209,8 +1199,6 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		rweight = model.getProperty(RobotDialogWeight)->getValue().toDouble();
 		velocity = model.getProperty(RobotDialogMaxVelocity)->getValue().toDouble();
 		accel = model.getProperty(RobotDialogMaxAcceleration)->getValue().toDouble();
-		jerk = model.getProperty(RobotDialogMaxJerk)->getValue().toDouble();
-		cent = model.getProperty(RobotDialogMaxCentripetal)->getValue().toDouble();
 		drivetype = DriveBaseData::nameToType(model.getProperty(RobotDialogDriveType)->getValue().toString());
 		timestep = model.getProperty(RobotDialogTimeStep)->getValue().toDouble();
 		lengthunits = model.getProperty(RobotDialogLengthUnits)->getValue().toString();
@@ -1250,8 +1238,6 @@ void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QStr
 		robot->setRobotWeight(rweight);
 		robot->setMaxVelocity(velocity);
 		robot->setMaxAcceleration(accel);
-		robot->setMaxJerk(jerk);
-		robot->setMaxCentripetalForce(cent);
 		robot->setTimestep(timestep);
 		robot->setDriveType(drivetype);
 		robot->setLengthUnits(lengthunits);

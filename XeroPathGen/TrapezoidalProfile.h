@@ -31,11 +31,6 @@ public:
 	/// \param end_velocity the final velocity for the profile
 	bool update(double dist, double start_velocity, double end_velocity);
 
-	virtual double getJerk(double t) const {
-		(void)t;
-		return 0.0;
-	}
-
 	/// \brief return the acceleration for the profile at the given time
 	/// If the time is prior to zero for the profile, the max acceleration value
 	/// is returned.  If the time is past the end of the profile, the max deceleartion

@@ -30,7 +30,6 @@ public:
 	static constexpr const char* PositionTag = "position";
 	static constexpr const char* CurvatureTag = "curvature";
 	static constexpr const char* AccelerationTag = "acceleration";
-	static constexpr const char* JerkTag = "jerk";
 	static constexpr const char* NameTag = "name";
 	static constexpr const char* PathsTag = "paths";
 	static constexpr const char* StartVelocityTag = "startvelocity";
@@ -41,7 +40,6 @@ public:
 	static constexpr const char* EndAngleDelayTag = "endangledelay";
 	static constexpr const char* MaxVelocityTag = "maxvelocity";
 	static constexpr const char* MaxAccelerationTag = "maxacceleration";
-	static constexpr const char* MaxJerkTag = "maxjerk";
 	static constexpr const char* MaxCentripetalTag = "maxcentripetal";
 	static constexpr const char* ConstraintsTag = "constraints";
 	static constexpr const char* TypeTag = "type";

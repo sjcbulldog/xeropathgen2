@@ -43,3 +43,39 @@ double TrajectoryUtils::linearToRotational(std::shared_ptr<RobotParams> robot, d
 	double circum = diameter * MathUtils::kPI;
 	return gr * 360.0 / circum;
 }
+
+void TrajectoryUtils::computeCurvature(std::shared_ptr<PathTrajectory> traj)
+{
+	double curv;
+
+	auto pts = *traj;
+	for (int i = 0; i < traj->size(); i++) {
+		if (i == 0 || i == traj->size() - 1)
+		{
+			curv = 0.0;
+		}
+		else
+		{
+			curv = Pose2dWithRotation::curvature(pts[i - 1].pose(), pts[i].pose(), pts[i + 1].pose());
+			pts[i].pose().setCurvature(curv);
+		}
+	}
+}
+
+
+void TrajectoryUtils::computeCurvature(QVector<Pose2dWithRotation>& pts)
+{
+	double curv;
+
+	for (int i = 0; i < pts.size(); i++) {
+		if (i == 0 || i == pts.size() - 1)
+		{
+			curv = 0.0;
+		}
+		else
+		{
+			curv = Pose2dWithRotation::curvature(pts[i - 1], pts[i], pts[i + 1]);
+			pts[i].setCurvature(curv);
+		}
+	}
+}
