@@ -335,6 +335,8 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 		createEditRobot(nullptr, robotfile);
 	}
 
+	paths_data_model_.reset();
+
 	info = QFileInfo(pathfile);
 	if (info.exists())
 	{

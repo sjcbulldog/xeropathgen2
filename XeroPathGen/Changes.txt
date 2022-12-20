@@ -1,7 +1,7 @@
 XeroPathGen 2.0 Beta
 -----------------------------------------------------------------------------------
 
-This is a rewrite from the groud up, while reusing code from the previous version
+This is a rewrite from the ground up, while reusing code from the previous version
 where possible.  The changes from the previous version are given below to the best
 of my ability to remember them.
 
@@ -9,11 +9,13 @@ User Visible Changes
 --------------------
 o The program uses a new extension for path files since the path file has changed. 
   This new program should be able to read old path files.  Let me know if you find 
-  one that does not work.
+  one that does not work.  The new extension is .xeropath
 
 o Many features that were never used or only used by me have been removed.  I will
   add them back only if we have a real use for them. So, if your favorite feature
-  disappeared, let me know.  I only want to maintain things that are useful.
+  disappeared, let me know.  I only want to maintain things that are being used.  I
+  know the ability to move the robot through the path via a scroll bar is useful and
+  it will come back at some point soon.
 
 o Added the concept of a project.  WHen you load a project, you navigate to the top
   directory of a robot project.  The path generation then stores the path file in
@@ -21,35 +23,45 @@ o Added the concept of a project.  WHen you load a project, you navigate to the 
   file PROJECTDIR/src/main/paths/robot.json (and is now part of the project).  The
   generation directory is set to PROJECTDIER/src/main/deploy/paths.  In other words
   you navigate to the robot project on your machine and everything is loaded and 
-  stored in that robot project.  Note, when i project mode, Save As and Generate As
-  do not work and will tell you they are not allowed.  The locations for generation
-  and the path file are fixed.  You also cannot create new robots are pick different
+  stored in that robot project.  Note, when in project mode, Save As and Generate As
+  do not work and will tell you they are not allowed.  The locations for generated paths
+  and the path file are fixed.  You also cannot create new robots or pick different
   robots.  The project mode is very constrained and is meant to align with our robot
   project source structure, and keep the robot descriptor file in the robot project
-  source.
+  source.  Note, you can still load a file and things work like they did in the previous
+  version.
 
 o Since projects are the primary working mode going forward, added the recently
   used project menu item to the File menu.
 
 o While the "Error Code Xero Swerve Drive Generator" exists, it is not functional yet.
+  Do no pick this generator.  The Cheesy Poofs Generator works as the generator did in 
+  the previous version, including with swerve drive rotations.
 
 o If you close the path generator program with unsaved changes, it now prompts you to
   save change, discard changes, or cancel close.  Prevously it just asked if you really
   wanted to close.  This is more inline with how other programs work.
 
 o The chosen generator is a path file parameter and stored in the path file.  It
-  is changed via the right click menu in the path file.
+  is changed via the right click menu in the path file window.
+
+o The desired units is a path fiel parameter and is stored in the path file.  it is
+  changed via the right click menu in the path file window.  See the design changes
+  below for more on units.
 
 o Other than the main path editing window, all other windows are dockable windows
-  that can be docked anywhere or undocked and floated to another monitor.
+  that can be docked anywhere or undocked and/or floated.  This is useful to put
+  the plot window on a different monitor.
 
 o Replaced the multiple logger files that are generated and never cleaned up with
   a single logger file that is overwritten each run.  This file is stored in the
   file C:/Users/USERNAME/AppData/Local/ErrorCodeXero/XeroPathGenerator/logfile.txt.
+  I suspect no on even knew they existed but they are useful for me if the program
+  crashes on startup.
 
 o Moved the centripetal force value from a robot characteristice to a constraint.  This
   constraint will be updated in the future to be applicable only to certain regions of
-  a path.
+  a path, but for now it applies to the complete path.
 
 o Removed 'jerk' as a robot parameter or a path parameter since it is not used anywhere
   in the path generation process.
@@ -65,7 +77,7 @@ o As evidenced by the transition from inches to meters and all of the associated
   that the units go with the paths.  All computations are done in the units of the
   path file and robot units are converted to path units anywhere they are needed
   in computations.  One big exception to this is centripetal force constraint
-  units are always in Newtons (N) and converted to path units to be applied.
+  units are always in Newtons (N) and converted to path units when applied.
 
 o In the previous version I got carried away with abstracting out the generators
   and assumptions made around how they are written. I simplified a great deal by
@@ -76,19 +88,20 @@ o In the previous version I got carried away with abstracting out the generators
 
 o Created a first class object Pose2dWithRotation that is derived from Pose2d which
   represents a robot pose with a rotation for the swerve drive.  To keep the Pose2d
-  the same, I added a field called swrot() which is the swerve rotation and the 
-  getRotation() gets the "heading" of the path.
+  the same, I added a field called swrot() which is the swerve rotation.  It should
+  be noted that this is different than getRotation() which is historical and is the
+  heading of the path.
 
 o Seperated the PathDataModel from the trajectory data model.  The path data model
-  contains path groups (with names) and paths (with names and waypoints). THis data
+  contains path groups (with names) and paths (with names and waypoints). This data
   model also includes the desired generator and the units used.  The path data model
   also keeps transient copies of data needed to draw the paths including the splines
   needed and the distances between waypoints.  The GeneratorMgr manages generators
-  and trajectories.  The GeneratorMgr keeps a map of paths to TrajectoryGroup and can
-  provide a TrajectoryGroup for any path if it is available.  A TrajectoryGroups is a
-  set of trajectories.  It will always contain a 'main' trajectory but may also conatain
-  other trajectories like 'left' and 'right' for tank drive.  A Trajectory is a set
-  of points that are 20 ms apart that contains the distance, velocity, acceleration, 
+  and trajectories.  The GeneratorMgr keeps a map of paths to TrajectoryGroup objects 
+  and can provide a TrajectoryGroup for any path if it is available.  A TrajectoryGroup 
+  is a set of trajectories.  It will always contain a 'main' trajectory but may also 
+  conatain other trajectories like 'left' and 'right' for tank drive.  A Trajectory 
+  is a set of points that are 20 ms apart that contains the distance, velocity, acceleration, 
   X/Y position, curvature, and swerve rotation.
 
 o All of this cleanup with the generators, path data model, and Pose2dWithRotation is
@@ -97,4 +110,5 @@ o All of this cleanup with the generators, path data model, and Pose2dWithRotati
   going to be an iterative algorithm and may be time consuming.  THe basic point is that
   I now have a code base that works for trying to figure this out.
 
+o The source to this program is on github at  https://github.com/sjcbulldog/xeropathgen2.git
 

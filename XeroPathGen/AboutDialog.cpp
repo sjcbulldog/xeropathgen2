@@ -58,8 +58,6 @@ AboutDialog::AboutDialog(GameFieldManager& fields, QWidget *parent) : QDialog(pa
 	ui.text_->append("Icon made by Pixel perfect from www.flaticon.com\r\n\r\n");
 	ui.text_->append("Icon made by turkkub from www.flaticon.com\r\n\r\n");
 	ui.text_->append("Icon made by Freepik from www.flaticon.com\r\n\r\n");
-	ui.text_->append("PathFinder V1 borrowed from Jaci with much appreciation");
-	ui.text_->append("https://github.com/JacisNonsense/Pathfinder\r\n\r\n");
 	ui.text_->append("Ideas, algorithms, concepts, taken from Team 254, Cheesy Poofs with much appreciation.\r\n\r\n");
 
 	font = fmt.font();
@@ -83,6 +81,9 @@ AboutDialog::AboutDialog(GameFieldManager& fields, QWidget *parent) : QDialog(pa
 		ui.text_->append(QString(field->getName()));
 	}
 
+	QTextCursor cursor = ui.text_->textCursor();
+	cursor.movePosition(QTextCursor::Start);
+	ui.text_->setTextCursor(cursor);
 
 	(void)connect(ui.buttons_, &QDialogButtonBox::accepted, this, &AboutDialog::accept);
 }

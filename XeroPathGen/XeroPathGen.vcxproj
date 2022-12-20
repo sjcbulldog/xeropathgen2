@@ -70,6 +70,9 @@ mkdir $(OutDir)\fields
 copy $(SolutionDir)fields\* $(OutDir)\fields\
 </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>C:/cygwin64/bin/sh.exe $(ProjectDir)/incver.sh</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PostBuildEvent>
@@ -82,6 +85,9 @@ mkdir $(OutDir)\fields
 copy $(SolutionDir)fields\* $(OutDir)\fields\
 </Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>C:/cygwin64/bin/sh.exe $(ProjectDir)/incver.sh</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>

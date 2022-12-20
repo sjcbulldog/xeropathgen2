@@ -83,8 +83,8 @@ Translation2d Translation2d::interpolate(const Translation2d& other, double perc
 
 Translation2d Translation2d::extrapolate(const Translation2d& other, double percent) const
 {
-	double x = percent * (other.getX() - x_);
-	double y = percent * (other.getY() - y_);
+	double x = percent * (other.getX() - x_) + x_;
+	double y = percent * (other.getY() - y_) + y_;
 	return Translation2d(x, y);
 }
 

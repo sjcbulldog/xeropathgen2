@@ -69,11 +69,11 @@ public:
 	}
 
 	void setSwRotation(Rotation2d d) {
-		swrotation_ = d;
+		pose_.setSwrot(d);
 	}
 
 	const Rotation2d &swrotation() const {
-		return swrotation_;
+		return pose_.swrot();
 	}
 
 	double velocity() const {
@@ -106,5 +106,4 @@ private:
 	double position_;
 	double velocity_;
 	double acceleration_;
-	Rotation2d swrotation_;
 };

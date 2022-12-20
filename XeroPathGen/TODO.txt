@@ -1,9 +1,9 @@
-
 - New Swerve Path Generator
-
-- Make sure swrot matches heading for tank drive
 - Add distances for centripetal force constraints
+- The ability to move through the path and see the robot
 
+- Make sure swrot matches heading for tank drive			Done
+- Fix the build incrementer for building					Done
 - Splitter distances										Done
 - Left and right trajectories for tank drive				Done
 - Remember node list for plot window						Done

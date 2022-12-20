@@ -38,6 +38,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#MyAppSourceDir}\x64\Release\*.*"; DestDir: "{app}"; Flags: ignoreversion 64bit recursesubdirs
+Source: "{#MyAppSourceDir}\installer\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion 64bit
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

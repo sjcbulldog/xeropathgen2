@@ -21,10 +21,8 @@ TrajectoryPlotWindow::TrajectoryPlotWindow(const QVector<QString>& varnames, QWi
 void TrajectoryPlotWindow::setNodeList(const QStringList& list)
 {
 	removeAll();
-	if (group_ != nullptr) {
-		for (const QString& node : list) {
-			insertNode(node);
-		}
+	for (const QString& node : list) {
+		insertNode(node);
 	}
 }
 
@@ -126,13 +124,7 @@ void TrajectoryPlotWindow::mouseReleaseEvent(QMouseEvent* event)
 
 void TrajectoryPlotWindow::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)
 {
-	if (group == nullptr || group_ == nullptr || group->path() != group_->path())
-	{
-		nodes_.clear();
-	}
-
 	group_ = group;
-
 	clear();
 
 	if (group_ != nullptr) {
@@ -317,8 +309,10 @@ void TrajectoryPlotWindow::insertNode(const QString& node)
 	if (nodes_.contains(node))
 		return;
 
-	setupLegend();
 	nodes_.push_back(node);
+
+	if (group_ == nullptr)
+		return;
 
 	int index = node.indexOf('-');
 	QString name = node.mid(0, index);
@@ -328,7 +322,9 @@ void TrajectoryPlotWindow::insertNode(const QString& node)
 	if (traj == nullptr)
 		return;
 
-	if (time_axis_ == nullptr) 
+	setupLegend();
+
+	if (time_axis_ == nullptr)
 	{
 		setupTimeAxis();
 	}
@@ -360,6 +356,5 @@ void TrajectoryPlotWindow::insertNode(const QString& node)
 	chart()->addSeries(series);
 	series->attachAxis(time_axis_);
 	series->attachAxis(axis);
-
 	axis->applyNiceNumbers();
 }

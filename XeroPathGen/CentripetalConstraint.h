@@ -18,6 +18,10 @@ public:
 		maxcen_ = maxcen;
 	}
 
+	double maxCenForce() const {
+		return maxcen_;
+	}
+
 	void setMaxCenForce(double c) {
 		maxcen_ = c;
 		path()->constraintChanged();
