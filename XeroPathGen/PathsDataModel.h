@@ -18,6 +18,7 @@ public:
 	virtual ~PathsDataModel();
 
 	void setGeneratorType(GeneratorType type) {
+		emit beforeChange();
 		gen_type_ = type;
 		dirty_ = true;
 		emit trajectoryGeneratorChanged();
@@ -42,6 +43,7 @@ public:
 	}
 
 	void setUnits(const QString& units) {
+		emit beforeChange();
 		convert(units);
 		emit unitsChanged(units_);
 	}
@@ -116,9 +118,11 @@ private:
 		dirty_ = true;
 	}
 
-	void pathChanged(const QString& grname, const QString& pathname);
+	void beforePathChanged(const QString& grname, const QString& pathname);
+	void afterPathChanged(const QString& grname, const QString& pathname);
 
 signals:
+	void beforeChange();
 	void groupAdded(const QString& grname);
 	void groupDeleted(const QString& grname);
 	void groupRenamed(const QString& oldname, const QString& newname);

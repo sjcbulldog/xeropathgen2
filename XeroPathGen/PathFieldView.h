@@ -78,6 +78,7 @@ signals:
 	void waypointEndMoving(size_t index);
 	void waypointInserted();
 	void waypointDeleted();
+	void undoRequested();
 
 protected:
 	virtual void paintEvent(QPaintEvent* event) override;

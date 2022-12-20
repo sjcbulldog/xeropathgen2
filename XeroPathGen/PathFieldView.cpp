@@ -391,6 +391,10 @@ void PathFieldView::keyPressEvent(QKeyEvent* ev)
 		{
 			pasteCoordinates(false);
 		}
+		else if (ev->key() == Qt::Key::Key_Z)
+		{
+			emit undoRequested();
+		}
 	}
 	else if (ev->modifiers() == (Qt::KeyboardModifier::ControlModifier | Qt::KeyboardModifier::ShiftModifier))
 	{
@@ -744,7 +748,7 @@ void PathFieldView::pathChanged(const QString &grname, const QString &pathname)
 void PathFieldView::setPath(std::shared_ptr<RobotPath> path)
 {
 	if (path_ != nullptr) {
-		disconnect(path_.get(), &RobotPath::pathChanged, this, &PathFieldView::pathChanged);
+		disconnect(path_.get(), &RobotPath::afterPathChanged, this, &PathFieldView::pathChanged);
 	}
 
 	if (path_ != path)
@@ -754,7 +758,7 @@ void PathFieldView::setPath(std::shared_ptr<RobotPath> path)
 		repaint(geometry());
 
 		if (path_ != nullptr) {
-			connect(path_.get(), &RobotPath::pathChanged, this, &PathFieldView::pathChanged);
+			connect(path_.get(), &RobotPath::afterPathChanged, this, &PathFieldView::pathChanged);
 		}
 	}
 }

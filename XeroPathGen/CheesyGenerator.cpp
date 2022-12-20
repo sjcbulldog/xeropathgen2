@@ -21,7 +21,108 @@ CheesyGenerator::~CheesyGenerator()
 }
 
 std::shared_ptr<PathTrajectory>
-CheesyGenerator::generateSwerve(std::shared_ptr<RobotPath> path)
+CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path)
+{
+	std::shared_ptr<PathTrajectory> traj;
+
+	QVector<std::shared_ptr<SplinePair>> splines = generateSplines(path->waypoints());
+	QVector<double> dists = TrajectoryUtils::getDistancesForSplines(splines);
+	assert(dists.size() == path->waypoints().size());
+	bool generating = true;
+
+	QVector<std::shared_ptr<PathConstraint>> extras;
+	QVector<double> percents;
+
+	for (int i = 0; i < path->size() - 1; i++) {
+		percents.push_back(1);
+	}
+
+	bool running = true;
+	while (running) {
+		running = false;
+
+		//
+		// Generate the linear trajectory based on the percent of robot velocity used for each
+		// of the segments between the various waypoints
+		//
+		extras.clear();
+		for (int i = 0; i < path->size() - 1; i++) {
+			auto c = std::make_shared<DistanceVelocityConstraint>(path, dists[i], dists[i + 1], path->params().maxVelocity() * percents[i]);
+			extras.push_back(c);
+		}
+		traj = generateInternal(path, extras);
+
+		//
+		// Now evaluate if any rotation requested is feasible.  If not, we lower the percentage of velocity for
+		// any given segment available to the linear trajectory to reserve more for the rotation.
+		//
+		for (int i = 0; i < path->size() - 1; i++)
+		{
+			double startTime, endTime;
+			int startIndex, endIndex;
+			double startRot = path->getPoint(i).swrot().toDegrees();
+			double endRot = path->getPoint(i + 1).swrot().toDegrees();
+
+			if (!traj->getTimeForDistance(dists[i], startTime))
+			{
+				//
+				// Something is wrong, this should never happen
+				//
+				return nullptr;
+			}
+			startIndex = traj->getIndex(startTime);
+
+			if (!traj->getTimeForDistance(dists[i + 1], endTime))
+			{
+				//
+				// Something is wrong, this should never happen
+				//
+				return nullptr;
+			}
+
+			endIndex = traj->getIndex(endTime);
+
+			if (traj->size() - endIndex < 5) {
+				//
+				// If the detected end point is within 100 ms of the end of the path
+				// just push the computation to the end of the path.  This is a round off
+				// error that has to do with computing the distances using the splines and then
+				// the computations required to get from splines to a trajectory.
+				//
+				endIndex = traj->size();
+			}
+
+			//
+			// We now need the trajectory points for the times range
+			//
+
+			if (!modifySegmentForRotation(path, traj, 1.0 - percents[i], startIndex, endIndex, startRot, endRot))
+			{
+				percents[i] -= 0.01;
+				running = true;
+
+				if (percents[i] <= 0.0) {
+					//
+					// A single segment cannot reach the desired goal
+					//
+					return nullptr;
+				}
+			}
+			else
+			{
+				//
+				// A segment is ok
+				//
+				running = running;
+			}
+		}
+	}
+
+	return traj;
+}
+
+std::shared_ptr<PathTrajectory>
+CheesyGenerator::generateSwerveSingleRotate(std::shared_ptr<RobotPath> path)
 {
 	std::shared_ptr<PathTrajectory> traj;
 	double percent = 1.0;
@@ -82,7 +183,12 @@ CheesyGenerator::generate(std::shared_ptr<RobotPath> path)
 	}
 	else
 	{
-		traj = generateSwerve(path);
+		if (xeromode_) {
+			traj = generateSwervePerWaypointRotate(path);
+		}
+		else {
+			traj = generateSwerveSingleRotate(path);
+		}
 	}
 
 	return traj;

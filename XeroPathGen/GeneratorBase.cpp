@@ -355,7 +355,6 @@ Translation2d GeneratorBase::getWheelPerpendicularVector(Wheel w, double magnitu
 
 bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent)
 {
-
 	QVector<std::shared_ptr<SplinePair>> splines = generateSplines(path->waypoints());
 	QVector<double> dists = TrajectoryUtils::getDistancesForSplines(splines);
 	assert(dists.size() == path->waypoints().size());
@@ -399,8 +398,7 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 		//
 		// We now need the trajectory points for the times range
 		//
-
-		if (!modifySegmentForRotation(path, traj, percent, startIndex, endIndex, startRot, endRot))
+		if (!modifySegmentForRotation(path, traj, percent , startIndex, endIndex, startRot, endRot))
 		{
 			return false;
 		}

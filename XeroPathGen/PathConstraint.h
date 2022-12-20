@@ -4,6 +4,7 @@
 #include "Pose2dWithTrajectory.h"
 #include "RobotParams.h"
 #include <QtCore/QJsonObject>
+#include <memory>
 
 class RobotPath;
 

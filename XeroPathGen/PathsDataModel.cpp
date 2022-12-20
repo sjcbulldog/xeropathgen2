@@ -51,6 +51,7 @@ bool PathsDataModel::hasGroup(const QString& grname) const
 
 void PathsDataModel::addGroup(const QString& grname)
 {
+	emit beforeChange();
 	assert(hasGroup(grname) == false);
 	PathGroup *gr = new PathGroup(grname);
 	groups_.push_back(gr);
@@ -61,6 +62,7 @@ void PathsDataModel::addGroup(const QString& grname)
 
 void PathsDataModel::deleteGroup(const QString& grname)
 {
+	emit beforeChange();
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
 		groups_.erase(it);
@@ -94,6 +96,8 @@ const PathGroup* PathsDataModel::getPathGroupByName(const QString& grname)
 
 void PathsDataModel::renameGroup(const QString& oldname, const QString& newname)
 {
+	emit beforeChange();
+
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&oldname](const PathGroup* g) { return g->name() == oldname; });
 	if (it == groups_.end()) {
 		QString msg = "group '" + oldname + "' does not exist";
@@ -121,9 +125,12 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup* g) { return g->name() == path->pathGroup()->name(); });
 	if (it != groups_.end()) {
+		emit beforeChange();
+
 		(*it)->addPath(path);
 		setDirty();
-		connect(path.get(), &RobotPath::pathChanged, this, &PathsDataModel::pathChanged);
+		connect(path.get(), &RobotPath::beforePathChanged, this, &PathsDataModel::beforePathChanged);
+		connect(path.get(), &RobotPath::afterPathChanged, this, &PathsDataModel::afterPathChanged);
 		gen_mgr_.addPath(gen_type_, path);
 		emit pathAdded(path);
 	}
@@ -137,6 +144,8 @@ void PathsDataModel::deletePath(const QString& grname, const QString& pathname)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
+		emit beforeChange();
+
 		auto path = (*it)->getPathByName(pathname);
 		if (path != nullptr) {
 			gen_mgr_.removePath(path);
@@ -176,6 +185,7 @@ void PathsDataModel::renamePath(const QString& grname, const QString& oldname, c
 		throw std::runtime_error(msg.toStdString());
 	}
 
+	emit beforeChange();
 	path->setName(newname);
 	setDirty();
 	emit pathRenamed(grname, oldname, newname);
@@ -194,7 +204,12 @@ QVector<std::shared_ptr<RobotPath>> PathsDataModel::getAllPaths()
 	return paths;
 }
 
-void PathsDataModel::pathChanged(const QString& grname, const QString& pathname)
+void PathsDataModel::beforePathChanged(const QString& grname, const QString& pathname)
+{
+	emit beforeChange();
+}
+
+void PathsDataModel::afterPathChanged(const QString& grname, const QString& pathname)
 {
 	setDirty();
 	computeSplines(grname, pathname);

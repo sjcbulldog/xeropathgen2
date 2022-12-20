@@ -56,14 +56,16 @@ public:
 
 public:
 	RobotPath(const PathGroup *gr, const QString &units, const QString &name, const PathParameters &params);
+	RobotPath(const PathGroup* gr, const RobotPath& path);
 
 	const QString& name() const {
 		return name_;
 	}
 
 	void setName(const QString& name) {
+		emitBeforePathChangedSignal();
 		name_ = name;
-		emitPathChangedSignal();
+		emitAfterPathChangedSignal();
 	}
 
 	const QString& units() const {
@@ -75,8 +77,9 @@ public:
 	}
 
 	void setParams(const PathParameters& p) {
+		emitBeforePathChangedSignal();
 		params_ = p;
-		emitPathChangedSignal();
+		emitBeforePathChangedSignal();
 	}
 
 	const PathGroup* pathGroup() const {
@@ -88,8 +91,9 @@ public:
 	}
 
 	void addWayPoint(const Pose2dWithRotation& waypoint) {
+		emitBeforePathChangedSignal();
 		waypoints_.push_back(waypoint);
-		emitPathChangedSignal();
+		emitBeforePathChangedSignal();
 	}
 
 	bool isEmpty() const {
@@ -105,37 +109,46 @@ public:
 	}
 
 	void replacePoint(size_t index, const Pose2dWithRotation& pt) {
+		emitBeforePathChangedSignal();
 		waypoints_[index] = pt;
-		emitPathChangedSignal();
+		emitBeforePathChangedSignal();
 
 	}
 
 	void removePoint(size_t index) {
+		emitBeforePathChangedSignal();
 		waypoints_.remove(index, 1);
-		emitPathChangedSignal();
+		emitBeforePathChangedSignal();
 
 	}
 
 	void insertPoint(size_t index, const Pose2dWithRotation& pt) {
+		emitBeforePathChangedSignal();
 		waypoints_.insert(index + 1, pt);
-		emitPathChangedSignal();
+		emitBeforePathChangedSignal();
 	}
 
 	void addConstraint(std::shared_ptr<PathConstraint> c) {
+		emitBeforePathChangedSignal();
 		constraints_.push_back(c);
-		emitPathChangedSignal();
+		emitBeforePathChangedSignal();
 	}
 
 	void deleteConstraint(std::shared_ptr<PathConstraint> c) {
 		auto it = std::find(constraints_.begin(), constraints_.end(), c);
 		if (it != constraints_.end()) {
+			emitBeforePathChangedSignal();
 			constraints_.erase(it);
-			emitPathChangedSignal();
+			emitBeforePathChangedSignal();
 		}
 	}
 
-	void constraintChanged() {
-		emitPathChangedSignal();
+	void beforeConstraintChanged() {
+		emitBeforePathChangedSignal();
+	}
+
+	void afterConstraintChanged() {
+		emitAfterPathChangedSignal();
 	}
 
 	const QVector<std::shared_ptr<PathConstraint>>& constraints() const {
@@ -148,10 +161,12 @@ public:
 	QJsonObject toJSONObject();
 
 signals:
-	void pathChanged(const QString& groupName, const QString& pathName);
+	void afterPathChanged(const QString& groupName, const QString& pathName);
+	void beforePathChanged(const QString& groupName, const QString& pathName);
 
 private:
-	void emitPathChangedSignal();
+	void emitBeforePathChangedSignal();
+	void emitAfterPathChangedSignal();
 
 	static bool readPoints(std::shared_ptr<RobotPath> path, const QJsonArray& obj, QString &msg);
 	static bool readConstraints(std::shared_ptr<RobotPath> path, const QJsonArray& obj, QString &msg);

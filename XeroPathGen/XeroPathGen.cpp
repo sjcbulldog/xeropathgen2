@@ -80,10 +80,19 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::st
 	connect(&generator_, &GenerationMgr::generationComplete, this, &XeroPathGen::trajectoryGenerationComplete);
 	connect(&paths_data_model_, &PathsDataModel::unitsChanged, this, &XeroPathGen::setUnits);
 	connect(&paths_data_model_, &PathsDataModel::trajectoryGeneratorChanged, this, &XeroPathGen::trajectoryGeneratorChanged);
+	connect(&paths_data_model_, &PathsDataModel::beforeChange, this, &XeroPathGen::beforePathModelChange);
 }
 
 XeroPathGen::~XeroPathGen()
 {
+}
+
+void XeroPathGen::keyPressEvent(QKeyEvent* ev)
+{
+	if (ev->key() == Qt::Key_Z && (ev->modifiers() & Qt::ControlModifier) == Qt::ControlModifier)
+	{
+		undo();
+	}
 }
 
 void XeroPathGen::setUnits(const QString& units)
@@ -148,6 +157,7 @@ bool XeroPathGen::createWindows()
 	connect(path_edit_win_, &PathFieldView::waypointStartMoving, this, &XeroPathGen::waypointStartMoving);
 	connect(path_edit_win_, &PathFieldView::waypointMoving, this, &XeroPathGen::waypointMoving);
 	connect(path_edit_win_, &PathFieldView::waypointEndMoving, this, &XeroPathGen::waypointEndMoving);
+	connect(path_edit_win_, &PathFieldView::undoRequested, this, &XeroPathGen::undo);
 	setCentralWidget(path_edit_win_);
 
 	path_win_ = new PathWindow(paths_data_model_, nullptr);
@@ -1329,4 +1339,12 @@ void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
 			waypointSelected(waypoint_win_->getWaypoint());
 		}
 	}
+}
+
+void XeroPathGen::beforePathModelChange()
+{
+}
+
+void XeroPathGen::undo()
+{
 }

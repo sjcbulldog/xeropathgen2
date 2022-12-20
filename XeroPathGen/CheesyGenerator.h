@@ -19,7 +19,8 @@ public:
 	std::shared_ptr<PathTrajectory> generate(std::shared_ptr<RobotPath> path);
 
 protected:
-	std::shared_ptr<PathTrajectory> generateSwerve(std::shared_ptr<RobotPath> path);
+	std::shared_ptr<PathTrajectory> generateSwerveSingleRotate(std::shared_ptr<RobotPath> path);
+	std::shared_ptr<PathTrajectory> generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path);
 	std::shared_ptr<PathTrajectory> generateTankDrive(std::shared_ptr<RobotPath> path);
 
 private:

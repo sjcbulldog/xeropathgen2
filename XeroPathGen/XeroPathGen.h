@@ -52,8 +52,9 @@ private:
     void recentOpenProject(const QString& filename);
 
 protected:
-    void closeEvent(QCloseEvent* ev);
-    void showEvent(QShowEvent* ev);
+    void closeEvent(QCloseEvent* ev) override;
+    void showEvent(QShowEvent* ev) override ;
+    void keyPressEvent(QKeyEvent* ev) override;
 
 private:
     static void messageLogger(QtMsgType type, const QMessageLogContext& context, const QString& msg);
@@ -105,6 +106,8 @@ private:
     void createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path);
 
     void showAbout();
+    void undo();
+    void beforePathModelChange();
 
     void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
     void trajectoryGeneratorChanged();
@@ -185,4 +188,6 @@ private:
 
     bool project_mode_;
     Logger logger_;
+
+    QList<PathsDataModel> undo_stack_;
 };

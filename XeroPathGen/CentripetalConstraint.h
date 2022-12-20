@@ -23,8 +23,9 @@ public:
 	}
 
 	void setMaxCenForce(double c) {
+		path()->beforeConstraintChanged();
 		maxcen_ = c;
-		path()->constraintChanged();
+		path()->afterConstraintChanged();
 	}
 
 	double getMaxVelocity(const Pose2dWithTrajectory& state, std::shared_ptr<RobotParams> robot) override {
