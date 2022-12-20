@@ -2,7 +2,6 @@
 #include "RobotPath.h"
 #include "PathGroup.h"
 #include "CheesyGenerator.h"
-#include "XeroSwerveGenerator.h"
 #include "TrajectoryNames.h"
 #include "TrajectoryUtils.h"
 #include <QtCore/QThread>
@@ -25,7 +24,7 @@ void Generator::generateTrajectory()
 	double maxtheta = 0.1;
 
 	if (group_->type() == GeneratorType::CheesyPoofs) {
-		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
+		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_, false);
 		auto traj = gen.generate(path);
 
 		if (traj != nullptr) {
@@ -33,7 +32,7 @@ void Generator::generateTrajectory()
 		}
 	}
 	else if (group_->type() == GeneratorType::ErrorCodeXeroSwerve) {
-		XeroSwerveGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
+		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_, true);
 		auto traj = gen.generate(path);
 
 		if (traj != nullptr) {

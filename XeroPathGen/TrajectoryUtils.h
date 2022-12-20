@@ -22,6 +22,8 @@ public:
 
 	static void computeCurvature(QVector<Pose2dWithRotation>& points);
 
+	static QVector<double> getDistancesForSplines(const QVector<std::shared_ptr<SplinePair>>& splines);
+
 private:
 	static void getSegmentArc(std::shared_ptr<SplinePair> pair, QVector<Pose2dWithRotation>& results,
 		double t0, double t1, double maxDx, double maxDy, double maxDTheta);

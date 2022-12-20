@@ -117,7 +117,7 @@ public:
 	}
 
 	void insertPoint(size_t index, const Pose2dWithRotation& pt) {
-		waypoints_.insert(index, pt);
+		waypoints_.insert(index + 1, pt);
 		emitPathChangedSignal();
 	}
 

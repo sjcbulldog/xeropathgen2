@@ -1,4 +1,5 @@
 #include "TrajectoryUtils.h"
+#include "RobotPath.h"
 
 QVector<Pose2dWithRotation> TrajectoryUtils::parameterize(const QVector<std::shared_ptr<SplinePair>>& splines,
 	double maxDx, double maxDy, double maxDTheta)
@@ -78,4 +79,37 @@ void TrajectoryUtils::computeCurvature(QVector<Pose2dWithRotation>& pts)
 			pts[i].setCurvature(curv);
 		}
 	}
+}
+
+QVector<double> TrajectoryUtils::getDistancesForSplines(const QVector<std::shared_ptr<SplinePair>>& splines)
+{
+	QVector<double> dists;
+
+	if (splines.length() > 0) {
+		int steps = 10000;
+		double dist = 0;
+
+		dists.push_back(0.0);
+		for (size_t i = 0; i < splines.size(); i++)
+		{
+			auto pair = splines[i];
+			bool first = true;
+			Translation2d pos, prevpos;
+			for (float t = 0.0f; t <= 1.0f; t += 1.0f / steps)
+			{
+				pos = pair->evalPosition(t);
+				if (first)
+					first = false;
+				else
+				{
+					dist += pos.distance(prevpos);
+				}
+
+				prevpos = pos;
+			}
+
+			dists.push_back(dist);
+		}
+	}
+	return dists;
 }

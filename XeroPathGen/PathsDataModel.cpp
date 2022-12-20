@@ -1,5 +1,6 @@
 #include "PathsDataModel.h"
 #include "RobotPath.h"
+#include "TrajectoryUtils.h"
 #include <QtCore/QFile>
 #include <QtCore/QJsonParseError>
 #include <QtCore/QJsonObject>
@@ -487,35 +488,8 @@ QVector<double> PathsDataModel::getDistancesForPath(std::shared_ptr<RobotPath> p
 	if (!distances_.contains(path))
 	{
 		QVector<std::shared_ptr<SplinePair>> splines = getSplinesForPath(path);
-		if (splines.length() > 0) {
-			QVector<double> dists;
-			int steps = 1000;
-
-			dists.push_back(0.0);
-			for (size_t i = 0; i < splines.size(); i++)
-			{
-				double dist = 0;
-				auto pair = splines[i];
-				bool first = true;
-				Translation2d pos, prevpos;
-				for (float t = 0.0f; t <= 1.0f; t += 1.0f / steps)
-				{
-					pos = pair->evalPosition(t);
-					if (first)
-						first = false;
-					else
-					{
-						dist += pos.distance(prevpos);
-					}
-
-					prevpos = pos;
-				}
-
-				dists.push_back(dist);
-			}
-
-			distances_.insert(path, dists);
-		}
+		auto dists = TrajectoryUtils::getDistancesForSplines(splines);
+		distances_.insert(path, dists);
 	}
 	return distances_.value(path);
 }
