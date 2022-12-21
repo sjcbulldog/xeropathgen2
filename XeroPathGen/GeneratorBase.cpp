@@ -58,6 +58,14 @@ GeneratorBase::generateInternal(std::shared_ptr<RobotPath> path, QVector<std::sh
 	//
 	DistanceView distview(paramtraj, distSteppath);
 
+	if (distview.size() == 1 && distview.length() < 1e-4) {
+		//
+		// We have a simple, two point path with the two points concurrent.  Just
+		// return a null trajectory, as this does not make any sense
+		//
+		return nullptr;
+	}
+
 	//
 	// Step 4: generate a timing view that meets the constraints of the system
 	//

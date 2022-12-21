@@ -67,6 +67,9 @@ CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path
 		}
 
 		traj = generateInternal(path, extras);
+		if (traj == nullptr) {
+			return traj;
+		}
 
 		//
 		// Now evaluate if any rotation requested is feasible.  If not, we lower the percentage of velocity for

@@ -67,7 +67,8 @@ void PathWindow::itemRenamed(QTreeWidgetItem* item, int column)
 	assert(column == 0);
 
 	QString oldname = item->data(0, Qt::UserRole).toString();
-	if (oldname == item->text(0)) {
+	QString newname = item->text(0);
+	if (oldname == newname) {
 		//
 		// This is trigerred via an item changed signal.  This could be the background changing for the item
 		// in which case the names are the same.  Here we do nothing to the data model.
@@ -75,37 +76,39 @@ void PathWindow::itemRenamed(QTreeWidgetItem* item, int column)
 		return;
 	}
 
-	if (!isValidName(item->text(0)))
+	if (!isValidName(newname))
 	{
-		QMessageBox::critical(this, "Invalid Name", "The name '" + item->text(0) + "' is not a valid name.  A name must consist of letters and numbers only.");
+		QMessageBox::critical(this, "Invalid Name", "The name '" + newname + "' is not a valid name.  A name must consist of letters and numbers only.");
 		item->setText(0, oldname);
 		return;
 	}
 
 	if (item->parent() == nullptr) {
-		if (model_.hasGroup(item->text(0)))
+		if (model_.hasGroup(newname))
 		{
-			QMessageBox::critical(this, "Invalid Name", "There is already a group named '" + item->text(0) + "'.");
+			QMessageBox::critical(this, "Invalid Name", "There is already a group named '" + newname + "'.");
 			item->setText(0, oldname);
 			return;
 		}
 
 		model_.blockSignals(true);
-		model_.renameGroup(oldname, item->text(0));
+		model_.renameGroup(oldname, newname);
+		item->setData(0, Qt::UserRole, newname);
 		model_.blockSignals(false);
 	}
 	else
 	{
 		QString grname = item->parent()->text(0);
-		if (model_.hasPath(grname, item->text(0)))
+		if (model_.hasPath(grname, newname))
 		{
-			QMessageBox::critical(this, "Invalid Name", "There is already a path named '" + item->text(0) + "' in the group '" + grname + "'.");
+			QMessageBox::critical(this, "Invalid Name", "There is already a path named '" + newname + "' in the group '" + grname + "'.");
 			item->setText(0, oldname);
 			return;
 		}
 
 		model_.blockSignals(true);
-		model_.renamePath(grname, oldname, item->text(0));
+		model_.renamePath(grname, oldname, newname);
+		item->setData(0, Qt::UserRole, newname);
 		model_.blockSignals(false);
 	}
 }

@@ -382,6 +382,11 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 	else
 	{
 		//
+		// Tell the user what we are doing
+		//
+		QMessageBox::information(this, "Create Robot", "There is not robot descriptor in the project loaded.  Please configure the robot parameters in the next window.");
+
+		//
 		// Create a new robot file, and store it
 		//
 		createEditRobot(nullptr, robotfile);
@@ -885,7 +890,9 @@ void XeroPathGen::setPath(std::shared_ptr<RobotPath> path)
 	waypoint_win_->setPath(path);
 	path_params_win_->setPath(path);
 
-	setTrajectoryGroup(trajgrp);
+	if (trajgrp != nullptr) {
+		setTrajectoryGroup(trajgrp);
+	}
 }
 
 void XeroPathGen::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)

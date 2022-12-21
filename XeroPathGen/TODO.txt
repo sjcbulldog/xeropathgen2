@@ -1,6 +1,6 @@
-- Better robot drawing
 - Undo support
 
+- Better robot drawing										Done
 - The ability to move through the path and see the robot	Done
 - Disable trajectory generation while moving waypoint		Done
 - New Swerve Path Generator									Done

@@ -1,3 +1,20 @@
+XeroPathGen 2.2.0 Beta
+-----------------------------------------------------------------------------------
+
+User Visible Changes
+--------------------
+o Adding in slider that control the position of a robot image along the path to
+  visualize the movement of the robot through the path
+o Fixed bugs with concurrent waypoints
+o Added logging to the generator
+o Improved the drawing of the robot in the path
+o Added visual highlighting to the path window when a trajectory is not possible
+
+Program Design Changes
+----------------------
+o Cleaned up the selected path and generated trajectory logic at the top level to
+  inform other windows when things change
+
 XeroPathGen 2.1.0 Beta
 -----------------------------------------------------------------------------------
 
@@ -24,7 +41,6 @@ o Restructured the way the cheesy path generator works to accomidate the method 
   feel will work for a real swerve generator.  The generator is not done, but I
   know what I want to build and it will be part of the cheesy generator.  This
   restructuring makes this possible.
-
 
 
 XeroPathGen 2.0 Beta
