@@ -151,6 +151,7 @@ private:
 	void drawSplines(QPainter &paint);
 	void drawSpline(QPainter& paint, std::shared_ptr<SplinePair> pair);
 	void drawRobot(QPainter& paint);
+	void drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithTrajectory& pt);
 	bool hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRegion& region);
 	void invalidateWaypoint(size_t index);
 

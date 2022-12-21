@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	QString imagepath = exedir + "/images/Splash.png";
 	QPixmap image(imagepath);
 
-	std::string error;
+	QString error;
 
 	QSplashScreen splash(image);
 	QFont font = splash.font();
@@ -93,9 +93,14 @@ int main(int argc, char *argv[])
 	argc--;
 	argv++;
 
+	QStringList arglist;
+	for (int i = 0; i < argc; i++) {
+		arglist.push_back(argv[i]);
+	}
+
 	while (argc-- > 0)
 	{
-		std::string arg = *argv++;
+		QString arg = *argv++;
 		if (arg == "--fields")
 		{
 			if (argc == 0)
@@ -155,7 +160,7 @@ int main(int argc, char *argv[])
 	robots.dumpSearchPath("Robots");
 
 	try {
-		XeroPathGen w(robots, fields, log2stream);
+		XeroPathGen w(arglist, robots, fields, log2stream);
 		w.show();
 		splash.finish(&w);
 		return a.exec();

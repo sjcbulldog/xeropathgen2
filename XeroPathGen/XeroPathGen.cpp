@@ -20,10 +20,11 @@
 
 XeroPathGen* XeroPathGen::theOne = nullptr;
 
-XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::stringstream& sstrmm, QWidget *parent)
+XeroPathGen::XeroPathGen(const QStringList &arglist, RobotManager& robots, GameFieldManager& fields, std::stringstream& sstrmm, QWidget *parent)
 			: QMainWindow(parent), robots_(robots), fields_(fields), strstream_(sstrmm), paths_data_model_(generator_)
 {
 	theOne = this;
+	args_ = arglist;
 
 	QString exedir = QCoreApplication::applicationDirPath();
 	QString imagepath = exedir + "/images/icon.png";
@@ -85,10 +86,37 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::st
 	connect(&paths_data_model_, &PathsDataModel::unitsChanged, this, &XeroPathGen::setUnits);
 	connect(&paths_data_model_, &PathsDataModel::trajectoryGeneratorChanged, this, &XeroPathGen::trajectoryGeneratorChanged);
 	connect(&paths_data_model_, &PathsDataModel::beforeChange, this, &XeroPathGen::beforePathModelChange);
+
+	processArguments();
 }
 
 XeroPathGen::~XeroPathGen()
 {
+}
+
+void XeroPathGen::processArguments()
+{
+	int i = 0;
+
+	while (i < args_.length())
+	{
+		QString arg = args_.at(i++);
+		if (arg == "--fields") {
+			i++;
+		}
+		else if (arg == "--robots") {
+			i++;
+		}
+		else if (arg == "--project") {
+			if (i == args_.length()) {
+				QMessageBox::critical(nullptr, "Command line error", "The --project option was provided without a project directory");
+				break;
+			}
+
+			arg = args_.at(i++);
+			recentOpenProject(arg);
+		}
+	}
 }
 
 void XeroPathGen::keyPressEvent(QKeyEvent* ev)
@@ -281,23 +309,17 @@ bool XeroPathGen::createToolbar()
 
 bool XeroPathGen::createStatusBar()
 {
-	xpos_text_ = new QLabel("X:");
-	xpos_text_->setFixedWidth(80);
-	statusBar()->insertWidget(0, xpos_text_);
+	mouse_loc_text_ = new QLabel("Mouse:");
+	statusBar()->addWidget(mouse_loc_text_);
 
-	ypos_text_ = new QLabel("Y:");
-	ypos_text_->setFixedWidth(80);
-	statusBar()->insertWidget(1, ypos_text_);
-
-	time_text_ = new QLabel("Time:");
-	time_text_->setFixedWidth(120);
-	statusBar()->insertWidget(2, time_text_);
+	time_text_ = new QLabel("Robot:");
+	statusBar()->addWidget(time_text_);
 
 	path_filename_ = new QLabel("<unknown>");
-	statusBar()->insertWidget(3, path_filename_);
+	statusBar()->addPermanentWidget(path_filename_);
 
 	path_gendir_ = new QLabel("<unknown>");
-	statusBar()->insertWidget(4, path_gendir_);
+	statusBar()->addPermanentWidget(path_gendir_);
 
 	updateStatusBar();
 
@@ -307,12 +329,14 @@ bool XeroPathGen::createStatusBar()
 void XeroPathGen::mouseMoved(Translation2d pos)
 {
 	QString str;
-	
-	str = QString::number(pos.getX(), 'f', 2);
-	xpos_text_->setText("X: " + str);
 
-	str = QString::number(pos.getY(), 'f', 2);
-	ypos_text_->setText("Y: " + str);
+	str = "Mouse: ";
+	
+	str += QString::number(pos.getX(), 'f', 2);
+	str += ", ";
+
+	str += QString::number(pos.getY(), 'f', 2);
+	mouse_loc_text_->setText(str);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1364,9 +1388,26 @@ void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
 
 void XeroPathGen::sliderChanged(int value)
 {
+	QString text;
 	double time = static_cast<double>(value) / 1000.0;
 	path_edit_win_->setTrajectoryTime(time);
-	time_text_->setText("Time: " + QString::number(time, 'f', 1));
+	text = "Time: " + QString::number(time, 'f', 1);
+
+	auto trajgrp = generator_.getTrajectoryGroup(path_win_->selectedPath());
+	if (trajgrp != nullptr) {
+		auto traj = trajgrp->getTrajectory(TrajectoryName::Main);
+		if (traj) {
+			int index = traj->getIndex(time);
+			if (index >= 0 && index < traj->size()) {
+				const Pose2dWithTrajectory& pose = (*traj)[index];
+				text += ",  X: " + QString::number(pose.translation().getX(), 'f', 2);
+				text += ",  Y: " + QString::number(pose.translation().getY(), 'f', 2);
+				text += ",  Heading: " + QString::number(pose.rotation().toDegrees(), 'f', 2);
+				text += ",  SwerveRotation: " + QString::number(pose.swrot().toDegrees(), 'f', 2);
+			}
+		}
+	}
+	time_text_->setText(text);
 }
 
 void XeroPathGen::beforePathModelChange()

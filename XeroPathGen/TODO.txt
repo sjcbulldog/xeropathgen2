@@ -1,6 +1,8 @@
-- The ability to move through the path and see the robot
+- Better robot drawing
 - Undo support
 
+- The ability to move through the path and see the robot	Done
+- Disable trajectory generation while moving waypoint		Done
 - New Swerve Path Generator									Done
 - Make sure swrot matches heading for tank drive			Done
 - Fix the build incrementer for building					Done

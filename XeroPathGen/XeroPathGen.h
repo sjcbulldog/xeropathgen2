@@ -26,7 +26,7 @@ class XeroPathGen : public QMainWindow
     Q_OBJECT
 
 public:
-    XeroPathGen(RobotManager &robots, GameFieldManager &fields, std::stringstream& sstrmm, QWidget *parent = nullptr);
+    XeroPathGen(const QStringList &args, RobotManager &robots, GameFieldManager &fields, std::stringstream& sstrmm, QWidget *parent = nullptr);
     ~XeroPathGen();
 
 private:
@@ -112,6 +112,7 @@ private:
     void trajectoryGeneratorChanged();
 
     void sliderChanged(int change);
+    void processArguments();
 
 private:
     static constexpr const char* RobotDialogName = "Name";
@@ -132,6 +133,7 @@ private:
 
 private:
     QSettings settings_;
+    QStringList args_;
 
     GameFieldManager& fields_;
     RobotManager& robots_;
@@ -181,8 +183,7 @@ private:
     QMenu* help_menu_;
 
     // Status bar widgets
-    QLabel* xpos_text_;
-    QLabel* ypos_text_;
+    QLabel* mouse_loc_text_;
     QLabel* time_text_;
     QLabel* path_filename_;
     QLabel* path_gendir_;

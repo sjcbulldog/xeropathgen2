@@ -19,14 +19,14 @@
 #include "RobotPath.h"
 #include "PathGroup.h"
 #include "Pose2d.h"
-#include <QPainter>
-#include <QPointF>
-#include <QMouseEvent>
-#include <QFontMetrics>
-#include <QDebug>
-#include <QCoreApplication>
-#include <QClipboard>
-#include <QGuiApplication>
+#include <QtCore/QPointF>
+#include <QtCore/QCoreApplication>
+#include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
+#include <QtGui/QMouseEvent>
+#include <QtGui/QFontMetrics>
+#include <QtGui/QClipboard>
+#include <QtGui/QGuiApplication>
 #include <cmath>
 
 PathFieldView::PathFieldView(PathsDataModel&model, QWidget *parent) : QWidget(parent), path_data_model_(model)
@@ -507,6 +507,44 @@ QVector<QPointF> PathFieldView::transformPoints(QTransform& trans, const QVector
 	return result;
 }
 
+void PathFieldView::drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithTrajectory& pose)
+{
+	static const double wheelWidth = UnitConverter::convert(2.0, "in", units_);
+	static const double wheelLength = UnitConverter::convert(4.0, "in", units_);
+
+	Translation2d fl, fr, bl, br;
+	fl = Translation2d(wheelWidth, wheelLength);
+	fr = Translation2d(wheelWidth, -wheelLength);
+	bl = Translation2d(-wheelWidth, wheelLength);
+	br = Translation2d(-wheelWidth, -wheelLength);
+
+	fl = fl.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	fr = fr.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	bl = bl.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	br = br.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+
+	fl = fl.translateBy(loc);
+	fr = fr.translateBy(loc);
+	bl = bl.translateBy(loc);
+	br = br.translateBy(loc);
+
+	QVector<QPointF> corners;
+	corners.push_back(QPointF(fl.getX(), fl.getY()));
+	corners.push_back(QPointF(fr.getX(), fr.getY()));
+	corners.push_back(QPointF(bl.getX(), bl.getY()));
+	corners.push_back(QPointF(br.getX(), br.getY()));
+
+	auto winloc = worldToWindow(corners);
+
+	QPainterPath path;
+	path.moveTo(winloc[0]);
+	path.lineTo(winloc[1]);
+	path.lineTo(winloc[3]);
+	path.lineTo(winloc[2]);
+	path.lineTo(winloc[0]);
+	paint.fillPath(path, brush);
+}
+
 void PathFieldView::drawRobot(QPainter& paint)
 {
 	if (path_ == nullptr || robot_ == nullptr || traj_ == nullptr)
@@ -538,7 +576,16 @@ void PathFieldView::drawRobot(QPainter& paint)
 
 	auto winloc = worldToWindow(corners);
 
-	QPen pen(QColor(0xff, 0xff, 0x00, 0xff));
+	QBrush brush(QColor(255, 128, 0));
+	paint.setBrush(brush);
+
+	drawWheel(paint, brush, fl, pose);
+	drawWheel(paint, brush, fr, pose);
+	drawWheel(paint, brush, bl, pose);
+	drawWheel(paint, brush, br, pose);
+
+	QPen pen(QColor(0, 153, 0));
+	paint.setPen(pen);
 	pen.setWidthF(2.0f);
 	paint.setPen(pen);
 
@@ -546,10 +593,8 @@ void PathFieldView::drawRobot(QPainter& paint)
 	paint.drawLine(winloc[2], winloc[3]);
 	paint.drawLine(winloc[2], winloc[0]);
 
-	pen = QPen(QColor(0x00, 0x00, 0xff, 0xff));
-	pen.setWidthF(2.0f);
+	pen.setWidthF(5.0);
 	paint.setPen(pen);
-
 	paint.drawLine(winloc[0], winloc[1]);
 }
 
