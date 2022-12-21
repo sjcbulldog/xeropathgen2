@@ -13,6 +13,7 @@ PathsDataModel::PathsDataModel(GenerationMgr& genmgr) : gen_mgr_(genmgr)
 	gen_type_ = GeneratorType::CheesyPoofs;
 	default_units_ = "m";
 	gen_type_ = GeneratorType::None;
+	generation_enabled_ = true;
 }
 
 PathsDataModel::~PathsDataModel()
@@ -131,7 +132,7 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 		setDirty();
 		connect(path.get(), &RobotPath::beforePathChanged, this, &PathsDataModel::beforePathChanged);
 		connect(path.get(), &RobotPath::afterPathChanged, this, &PathsDataModel::afterPathChanged);
-		gen_mgr_.addPath(gen_type_, path);
+		this->generateTrajectory(path);
 		emit pathAdded(path);
 	}
 	else {
@@ -215,12 +216,37 @@ void PathsDataModel::afterPathChanged(const QString& grname, const QString& path
 	computeSplines(grname, pathname);
 }
 
+void PathsDataModel::enableGeneration(bool b)
+{
+	if (b)
+	{
+		generation_enabled_ = true;
+		for (auto path : deferred_) {
+			gen_mgr_.addPath(gen_type_, path);
+		}
+	}
+	else
+	{
+		generation_enabled_ = false;
+	}
+}
+
+void PathsDataModel::generateTrajectory(std::shared_ptr<RobotPath> path)
+{
+	if (generation_enabled_) {
+		gen_mgr_.addPath(gen_type_, path);
+	}
+	else {
+		deferred_.push_back(path);
+	}
+}
+
 void PathsDataModel::computeSplines(const QString& grname, const QString& pathname)
 {
 	auto path = getPathByName(grname, pathname);
 	assert(path != nullptr);
 
-	gen_mgr_.addPath(gen_type_, path);
+	generateTrajectory(path);
 	computeSplinesForPath(path);
 	distances_.remove(path);
 }

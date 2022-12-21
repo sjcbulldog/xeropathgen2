@@ -19,9 +19,13 @@ public:
 		robot_ = robot;
 	}
 
+	std::shared_ptr<RobotPath> selectedPath() {
+		return selected_path_;
+	}
+
 signals:
 	void groupSelected(const QString& grname);
-	void pathSelected(const QString& grname, const QString& pathname);
+	void pathSelected(std::shared_ptr<RobotPath> path);
 
 private:
 	void prepareCustomMenu(const QPoint& pos);
@@ -53,4 +57,5 @@ private:
 	PathsDataModel &model_;
 	QString units_;
 	std::shared_ptr<RobotParams> robot_;
+	std::shared_ptr<RobotPath> selected_path_;
 };

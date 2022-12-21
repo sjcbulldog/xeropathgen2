@@ -78,6 +78,7 @@ private:
     void newRobotSelected(std::shared_ptr<RobotParams> robot);
 
     void setPath(std::shared_ptr<RobotPath> path);
+    void setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group);
 
     void newRobotAction();
     void editRobotAction();
@@ -85,8 +86,6 @@ private:
     void deleteRobotAction();
     void exportCurrentRobot();
     void importRobot();
-
-    void pathSelected(const QString& grname, const QString& pathname);
 
     bool internalFileSave();
     bool internalFileSaveAs();
@@ -111,6 +110,8 @@ private:
 
     void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
     void trajectoryGeneratorChanged();
+
+    void sliderChanged(int change);
 
 private:
     static constexpr const char* RobotDialogName = "Name";
@@ -143,6 +144,8 @@ private:
     std::stringstream& strstream_;
 
     // Windows
+    QWidget* path_edit_win_container_;
+    QSlider* path_edit_win_slider_;
     PathFieldView* path_edit_win_;
     PathWindow* path_win_;
     PathParametersWindow* path_params_win_;
@@ -180,6 +183,7 @@ private:
     // Status bar widgets
     QLabel* xpos_text_;
     QLabel* ypos_text_;
+    QLabel* time_text_;
     QLabel* path_filename_;
     QLabel* path_gendir_;
 

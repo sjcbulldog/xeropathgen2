@@ -17,6 +17,9 @@ public:
 	PathsDataModel(GenerationMgr &genmgr);
 	virtual ~PathsDataModel();
 
+
+	void enableGeneration(bool);
+
 	void setGeneratorType(GeneratorType type) {
 		emit beforeChange();
 		gen_type_ = type;
@@ -29,14 +32,6 @@ public:
 	}
 
 	void reset();
-
-	const QString& setDefaultUnits(const QString units) {
-		default_units_ = units;
-	}
-
-	const QString& defaultUnits() const {
-		return default_units_;
-	}
 
 	const QString& units() const {
 		return units_;
@@ -112,6 +107,8 @@ private:
 
 	bool readPathGroup(QFile& file, const QJsonObject& obj, QString &msg);
 
+	void generateTrajectory(std::shared_ptr<RobotPath> path);
+
 	QJsonObject modelToObject();
 
 	void setDirty() {
@@ -136,15 +133,19 @@ private:
 	QString filename_;						// The filename for the path JSON file
 	QString path_output_dir_;				// The directory for the output of trajectory (.csv) files
 	QString units_;							// The units for the current data model
-	QString default_units_;					// The units to use if a data file being read does not have units
 	QList<PathGroup *> groups_;				// The path groups (auto modes) that are stored here
-	bool dirty_;							// If true, unsaved changes exist
 	GeneratorType gen_type_;				// The generator type that goes with these paths
+
 	GenerationMgr& gen_mgr_;				// The generator manager to actually do the work of generating trajectories
+	bool dirty_;							// If true, unsaved changes exist
+	QString default_units_;					// The units to use if a data file being read does not have units
 
 	// A mapping of paths to splines
 	QMap<std::shared_ptr<RobotPath>, QVector<std::shared_ptr<SplinePair>>> splines_;
 
 	// A mapping of paths to distances
 	QMap<std::shared_ptr<RobotPath>, QVector<double>> distances_;
+
+	QVector<std::shared_ptr<RobotPath>> deferred_;
+	bool generation_enabled_;
 };

@@ -71,7 +71,8 @@ void PathWindow::selectedItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* 
 		}
 		else
 		{
-			emit pathSelected(current->parent()->text(0), current->text(0));
+			selected_path_ = model_.getPathByName(current->parent()->text(0), current->text(0));
+			emit pathSelected(selected_path_);
 		}
 	}
 }

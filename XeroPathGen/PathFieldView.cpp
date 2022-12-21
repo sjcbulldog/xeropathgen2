@@ -40,35 +40,7 @@ PathFieldView::PathFieldView(PathsDataModel&model, QWidget *parent) : QWidget(pa
 	image_scale_ = 1.0;
 	dragging_ = false;
 	rotating_ = false;
-
-	QString exedir = QCoreApplication::applicationDirPath();
-	QString imagepath = exedir + "/images/" + FlagImage;
-	flagimage_ = QImage(imagepath);
-
-	imagepath = exedir + "/images/" + Marker1Image;
-	im = new QImage(imagepath);
-	assert(!im->isNull());
-	marker_images_.push_back(im);
-
-	imagepath = exedir + "/images/" + Marker2Image;
-	im = new QImage(imagepath);
-	assert(!im->isNull());
-	marker_images_.push_back(im);
-
-	imagepath = exedir + "/images/" + Marker3Image;
-	im = new QImage(imagepath);
-	assert(!im->isNull());
-	marker_images_.push_back(im);
-
-	imagepath = exedir + "/images/" + Marker4Image;
-	im = new QImage(imagepath);
-	assert(!im->isNull());
-	marker_images_.push_back(im);
-
-	marker_offsets_.push_back(QPoint(-10, 0));
-	marker_offsets_.push_back(QPoint(-10, 0));
-	marker_offsets_.push_back(QPoint(-10, 0));
-	marker_offsets_.push_back(QPoint(-10, 0));
+	traj_time_ = 0.0;
 }
 
 PathFieldView::~PathFieldView()
@@ -150,6 +122,10 @@ void PathFieldView::doPaint(QPainter &paint, bool printing)
 	if (path_ != nullptr)
 	{
 		drawPath(paint);
+
+		if (robot_ != nullptr) {
+			drawRobot(paint);
+		}
 	}
 }
 
@@ -518,9 +494,9 @@ void PathFieldView::pasteCoordinates(bool b)
 	}
 }
 
-std::vector<QPointF> PathFieldView::transformPoints(QTransform& trans, const std::vector<QPointF>& points)
+QVector<QPointF> PathFieldView::transformPoints(QTransform& trans, const QVector<QPointF>& points)
 {
-	std::vector<QPointF> result;
+	QVector<QPointF> result;
 
 	for (const QPointF& pt : points)
 	{
@@ -529,6 +505,52 @@ std::vector<QPointF> PathFieldView::transformPoints(QTransform& trans, const std
 	}
 
 	return result;
+}
+
+void PathFieldView::drawRobot(QPainter& paint)
+{
+	if (path_ == nullptr || robot_ == nullptr || traj_ == nullptr)
+		return;
+
+	int index = traj_->getIndex(traj_time_);
+	if (index == -1)
+		return;
+
+	const Pose2dWithTrajectory& pose = (*traj_)[index];
+
+	Translation2d fl, fr, bl, br;
+	robot_->getLocations(path_->units(), fl, fr, bl, br);
+	fl = fl.rotateBy(pose.swrot());
+	fr = fr.rotateBy(pose.swrot());
+	bl = bl.rotateBy(pose.swrot());
+	br = br.rotateBy(pose.swrot());
+
+	fl = fl.translateBy(pose.pose().getTranslation());
+	fr = fr.translateBy(pose.pose().getTranslation());
+	bl = bl.translateBy(pose.pose().getTranslation());
+	br = br.translateBy(pose.pose().getTranslation());
+
+	QVector<QPointF> corners;
+	corners.push_back(QPointF(fl.getX(), fl.getY()));
+	corners.push_back(QPointF(fr.getX(), fr.getY()));
+	corners.push_back(QPointF(bl.getX(), bl.getY()));
+	corners.push_back(QPointF(br.getX(), br.getY()));
+
+	auto winloc = worldToWindow(corners);
+
+	QPen pen(QColor(0xff, 0xff, 0x00, 0xff));
+	pen.setWidthF(2.0f);
+	paint.setPen(pen);
+
+	paint.drawLine(winloc[1], winloc[3]);
+	paint.drawLine(winloc[2], winloc[3]);
+	paint.drawLine(winloc[2], winloc[0]);
+
+	pen = QPen(QColor(0x00, 0x00, 0xff, 0xff));
+	pen.setWidthF(2.0f);
+	paint.setPen(pen);
+
+	paint.drawLine(winloc[0], winloc[1]);
 }
 
 void PathFieldView::drawPath(QPainter &paint)
@@ -564,7 +586,7 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 	mm.translate(pt.getTranslation().getX(), pt.getTranslation().getY());
 	mm.rotateRadians(pt.getRotation().toRadians());
 
-	std::vector<QPointF> mapped = worldToWindow(transformPoints(mm, triangle_));
+	QVector<QPointF> mapped = worldToWindow(transformPoints(mm, triangle_));
 	paint.drawPolygon(&mapped[0], 3);
 
 	if (selected)
@@ -572,7 +594,7 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 		double rl = robot_length_;
 		double rw = robot_width_;
 
-		std::vector<QPointF> robot =
+		QVector<QPointF> robot =
 		{
 			{ rl / 2.0, rw / 2.0 },
 			{ -rl / 2.0, rw / 2.0 },
@@ -580,7 +602,7 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 			{ rl / 2.0, -rw / 2.0 },
 		};
 
-		std::vector<QPointF> line =
+		QVector<QPointF> line =
 		{
 			{ 0.0, rw / 2.0},
 			{ 0.0, rw * 3.0 / 4.0 },
@@ -591,10 +613,10 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 		pen.setWidthF(2.0f);
 		paint.setPen(pen);
 
-		std::vector<QPointF> robotsel = worldToWindow(transformPoints(mm, robot));
+		QVector<QPointF> robotsel = worldToWindow(transformPoints(mm, robot));
 		paint.drawPolygon(&robotsel[0], static_cast<int>(robotsel.size()));
 
-		std::vector<QPointF> linesel = worldToWindow(transformPoints(mm, line));
+		QVector<QPointF> linesel = worldToWindow(transformPoints(mm, line));
 		paint.drawLine(linesel[0], linesel[1]);
 
 		paint.setBrush(QBrush(QColor(0xff, 0xff, 0x00, 0xff)));
@@ -613,7 +635,7 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 		//
 		// Draw a vector showing the direction of the robot
 		//
-		std::vector<QPointF> mapped = worldToWindow(transformPoints(mmswrot, arrow_));
+		QVector<QPointF> mapped = worldToWindow(transformPoints(mmswrot, arrow_));
 
 		QPen pen(QColor(0x00, 0xff, 0x00));
 		pen.setWidth(2);
@@ -786,8 +808,10 @@ void PathFieldView::createTransforms()
 	// without changing the aspec ratio.  Pick the largest scale factor that will fit
 	// the most constrained dimension
 	//
-	double sx = (double)width() / (double)field_image_.width();
-	double sy = (double)height() / (double)field_image_.height();
+	int w = width();
+	int h = height();
+	double sx = (double)w / (double)field_image_.width();
+	double sy = (double)h / (double)field_image_.height();
 
 	if (sx < sy)
 		image_scale_ = sx;
@@ -847,12 +871,12 @@ QPointF PathFieldView::windowToWorld(const QPointF& pt)
 	return window_to_world_.map(pt);
 }
 
-std::vector<QPointF> PathFieldView::worldToWindow(const std::vector<QPointF> &points)
+QVector<QPointF> PathFieldView::worldToWindow(const QVector<QPointF> &points)
 {
 	return transformPoints(world_to_window_, points);
 }
 
-std::vector<QPointF> PathFieldView::windowToWorld(const std::vector<QPointF>& points)
+QVector<QPointF> PathFieldView::windowToWorld(const QVector<QPointF>& points)
 {
 	return transformPoints(window_to_world_, points);
 }

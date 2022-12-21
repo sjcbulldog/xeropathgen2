@@ -79,7 +79,7 @@ public:
 	void setParams(const PathParameters& p) {
 		emitBeforePathChangedSignal();
 		params_ = p;
-		emitBeforePathChangedSignal();
+		emitAfterPathChangedSignal();
 	}
 
 	const PathGroup* pathGroup() const {
@@ -93,7 +93,7 @@ public:
 	void addWayPoint(const Pose2dWithRotation& waypoint) {
 		emitBeforePathChangedSignal();
 		waypoints_.push_back(waypoint);
-		emitBeforePathChangedSignal();
+		emitAfterPathChangedSignal();
 	}
 
 	bool isEmpty() const {
@@ -111,27 +111,27 @@ public:
 	void replacePoint(size_t index, const Pose2dWithRotation& pt) {
 		emitBeforePathChangedSignal();
 		waypoints_[index] = pt;
-		emitBeforePathChangedSignal();
+		emitAfterPathChangedSignal();
 
 	}
 
 	void removePoint(size_t index) {
 		emitBeforePathChangedSignal();
 		waypoints_.remove(index, 1);
-		emitBeforePathChangedSignal();
+		emitAfterPathChangedSignal();
 
 	}
 
 	void insertPoint(size_t index, const Pose2dWithRotation& pt) {
 		emitBeforePathChangedSignal();
 		waypoints_.insert(index + 1, pt);
-		emitBeforePathChangedSignal();
+		emitAfterPathChangedSignal();
 	}
 
 	void addConstraint(std::shared_ptr<PathConstraint> c) {
 		emitBeforePathChangedSignal();
 		constraints_.push_back(c);
-		emitBeforePathChangedSignal();
+		emitAfterPathChangedSignal();
 	}
 
 	void deleteConstraint(std::shared_ptr<PathConstraint> c) {
@@ -139,7 +139,7 @@ public:
 		if (it != constraints_.end()) {
 			emitBeforePathChangedSignal();
 			constraints_.erase(it);
-			emitBeforePathChangedSignal();
+			emitAfterPathChangedSignal();
 		}
 	}
 
