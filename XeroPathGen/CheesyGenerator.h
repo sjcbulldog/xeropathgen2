@@ -13,7 +13,7 @@
 class CheesyGenerator : public GeneratorBase
 {
 public:
-	CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot, bool xeromod);
+	CheesyGenerator(const QString &logfile, QMutex &loglock, int which, double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot, bool xeromod);
 	virtual ~CheesyGenerator();
 
 	std::shared_ptr<PathTrajectory> generate(std::shared_ptr<RobotPath> path);

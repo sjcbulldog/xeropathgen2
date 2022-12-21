@@ -45,7 +45,7 @@ public:
 	void setUnits(const QString &units);
 	void setTrajectory(std::shared_ptr<PathTrajectory> traj) {
 		traj_ = traj;
-		if (traj_time_ > traj_->getEndTime()) {
+		if (traj_ == nullptr || traj_time_ > traj_->getEndTime()) {
 			traj_time_ = 0.0;
 		}
 		update();

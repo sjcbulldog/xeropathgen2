@@ -56,11 +56,12 @@ public:
 
 public:
 	RobotPath(const PathGroup *gr, const QString &units, const QString &name, const PathParameters &params);
-	RobotPath(const PathGroup* gr, const RobotPath& path);
 
 	const QString& name() const {
 		return name_;
 	}
+
+	QString fullname() const;
 
 	void setName(const QString& name) {
 		emitBeforePathChangedSignal();

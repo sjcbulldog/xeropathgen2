@@ -6,6 +6,10 @@
 
 PathWindow::PathWindow(PathsDataModel& model, QWidget* parent) : QTreeWidget(parent), model_(model)
 {
+	unknown_ = QBrush(QColor(0, 0, 0));
+	bad_ = QBrush(QColor(255, 0, 0));
+	good_ = QBrush(QColor(0, 153, 0));
+
 	setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this, &QTreeWidget::customContextMenuRequested, this, &PathWindow::prepareCustomMenu);
 	connect(this, &QTreeWidget::currentItemChanged, this, &PathWindow::selectedItemChanged);
@@ -20,11 +24,56 @@ PathWindow::PathWindow(PathsDataModel& model, QWidget* parent) : QTreeWidget(par
 	setHeaderHidden(true);
 }
 
+void PathWindow::trajectoryGenerationError(std::shared_ptr<RobotPath> path, bool error)
+{
+	QTreeWidgetItem* groupItem = nullptr ;
+	QTreeWidgetItem* pathItem = nullptr;
+
+	for (int i = 0; i < topLevelItemCount(); i++) {
+		QTreeWidgetItem* item = topLevelItem(i);
+		if (item->text(0) == path->pathGroup()->name()) {
+			groupItem = item;
+			break;
+		}
+	}
+
+	if (groupItem == nullptr) {
+		return;
+	}
+
+	for(int i = 0 ; i < groupItem->childCount() ; i++) {
+		QTreeWidgetItem* item = groupItem->child(i);
+		if (item->text(0) == path->name()) {
+			pathItem = item;
+			break;
+		}
+	}
+
+	if (pathItem == nullptr) {
+		return;
+	}
+
+	if (error) {
+		pathItem->setForeground(0, bad_);
+	}
+	else {
+		pathItem->setForeground(0, good_);
+	}
+}
+
+
 void PathWindow::itemRenamed(QTreeWidgetItem* item, int column)
 {
 	assert(column == 0);
 
 	QString oldname = item->data(0, Qt::UserRole).toString();
+	if (oldname == item->text(0)) {
+		//
+		// This is trigerred via an item changed signal.  This could be the background changing for the item
+		// in which case the names are the same.  Here we do nothing to the data model.
+		//
+		return;
+	}
 
 	if (!isValidName(item->text(0)))
 	{

@@ -893,6 +893,17 @@ void XeroPathGen::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)
 	auto main = group->getTrajectory(TrajectoryName::Main);
 	path_edit_win_->setTrajectory(main);
 
+	if (main == nullptr) {
+		//
+		// If we have a group, but have no main trajectory, this means trajectory generation
+		// failed.  Lets tell the path window so it can display this is some way.
+		//
+		path_win_->trajectoryGenerationError(group->path(), true);
+	}
+	else {
+		path_win_->trajectoryGenerationError(group->path(), false);
+	}
+
 	if (group->path() == path_win_->selectedPath()) {
 		path_params_win_->setTrajectory(main);
 		plot_win_->setTrajectoryGroup(group);
@@ -900,7 +911,12 @@ void XeroPathGen::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)
 
 		path_edit_win_->setTrajectory(main);
 		path_edit_win_slider_->setValue(0);
-		path_edit_win_slider_->setMaximum(static_cast<int>(main->getEndTime() * 1000));
+		if (main == nullptr) {
+			path_edit_win_slider_->setMaximum(0);
+		}
+		else {
+			path_edit_win_slider_->setMaximum(static_cast<int>(main->getEndTime() * 1000));
+		}
 	}
 }
 

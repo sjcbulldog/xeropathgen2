@@ -39,24 +39,6 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
 	log2stream << localMsg.constData() << std::endl;
 }
 
-static void pruneLogFiles(QDir& logdir)
-{
-	int count = 0;
-	QStringList paths;
-	QStringList list;
-	list << "*.log";
-	QFileInfoList files = logdir.entryInfoList(list, QDir::Filter::NoFilter, QDir::SortFlag::Time);
-	while (files.size() > 20)
-	{
-		QFile file(files.back().absoluteFilePath());
-		file.remove();
-		files.pop_back();
-		count++;
-	}
-
-	qDebug() << "Pruning old log files, " << count << "deleted";
-}
-
 int main(int argc, char *argv[])
 {
 	qInstallMessageHandler(myMessageOutput);

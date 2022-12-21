@@ -17,17 +17,30 @@ PathParametersWindow::PathParametersWindow(QWidget* parent) : QTreeWidget(parent
 void PathParametersWindow::setTrajectory(std::shared_ptr<PathTrajectory> traj)
 {
 	if (duration_item_ != nullptr) {
-		duration_item_->setText(1, QString::number(traj->getEndTime(), 'f', 2));
+		if (traj == nullptr) {
+			duration_item_->setText(1, "");
+		}
+		else {
+			duration_item_->setText(1, QString::number(traj->getEndTime(), 'f', 2));
+		}
 	}
 
 	if (length_item_ != nullptr) {
-		length_item_->setText(1, QString::number(traj->getEndDistance(), 'f', 2));
+		if (traj == nullptr) {
+			length_item_->setText(1, "");
+		}
+		else {
+			length_item_->setText(1, QString::number(traj->getEndDistance(), 'f', 2));
+		}
 	}
 }
 
 void PathParametersWindow::pathParamChanged(QTreeWidgetItem* item, int column)
 {
 	assert(column == 1);
+
+	if (item == length_item_ || item == duration_item_)
+		return;
 
 	bool ok;
 	double value = item->text(1).toDouble(&ok);

@@ -72,4 +72,7 @@ private:
 
 	std::shared_ptr<RobotParams> robot_;
 	double timestep_;
+
+	QString logfile_;
+	QMutex loglock_;
 };

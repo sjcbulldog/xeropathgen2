@@ -13,6 +13,10 @@ RobotPath::RobotPath(const PathGroup* gr, const QString& units, const QString &n
 	units_ = units;
 }
 
+QString RobotPath::fullname() const {
+	return group_->name() + "-" + name_;
+}
+
 void RobotPath::emitBeforePathChangedSignal()
 {
 	emit beforePathChanged(group_->name(), name_);

@@ -4,8 +4,12 @@
 #include "TrajectoryUtils.h"
 #include "RobotPath.h"
 #include "TrajectoryNames.h"
+#include <QtCore/QStandardPaths>
+#include <QtCore/QFile>
+#include <QtCore/QTextStream>
 
-GeneratorBase::GeneratorBase(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot)
+GeneratorBase::GeneratorBase(const QString &logfile, QMutex& loglock, int which, double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot)
+	: logfile_(logfile), loglock_(loglock), which_(which)
 {
 	robot_ = robot;
 	diststep_ = diststep;
@@ -15,6 +19,19 @@ GeneratorBase::GeneratorBase(double diststep, double timestep, double maxdx, dou
 	maxDTheta_ = maxtheta;
 }
 
+void GeneratorBase::logMessage(const QString& msg)
+{
+	loglock_.lock();
+
+	QFile file(logfile_);
+	if (file.open(QIODeviceBase::WriteOnly | QIODeviceBase::Append | QIODeviceBase::Text))
+	{
+		QTextStream strm(&file);
+		strm << QString::number(which_) << ":" << msg << "\n";
+	}
+
+	loglock_.unlock();
+}
 
 std::shared_ptr<PathTrajectory>
 GeneratorBase::generateInternal(std::shared_ptr<RobotPath> path, QVector<std::shared_ptr<PathConstraint>>& extras)
@@ -409,6 +426,8 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 
 bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double endRot)
 {
+	QString logmsg;
+
 	assert(start >= 0 && start < traj->size());
 	assert(end >= 0 && end <= traj->size());
 	assert(end > start);
@@ -432,21 +451,33 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 
 	double deltat = endTime - startTime;
 
-	double accel = TrajectoryUtils::linearToRotational(robot_, path->params().maxAccel() * percent);
+	double maxaccel = TrajectoryUtils::linearToRotational(robot_, path->params().maxAccel() * percent);
 	double maxvel = TrajectoryUtils::linearToRotational(robot_, path->params().maxVelocity() * percent);
 
-
 	double diff = MathUtils::boundDegrees(endRot - startRot);
-	tp = std::make_shared<TrapezoidalProfile>(accel, -accel, maxvel);
+
+	logmsg = "modifySegmentForRotation:";
+	logmsg += "time = " + QString::number(startTime, 'f', 2) + " - " + QString::number(endTime, 'f', 2);
+	logmsg += ", linear accel " + QString::number(path->params().maxAccel() * percent, 'f', 2);
+	logmsg += ", linear velocity " + QString::number(path->params().maxVelocity() * percent, 'f', 2);
+	logmsg += ", rot accel " + QString::number(maxaccel, 'f', 2);
+	logmsg += ", rot velocity " + QString::number(maxvel, 'f', 2);
+	logMessage(logmsg);
+
+	tp = std::make_shared<TrapezoidalProfile>(maxaccel, -maxaccel, maxvel);
 	if (!tp->update(diff, 0.0, 0.0)) {
+		logMessage("modifySegmentForRotation: cannot create TrapezoidalProfile - failed");
 		return false;
 	}
+
+	logMessage("trapezoidal profile: " + tp->toString());
 
 	if (tp->getTotalTime() > deltat) {
 		//
 		// With the percentage of the velocity and acceleration given to 
 		// rotation, we don't have time to complete the rotation.
 		//
+		logMessage("modifySegmentForRotation: trapeazoidal profile cannot complete in defined interval");
 		return false;
 	}
 
@@ -485,34 +516,80 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		Translation2d rotblvel = getWheelPerpendicularVector(Wheel::BL, rv).rotateBy(angle);
 		Translation2d rotbrvel = getWheelPerpendicularVector(Wheel::BR, rv).rotateBy(angle);
 
-		if (rotflvel.normalize() > robot_max_velocity_)
-			return false;
-
-		if (rotfrvel.normalize() > robot_max_velocity_)
-			return false;
-
-		if (rotblvel.normalize() > robot_max_velocity_)
-			return false;
-
-		if (rotbrvel.normalize() > robot_max_velocity_)
-			return false;
-
 		Translation2d rotflacc = getWheelPerpendicularVector(Wheel::FL, ra).rotateBy(angle);
 		Translation2d rotfracc = getWheelPerpendicularVector(Wheel::FR, ra).rotateBy(angle);
 		Translation2d rotblacc = getWheelPerpendicularVector(Wheel::BL, ra).rotateBy(angle);
 		Translation2d rotbracc = getWheelPerpendicularVector(Wheel::BR, ra).rotateBy(angle);
 
+		bool ok = true;
+		logmsg.clear();
+		if (rotflvel.normalize() > robot_max_velocity_)
+		{
+			logmsg.clear();
+			logmsg += "FL velocity failed - required " + QString::number(rotflvel.normalize(), 'f', 2) + ", max " + QString::number(robot_max_velocity_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
+
+		if (rotfrvel.normalize() > robot_max_velocity_)
+		{
+			logmsg.clear();
+			logmsg += "FR velocity failed - required " + QString::number(rotfrvel.normalize(), 'f', 2) + ", max " + QString::number(robot_max_velocity_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
+
+		if (rotblvel.normalize() > robot_max_velocity_)
+		{
+			logmsg.clear();
+			logmsg += "BL velocity failed - required " + QString::number(rotblvel.normalize(), 'f', 2) + ", max " + QString::number(robot_max_velocity_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
+
+		if (rotbrvel.normalize() > robot_max_velocity_)
+		{
+			logmsg.clear();
+			logmsg += "BR velocity failed - required " + QString::number(rotbrvel.normalize(), 'f', 2) + ", max " + QString::number(robot_max_velocity_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
+
 		if (rotflacc.normalize() > robot_max_accel_)
-			return false;
+		{
+			logmsg.clear();
+			logmsg += "FL acceleration failed - required " + QString::number(rotflacc.normalize(), 'f', 2) + ", max " + QString::number(robot_max_accel_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
 
 		if (rotfracc.normalize() > robot_max_accel_)
-			return false;
+		{
+			logmsg.clear();
+			logmsg += "FR acceleration failed - required " + QString::number(rotfracc.normalize(), 'f', 2) + ", max " + QString::number(robot_max_accel_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
 
 		if (rotblacc.normalize() > robot_max_accel_)
-			return false;
+		{
+			logmsg.clear();
+			logmsg += "BL acceleration failed - required " + QString::number(rotblacc.normalize(), 'f', 2) + ", max " + QString::number(robot_max_accel_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
 
 		if (rotbracc.normalize() > robot_max_accel_)
+		{
+			logmsg.clear();
+			logmsg += "BR acceleration failed - required " + QString::number(rotbracc.normalize(), 'f', 2) + ", max " + QString::number(robot_max_accel_, 'f', 2);
+			logMessage(logmsg);
+			ok = false;
+		}
+
+		if (!ok) {
 			return false;
+		}
 
 		Rotation2d heading = pt.rotation();
 		Translation2d pathvel = Translation2d(heading, pt.velocity()).rotateBy(Rotation2d::fromDegrees(-angle.toDegrees()));
@@ -568,5 +645,6 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 
 		(*traj)[i].setSwRotation(angle);
 	}
+
 	return true;
 }

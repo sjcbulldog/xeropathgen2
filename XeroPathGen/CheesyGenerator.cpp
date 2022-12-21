@@ -1,5 +1,6 @@
 #include "CheesyGenerator.h"
 #include "RobotPath.h"
+#include "PathGroup.h"
 #include "DistanceView.h"
 #include "Pose2dConstrained.h"
 #include "PathTrajectory.h"
@@ -10,8 +11,8 @@
 #include "DistanceVelocityConstraint.h"
 #include <cmath>
 
-CheesyGenerator::CheesyGenerator(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot, bool xeromode) 
-		: GeneratorBase(diststep, timestep, maxdx, maxdy, maxtheta, robot)
+CheesyGenerator::CheesyGenerator(const QString &logfile, QMutex& loglock, int which, double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot, bool xeromode)
+		: GeneratorBase(logfile, loglock, which, diststep, timestep, maxdx, maxdy, maxtheta, robot)
 {
 	xeromode_ = xeromode;
 }
@@ -23,8 +24,10 @@ CheesyGenerator::~CheesyGenerator()
 std::shared_ptr<PathTrajectory>
 CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path)
 {
+	QString logtext;
 	std::shared_ptr<PathTrajectory> traj;
 
+	logMessage(path->fullname() + ": generating splines");
 	QVector<std::shared_ptr<SplinePair>> splines = generateSplines(path->waypoints());
 	QVector<double> dists = TrajectoryUtils::getDistancesForSplines(splines);
 	assert(dists.size() == path->waypoints().size());
@@ -37,8 +40,20 @@ CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path
 		percents.push_back(1);
 	}
 
+	int iteration = 1;
 	bool running = true;
 	while (running) {
+		logMessage(path->fullname() + ": iteration " + QString::number(iteration++));
+
+		logtext.clear();
+		for (double d : percents) {
+			if (logtext.length() > 0) {
+				logtext += ", ";
+			}
+			logtext += QString::number(d, 'f', 2);
+		}
+		logMessage(path->fullname() + ": per seg percentages: " + logtext);
+
 		running = false;
 
 		//
@@ -50,12 +65,15 @@ CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path
 			auto c = std::make_shared<DistanceVelocityConstraint>(path, dists[i], dists[i + 1], path->params().maxVelocity() * percents[i]);
 			extras.push_back(c);
 		}
+
 		traj = generateInternal(path, extras);
 
 		//
 		// Now evaluate if any rotation requested is feasible.  If not, we lower the percentage of velocity for
 		// any given segment available to the linear trajectory to reserve more for the rotation.
 		//
+		QVector<bool> status;
+
 		for (int i = 0; i < path->size() - 1; i++)
 		{
 			double startTime, endTime;
@@ -107,13 +125,21 @@ CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path
 					//
 					return nullptr;
 				}
+				status.push_back(false);
 			}
 			else
 			{
-				//
-				// A segment is ok
-				//
-				running = running;
+				status.push_back(true);
+				status.push_back(true);
+			}
+
+			logtext.clear();
+			for (bool b : status) {
+				if (logtext.length() > 0) {
+					logtext += ", ";
+				}
+
+				logtext += (b ? "success" : "failed");
 			}
 		}
 	}
@@ -171,6 +197,23 @@ CheesyGenerator::generate(std::shared_ptr<RobotPath> path)
 	double percent = 1.0;
 	std::shared_ptr<PathTrajectory> traj;
 
+	QString startmsg = "Starting CheesyGenerator:";
+	startmsg += "path " + path->fullname();
+	if (robot()->getDriveType() == RobotParams::DriveType::TankDrive) {
+		startmsg += ", drive = tank";
+	}
+	else {
+		startmsg += ", drive = swerve";
+	}
+
+	if (xeromode_) {
+		startmsg += ", per waypoint rotation mode";
+	}
+	else {
+		startmsg += ", single rotation mode";
+	}
+	logMessage(startmsg);
+
 	//
 	// Compute the robot parameters in terms of the units used by the
 	// path and cache them for future access.
@@ -189,6 +232,13 @@ CheesyGenerator::generate(std::shared_ptr<RobotPath> path)
 		else {
 			traj = generateSwerveSingleRotate(path);
 		}
+	}
+
+	if (traj == nullptr) {
+		logMessage(path->fullname() + " - path generation failed");
+	}
+	else {
+		logMessage(path->fullname() + " - path generation successful");
 	}
 
 	return traj;

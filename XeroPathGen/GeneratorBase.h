@@ -8,6 +8,7 @@
 #include "SwerveWheels.h"
 #include "PathTrajectory.h"
 #include <QtCore/QVector>
+#include <QtCore/QMutex>
 #include <memory>
 
 class RobotParams;
@@ -15,7 +16,7 @@ class RobotParams;
 class GeneratorBase
 {
 public:
-	GeneratorBase(double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot);
+	GeneratorBase(const QString &logfile, QMutex& loglock, int which, double diststep, double timestep, double maxdx, double maxdy, double maxtheta, std::shared_ptr<RobotParams> robot);
 
 	std::shared_ptr<RobotParams> robot() {
 		return robot_;
@@ -62,6 +63,8 @@ protected:
 	bool modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double endRot);
 	bool modifyForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent);
 
+	void logMessage(const QString& msg);
+
 private:
 	std::shared_ptr<RobotParams> robot_;
 
@@ -75,5 +78,9 @@ private:
 	double maxDTheta_;
 	double diststep_;
 	double timestep_;
+
+	const QString &logfile_;
+	QMutex &loglock_;
+	int which_;
 };
 
