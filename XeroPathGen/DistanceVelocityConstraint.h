@@ -12,11 +12,11 @@ public:
 	virtual ~DistanceVelocityConstraint();
 
 	void update(double after, double before, double velocity) {
+		path()->beforeConstraintChanged();
 		after_distance_ = after;
 		before_distance_ = before;
 		velocity_ = velocity;
-
-		path()->constraintChanged();
+		path()->afterConstraintChanged();
 	}
 
 	double getMaxVelocity(const Pose2dWithTrajectory& state, std::shared_ptr<RobotParams> robot) override ;

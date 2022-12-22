@@ -2,16 +2,20 @@
 #include "RobotPath.h"
 #include "PathGroup.h"
 #include "CheesyGenerator.h"
-#include "XeroSwerveGenerator.h"
 #include "TrajectoryNames.h"
 #include "TrajectoryUtils.h"
 #include <QtCore/QThread>
 
-Generator::Generator(double timestep, std::shared_ptr<RobotParams> robot, std::shared_ptr<TrajectoryGroup> group)
+int Generator::global_which_ = 1;
+
+Generator::Generator(const QString& logfile, QMutex& mutex, double timestep, std::shared_ptr<RobotParams> robot, std::shared_ptr<TrajectoryGroup> group)
+	: logfile_(logfile), loglock_(mutex)
 {
 	timestep_ = timestep;
 	group_ = group;
 	robot_ = robot ;
+
+	which_ = global_which_++;
 }
 
 void Generator::generateTrajectory()
@@ -25,7 +29,7 @@ void Generator::generateTrajectory()
 	double maxtheta = 0.1;
 
 	if (group_->type() == GeneratorType::CheesyPoofs) {
-		CheesyGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
+		CheesyGenerator gen(logfile_, loglock_, which_, diststep, timestep_, maxdx, maxdy, maxtheta, robot_, false);
 		auto traj = gen.generate(path);
 
 		if (traj != nullptr) {
@@ -33,7 +37,7 @@ void Generator::generateTrajectory()
 		}
 	}
 	else if (group_->type() == GeneratorType::ErrorCodeXeroSwerve) {
-		XeroSwerveGenerator gen(diststep, timestep_, maxdx, maxdy, maxtheta, robot_);
+		CheesyGenerator gen(logfile_, loglock_, which_, diststep, timestep_, maxdx, maxdy, maxtheta, robot_, true);
 		auto traj = gen.generate(path);
 
 		if (traj != nullptr) {

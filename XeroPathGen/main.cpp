@@ -39,24 +39,6 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext& context, const QS
 	log2stream << localMsg.constData() << std::endl;
 }
 
-static void pruneLogFiles(QDir& logdir)
-{
-	int count = 0;
-	QStringList paths;
-	QStringList list;
-	list << "*.log";
-	QFileInfoList files = logdir.entryInfoList(list, QDir::Filter::NoFilter, QDir::SortFlag::Time);
-	while (files.size() > 20)
-	{
-		QFile file(files.back().absoluteFilePath());
-		file.remove();
-		files.pop_back();
-		count++;
-	}
-
-	qDebug() << "Pruning old log files, " << count << "deleted";
-}
-
 int main(int argc, char *argv[])
 {
 	qInstallMessageHandler(myMessageOutput);
@@ -74,7 +56,7 @@ int main(int argc, char *argv[])
 	QString imagepath = exedir + "/images/Splash.png";
 	QPixmap image(imagepath);
 
-	std::string error;
+	QString error;
 
 	QSplashScreen splash(image);
 	QFont font = splash.font();
@@ -93,9 +75,14 @@ int main(int argc, char *argv[])
 	argc--;
 	argv++;
 
+	QStringList arglist;
+	for (int i = 0; i < argc; i++) {
+		arglist.push_back(argv[i]);
+	}
+
 	while (argc-- > 0)
 	{
-		std::string arg = *argv++;
+		QString arg = *argv++;
 		if (arg == "--fields")
 		{
 			if (argc == 0)
@@ -155,7 +142,7 @@ int main(int argc, char *argv[])
 	robots.dumpSearchPath("Robots");
 
 	try {
-		XeroPathGen w(robots, fields, log2stream);
+		XeroPathGen w(arglist, robots, fields, log2stream);
 		w.show();
 		splash.finish(&w);
 		return a.exec();

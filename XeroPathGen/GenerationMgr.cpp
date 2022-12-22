@@ -2,6 +2,8 @@
 #include "Generator.h"
 #include "RobotPath.h"
 #include "PathGroup.h"
+#include <QtCore/QStandardPaths>
+#include <QtCore/QFile>
 
 GenerationMgr::GenerationMgr()
 {
@@ -9,6 +11,14 @@ GenerationMgr::GenerationMgr()
 	thread_ = nullptr;
 	active_type_ = GeneratorType::CheesyPoofs;
 	timestep_ = 0.02;
+
+	QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::AppLocalDataLocation);
+	logfile_ = dirs.front() + "/generators_log.txt";
+
+	QFile file(logfile_);
+	if (file.exists()) {
+		file.remove();
+	}
 }
 
 void GenerationMgr::clear()
@@ -74,10 +84,10 @@ void GenerationMgr::schedulePath()
 		pending_queue_.pop_front();
 		pending_queue_mutex_.unlock();
 
-		auto traj = std::make_shared<TrajectoryGroup>(type, path);
+		auto trajgrp = std::make_shared<TrajectoryGroup>(type, path);
 
 		thread_ = new QThread();
-		worker_ = new Generator(timestep_, robot_, traj);
+		worker_ = new Generator(logfile_, loglock_, timestep_, robot_, trajgrp);
 		worker_->moveToThread(thread_);
 
 		connect(thread_, &QThread::started, worker_, &Generator::generateTrajectory);

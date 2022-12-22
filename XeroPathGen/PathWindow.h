@@ -19,9 +19,15 @@ public:
 		robot_ = robot;
 	}
 
+	std::shared_ptr<RobotPath> selectedPath() {
+		return selected_path_;
+	}
+
+	void trajectoryGenerationError(std::shared_ptr<RobotPath> path, bool error);
+
 signals:
 	void groupSelected(const QString& grname);
-	void pathSelected(const QString& grname, const QString& pathname);
+	void pathSelected(std::shared_ptr<RobotPath> path);
 
 private:
 	void prepareCustomMenu(const QPoint& pos);
@@ -42,6 +48,7 @@ private:
 		item->setText(0, text);
 		item->setFlags(item->flags() | Qt::ItemIsEditable);
 		item->setData(0, Qt::UserRole, text);
+		item->setForeground(0, unknown_);
 
 		return item;
 	}
@@ -53,4 +60,9 @@ private:
 	PathsDataModel &model_;
 	QString units_;
 	std::shared_ptr<RobotParams> robot_;
+	std::shared_ptr<RobotPath> selected_path_;
+
+	QBrush unknown_;
+	QBrush good_;
+	QBrush bad_;
 };

@@ -26,7 +26,7 @@ class XeroPathGen : public QMainWindow
     Q_OBJECT
 
 public:
-    XeroPathGen(RobotManager &robots, GameFieldManager &fields, std::stringstream& sstrmm, QWidget *parent = nullptr);
+    XeroPathGen(const QStringList &args, RobotManager &robots, GameFieldManager &fields, std::stringstream& sstrmm, QWidget *parent = nullptr);
     ~XeroPathGen();
 
 private:
@@ -52,8 +52,9 @@ private:
     void recentOpenProject(const QString& filename);
 
 protected:
-    void closeEvent(QCloseEvent* ev);
-    void showEvent(QShowEvent* ev);
+    void closeEvent(QCloseEvent* ev) override;
+    void showEvent(QShowEvent* ev) override ;
+    void keyPressEvent(QKeyEvent* ev) override;
 
 private:
     static void messageLogger(QtMsgType type, const QMessageLogContext& context, const QString& msg);
@@ -77,6 +78,7 @@ private:
     void newRobotSelected(std::shared_ptr<RobotParams> robot);
 
     void setPath(std::shared_ptr<RobotPath> path);
+    void setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group);
 
     void newRobotAction();
     void editRobotAction();
@@ -84,8 +86,6 @@ private:
     void deleteRobotAction();
     void exportCurrentRobot();
     void importRobot();
-
-    void pathSelected(const QString& grname, const QString& pathname);
 
     bool internalFileSave();
     bool internalFileSaveAs();
@@ -105,9 +105,14 @@ private:
     void createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path);
 
     void showAbout();
+    void undo();
+    void beforePathModelChange();
 
     void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
     void trajectoryGeneratorChanged();
+
+    void sliderChanged(int change);
+    void processArguments();
 
 private:
     static constexpr const char* RobotDialogName = "Name";
@@ -128,6 +133,7 @@ private:
 
 private:
     QSettings settings_;
+    QStringList args_;
 
     GameFieldManager& fields_;
     RobotManager& robots_;
@@ -140,6 +146,8 @@ private:
     std::stringstream& strstream_;
 
     // Windows
+    QWidget* path_edit_win_container_;
+    QSlider* path_edit_win_slider_;
     PathFieldView* path_edit_win_;
     PathWindow* path_win_;
     PathParametersWindow* path_params_win_;
@@ -175,8 +183,8 @@ private:
     QMenu* help_menu_;
 
     // Status bar widgets
-    QLabel* xpos_text_;
-    QLabel* ypos_text_;
+    QLabel* mouse_loc_text_;
+    QLabel* time_text_;
     QLabel* path_filename_;
     QLabel* path_gendir_;
 
@@ -185,4 +193,6 @@ private:
 
     bool project_mode_;
     Logger logger_;
+
+    QList<PathsDataModel> undo_stack_;
 };

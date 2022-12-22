@@ -21,6 +21,7 @@
 #include "Pose2d.h"
 #include "SplinePair.h"
 #include "PathsDataModel.h"
+#include "PathTrajectory.h"
 #include <QWidget>
 #include <QPixmap>
 #include <QTransform>
@@ -38,23 +39,32 @@ public:
 	PathFieldView(PathsDataModel& model, QWidget *parent = Q_NULLPTR);
 	virtual ~PathFieldView();
 
-	const std::vector<QImage*>& markerImages() {
-		return marker_images_;
-	}
-
 	void setField(std::shared_ptr<GameField> field);
 	void setPath(std::shared_ptr<RobotPath> path);
 	void setRobot(std::shared_ptr<RobotParams> params);
 	void setUnits(const QString &units);
+	void setTrajectory(std::shared_ptr<PathTrajectory> traj) {
+		traj_ = traj;
+		if (traj_ == nullptr || traj_time_ > traj_->getEndTime()) {
+			traj_time_ = 0.0;
+		}
+		update();
+	}
 
 	std::shared_ptr<RobotPath> getPath() {
 		return path_;
 	}
 
+	void setTrajectoryTime(double time) {
+		traj_time_ = time;
+		update();
+	}
+
+
 	QPointF worldToWindow(const QPointF& pt);
 	QPointF windowToWorld(const QPointF& pt);
-	std::vector<QPointF> worldToWindow(const std::vector<QPointF>& points);
-	std::vector<QPointF> windowToWorld(const std::vector<QPointF>& points);
+	QVector<QPointF> worldToWindow(const QVector<QPointF>& points);
+	QVector<QPointF> windowToWorld(const QVector<QPointF>& points);
 
 	void deleteWaypoint();
 	void deleteWaypoint(const QString &group, const QString &path, size_t index);
@@ -78,6 +88,7 @@ signals:
 	void waypointEndMoving(size_t index);
 	void waypointInserted();
 	void waypointDeleted();
+	void undoRequested();
 
 protected:
 	virtual void paintEvent(QPaintEvent* event) override;
@@ -103,15 +114,8 @@ private:
 	static constexpr double BigWaypointRotate = 5.0;
 	static constexpr double SmallWaypointRotate = 0.5;
 
-	static constexpr const char* FlagImage = "flag.png";
-	static constexpr const char* Marker1Image = "marker1.png";
-	static constexpr const char* Marker2Image = "marker2.png";
-	static constexpr const char* Marker3Image = "marker3.png";
-	static constexpr const char* Marker4Image = "marker4.png";
-
-
-	std::vector<QPointF> triangle_;
-	std::vector<QPointF> arrow_;
+	QVector<QPointF> triangle_;
+	QVector<QPointF> arrow_;
 
 	enum WaypointRegion
 	{
@@ -123,6 +127,8 @@ private:
 private:
 	void copyCoordinates();
 	void pasteCoordinates(bool rot180);
+
+	void findSplineStep(std::shared_ptr<SplinePair> pair);
 
 	void pathChanged(const QString& grname, const QString& pathname);
 
@@ -137,23 +143,20 @@ private:
 	void moveWaypoint(bool shift, int dx, int dy);
 	void rotateWaypoint(bool shift, int dir);
 
-	std::vector<QPointF> transformPoints(QTransform& trans, const std::vector<QPointF>& points);
+	QVector<QPointF> transformPoints(QTransform& trans, const QVector<QPointF>& points);
 	void createTransforms();
 	void drawPath(QPainter& paint);
 	void drawPoints(QPainter& paint);
 	void drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, bool selected);
 	void drawSplines(QPainter &paint);
 	void drawSpline(QPainter& paint, std::shared_ptr<SplinePair> pair);
-	void findSplineStep(std::shared_ptr<SplinePair> pair);
 	void drawRobot(QPainter& paint);
+	void drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithTrajectory& pt);
 	bool hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRegion& region);
 	void invalidateWaypoint(size_t index);
 
 private:
 	QImage field_image_;
-	QImage flagimage_;
-	std::vector<QImage*> marker_images_;
-	std::vector<QPoint> marker_offsets_;
 
 	std::shared_ptr<GameField> field_;
 	std::shared_ptr<RobotPath> path_;
@@ -176,4 +179,7 @@ private:
 	RobotParams::DriveType drive_type_;
 	double robot_width_;
 	double robot_length_;
+
+	std::shared_ptr<PathTrajectory> traj_;
+	double traj_time_;
 };

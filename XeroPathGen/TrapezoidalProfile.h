@@ -1,8 +1,7 @@
 #pragma once
 
 #include "SpeedProfileGenerator.h"
-#include <string>
-#include <vector>
+#include <QtCore/QString>
 
 /// \file
 
@@ -58,7 +57,7 @@ public:
 
 	/// \brief convert the profile to a human readable string
 	/// \returns a human readable string
-	std::string toString();
+	QString toString();
 
 	/// \brief get the amount of time in the acceleration phase of the profile
 	/// \returns time accelerating
@@ -136,5 +135,5 @@ private:
 	double td_;
 	double tc_;
 
-	std::string type_;
+	QString type_;
 };

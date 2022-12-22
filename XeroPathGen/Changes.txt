@@ -1,3 +1,48 @@
+XeroPathGen 2.2.0 Beta
+-----------------------------------------------------------------------------------
+
+User Visible Changes
+--------------------
+o Adding in slider that control the position of a robot image along the path to
+  visualize the movement of the robot through the path
+o Fixed bugs with concurrent waypoints
+o Added logging to the generator
+o Improved the drawing of the robot in the path
+o Added visual highlighting to the path window when a trajectory is not possible
+
+Program Design Changes
+----------------------
+o Cleaned up the selected path and generated trajectory logic at the top level to
+  inform other windows when things change
+
+XeroPathGen 2.1.0 Beta
+-----------------------------------------------------------------------------------
+
+User Visible Changes
+--------------------
+o Added in the Error Code Xero generator that generates more optimal paths with a
+  swerve drive rotation and translating in a path at the same time.
+
+XeroPathGen 2.0.1 Beta
+-----------------------------------------------------------------------------------
+
+User Visible Changes
+--------------------
+o Fixed bug with the generation of the rotations.  The swerve drive rotations were
+  not right.
+o Fixed bug when two points in a path are exactly concurrent
+o Fixed bug when closing one project or file and opening another.  The waypoint window
+  remembered the waypoint index from the closed file and would crash if selected path
+  in the new path file had fewer waypoints than the previous path
+
+Program Design Changes
+----------------------
+o Restructured the way the cheesy path generator works to accomidate the method I
+  feel will work for a real swerve generator.  The generator is not done, but I
+  know what I want to build and it will be part of the cheesy generator.  This
+  restructuring makes this possible.
+
+
 XeroPathGen 2.0 Beta
 -----------------------------------------------------------------------------------
 

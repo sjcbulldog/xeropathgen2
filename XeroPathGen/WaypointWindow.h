@@ -13,7 +13,10 @@ public:
 	WaypointWindow(QWidget* parent);
 
 	void setPath(std::shared_ptr<RobotPath> path) {
-		path_ = path;
+		if (path_ != path) {
+			path_ = path;
+			index_ = -1;
+		}
 	}
 
 	std::shared_ptr<RobotPath> path() {

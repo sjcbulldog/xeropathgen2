@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UnitConverter.h"
+#include "Translation2d.h"
 #include <QtCore/QString>
 #include <cassert>
 
@@ -175,6 +176,16 @@ public:
 
 	void setTimestep(double v) {
 		timestep_ = v;
+	}
+
+	void getLocations(const QString &units, Translation2d& fl, Translation2d& fr, Translation2d& bl, Translation2d& br) {
+		double width = UnitConverter::convert(rwidth_, length_units_, units);
+		double length = UnitConverter::convert(rlength_, length_units_, units);
+
+		fl = Translation2d(width / 2.0, length / 2.0);
+		fr = Translation2d(width / 2.0, -length / 2.0);
+		bl = Translation2d(-width / 2.0, length / 2.0);
+		br = Translation2d(-width / 2.0, -length / 2.0);
 	}
 
 private:

@@ -157,9 +157,6 @@
     <ClCompile Include="DistanceVelocityConstraint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="XeroSwerveGenerator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TrapezoidalProfile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -170,6 +167,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LoggerWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratorBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -300,9 +300,6 @@
     <ClInclude Include="DistanceVelocityConstraint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="XeroSwerveGenerator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TrapezoidalProfile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -319,6 +316,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LoggerWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratorBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

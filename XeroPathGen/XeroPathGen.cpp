@@ -20,10 +20,11 @@
 
 XeroPathGen* XeroPathGen::theOne = nullptr;
 
-XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::stringstream& sstrmm, QWidget *parent)
+XeroPathGen::XeroPathGen(const QStringList &arglist, RobotManager& robots, GameFieldManager& fields, std::stringstream& sstrmm, QWidget *parent)
 			: QMainWindow(parent), robots_(robots), fields_(fields), strstream_(sstrmm), paths_data_model_(generator_)
 {
 	theOne = this;
+	args_ = arglist;
 
 	QString exedir = QCoreApplication::applicationDirPath();
 	QString imagepath = exedir + "/images/icon.png";
@@ -59,6 +60,10 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::st
 	setDefaultField();
 	setDefaultRobot();
 
+	//
+	// This is for a new paths data model.  If we read one in, we get the units from
+	// the file being read.
+	//
 	QString units("m");
 	if (settings_.contains("units")) {
 		units = settings_.value("units").toString();
@@ -80,10 +85,46 @@ XeroPathGen::XeroPathGen(RobotManager& robots, GameFieldManager& fields, std::st
 	connect(&generator_, &GenerationMgr::generationComplete, this, &XeroPathGen::trajectoryGenerationComplete);
 	connect(&paths_data_model_, &PathsDataModel::unitsChanged, this, &XeroPathGen::setUnits);
 	connect(&paths_data_model_, &PathsDataModel::trajectoryGeneratorChanged, this, &XeroPathGen::trajectoryGeneratorChanged);
+	connect(&paths_data_model_, &PathsDataModel::beforeChange, this, &XeroPathGen::beforePathModelChange);
+
+	processArguments();
 }
 
 XeroPathGen::~XeroPathGen()
 {
+}
+
+void XeroPathGen::processArguments()
+{
+	int i = 0;
+
+	while (i < args_.length())
+	{
+		QString arg = args_.at(i++);
+		if (arg == "--fields") {
+			i++;
+		}
+		else if (arg == "--robots") {
+			i++;
+		}
+		else if (arg == "--project") {
+			if (i == args_.length()) {
+				QMessageBox::critical(nullptr, "Command line error", "The --project option was provided without a project directory");
+				break;
+			}
+
+			arg = args_.at(i++);
+			recentOpenProject(arg);
+		}
+	}
+}
+
+void XeroPathGen::keyPressEvent(QKeyEvent* ev)
+{
+	if (ev->key() == Qt::Key_Z && (ev->modifiers() & Qt::ControlModifier) == Qt::ControlModifier)
+	{
+		undo();
+	}
 }
 
 void XeroPathGen::setUnits(const QString& units)
@@ -141,6 +182,10 @@ bool XeroPathGen::createWindows()
 		plot_win_->setNodeList(list);
 	}
 
+	path_edit_win_container_ = new QWidget();
+	QVBoxLayout* lay = new QVBoxLayout();
+	path_edit_win_container_->setLayout(lay);
+	setCentralWidget(path_edit_win_container_);
 
 	path_edit_win_ = new PathFieldView(paths_data_model_, nullptr);
 	connect(path_edit_win_, &PathFieldView::mouseMoved, this, &XeroPathGen::mouseMoved);
@@ -148,7 +193,14 @@ bool XeroPathGen::createWindows()
 	connect(path_edit_win_, &PathFieldView::waypointStartMoving, this, &XeroPathGen::waypointStartMoving);
 	connect(path_edit_win_, &PathFieldView::waypointMoving, this, &XeroPathGen::waypointMoving);
 	connect(path_edit_win_, &PathFieldView::waypointEndMoving, this, &XeroPathGen::waypointEndMoving);
-	setCentralWidget(path_edit_win_);
+	connect(path_edit_win_, &PathFieldView::undoRequested, this, &XeroPathGen::undo);
+	lay->addWidget(path_edit_win_);
+
+	path_edit_win_slider_ = new QSlider(Qt::Horizontal);
+	path_edit_win_slider_->setMinimum(0);
+	path_edit_win_slider_->setMaximum(100);
+	lay->addWidget(path_edit_win_slider_);
+	connect(path_edit_win_slider_, &QSlider::valueChanged, this, &XeroPathGen::sliderChanged);
 
 	path_win_ = new PathWindow(paths_data_model_, nullptr);
 	dock_path_win_ = new QDockWidget(tr("Paths"));
@@ -156,7 +208,7 @@ bool XeroPathGen::createWindows()
 	dock_path_win_->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	dock_path_win_->setWidget(path_win_);
 	addDockWidget(Qt::RightDockWidgetArea, dock_path_win_);
-	connect(path_win_, &PathWindow::pathSelected, this, &XeroPathGen::pathSelected);
+	connect(path_win_, &PathWindow::pathSelected, this, &XeroPathGen::setPath);
 
 	path_params_win_ = new PathParametersWindow(nullptr);
 	dock_path_params_win_ = new QDockWidget(tr("Path Parameters"));
@@ -257,19 +309,17 @@ bool XeroPathGen::createToolbar()
 
 bool XeroPathGen::createStatusBar()
 {
-	xpos_text_ = new QLabel("X:");
-	xpos_text_->setFixedWidth(80);
-	statusBar()->insertWidget(0, xpos_text_);
+	mouse_loc_text_ = new QLabel("Mouse:");
+	statusBar()->addWidget(mouse_loc_text_);
 
-	ypos_text_ = new QLabel("Y:");
-	ypos_text_->setFixedWidth(80);
-	statusBar()->insertWidget(1, ypos_text_);
+	time_text_ = new QLabel("Robot:");
+	statusBar()->addWidget(time_text_);
 
 	path_filename_ = new QLabel("<unknown>");
-	statusBar()->insertWidget(2, path_filename_);
+	statusBar()->addPermanentWidget(path_filename_);
 
 	path_gendir_ = new QLabel("<unknown>");
-	statusBar()->insertWidget(3, path_gendir_);
+	statusBar()->addPermanentWidget(path_gendir_);
 
 	updateStatusBar();
 
@@ -279,12 +329,14 @@ bool XeroPathGen::createStatusBar()
 void XeroPathGen::mouseMoved(Translation2d pos)
 {
 	QString str;
-	
-	str = QString::number(pos.getX(), 'f', 2);
-	xpos_text_->setText(str);
 
-	str = QString::number(pos.getY(), 'f', 2);
-	ypos_text_->setText(str);
+	str = "Mouse: ";
+	
+	str += QString::number(pos.getX(), 'f', 2);
+	str += ", ";
+
+	str += QString::number(pos.getY(), 'f', 2);
+	mouse_loc_text_->setText(str);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -329,6 +381,11 @@ void XeroPathGen::recentOpenProject(const QString& dirname)
 	}
 	else
 	{
+		//
+		// Tell the user what we are doing
+		//
+		QMessageBox::information(this, "Create Robot", "There is not robot descriptor in the project loaded.  Please configure the robot parameters in the next window.");
+
 		//
 		// Create a new robot file, and store it
 		//
@@ -780,12 +837,6 @@ void XeroPathGen::showEvent(QShowEvent* ev)
 	}
 }
 
-void XeroPathGen::pathSelected(const QString& grname, const QString& pathname)
-{
-	auto path = paths_data_model_.getPathByName(grname, pathname);
-	setPath(path);
-}
-
 void XeroPathGen::setField(const QString &name)
 {
 	//
@@ -824,17 +875,58 @@ void XeroPathGen::setDefaultField()
 		setField(field);
 }
 
+//
+// This is called when a specific path is selected in the path window.  It 
+// tells all of the windows which path is the current path so they can update
+// their display.  Note, this can also be called by things like close() to
+// indicate that no path is selected.  In this case the path value is nullptr.
+//
 void XeroPathGen::setPath(std::shared_ptr<RobotPath> path)
 {
+	auto trajgrp = generator_.getTrajectoryGroup(path);
+
 	path_edit_win_->setPath(path);
 	constraint_win_->setPath(path);
 	waypoint_win_->setPath(path);
 	path_params_win_->setPath(path);
 
-	auto traj = generator_.getTrajectoryGroup(path);
-	plot_win_->setTrajectoryGroup(traj);
-	trajectoryGenerationComplete(path);
+	if (trajgrp != nullptr) {
+		setTrajectoryGroup(trajgrp);
+	}
 }
+
+void XeroPathGen::setTrajectoryGroup(std::shared_ptr<TrajectoryGroup> group)
+{
+	auto main = group->getTrajectory(TrajectoryName::Main);
+	path_edit_win_->setTrajectory(main);
+
+	if (main == nullptr) {
+		//
+		// If we have a group, but have no main trajectory, this means trajectory generation
+		// failed.  Lets tell the path window so it can display this is some way.
+		//
+		path_win_->trajectoryGenerationError(group->path(), true);
+	}
+	else {
+		path_win_->trajectoryGenerationError(group->path(), false);
+	}
+
+	if (group->path() == path_win_->selectedPath()) {
+		path_params_win_->setTrajectory(main);
+		plot_win_->setTrajectoryGroup(group);
+		waypointSelected(waypoint_win_->getWaypoint());
+
+		path_edit_win_->setTrajectory(main);
+		path_edit_win_slider_->setValue(0);
+		if (main == nullptr) {
+			path_edit_win_slider_->setMaximum(0);
+		}
+		else {
+			path_edit_win_slider_->setMaximum(static_cast<int>(main->getEndTime() * 1000));
+		}
+	}
+}
+
 
 void XeroPathGen::setRobot(const QString& name)
 {
@@ -1058,6 +1150,7 @@ void XeroPathGen::waypointSelected(size_t index)
 
 void XeroPathGen::waypointStartMoving(size_t index)
 {
+	paths_data_model_.enableGeneration(false);
 	waypoint_win_->refresh();
 }
 
@@ -1068,8 +1161,8 @@ void XeroPathGen::waypointMoving(size_t index)
 
 void XeroPathGen::waypointEndMoving(size_t index)
 {
+	paths_data_model_.enableGeneration(true);
 	waypoint_win_->refresh();
-
 }
 
 void XeroPathGen::createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path)
@@ -1311,22 +1404,39 @@ void XeroPathGen::trajectoryGeneratorChanged()
 void XeroPathGen::trajectoryGenerationComplete(std::shared_ptr<RobotPath> path)
 {
 	auto group = generator_.getTrajectoryGroup(path);
+	assert(group != nullptr);
 
-	if (group != nullptr) {
+	setTrajectoryGroup(group);
+}
 
-		if (path_params_win_->path() == path) {
-			auto traj = group->getTrajectory(TrajectoryName::Main);
-			if (traj != nullptr) {
-				path_params_win_->setTrajectory(traj);
+void XeroPathGen::sliderChanged(int value)
+{
+	QString text;
+	double time = static_cast<double>(value) / 1000.0;
+	path_edit_win_->setTrajectoryTime(time);
+	text = "Time: " + QString::number(time, 'f', 1);
+
+	auto trajgrp = generator_.getTrajectoryGroup(path_win_->selectedPath());
+	if (trajgrp != nullptr) {
+		auto traj = trajgrp->getTrajectory(TrajectoryName::Main);
+		if (traj) {
+			int index = traj->getIndex(time);
+			if (index >= 0 && index < traj->size()) {
+				const Pose2dWithTrajectory& pose = (*traj)[index];
+				text += ",  X: " + QString::number(pose.translation().getX(), 'f', 2);
+				text += ",  Y: " + QString::number(pose.translation().getY(), 'f', 2);
+				text += ",  Heading: " + QString::number(pose.rotation().toDegrees(), 'f', 2);
+				text += ",  SwerveRotation: " + QString::number(pose.swrot().toDegrees(), 'f', 2);
 			}
 		}
-
-		if (plot_win_->group() != nullptr && plot_win_->group()->path() == path) {
-			plot_win_->setTrajectoryGroup(group);
-		}
-
-		if (path == waypoint_win_->path()) {
-			waypointSelected(waypoint_win_->getWaypoint());
-		}
 	}
+	time_text_->setText(text);
+}
+
+void XeroPathGen::beforePathModelChange()
+{
+}
+
+void XeroPathGen::undo()
+{
 }

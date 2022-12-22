@@ -1,5 +1,6 @@
 #include "PathsDataModel.h"
 #include "RobotPath.h"
+#include "TrajectoryUtils.h"
 #include <QtCore/QFile>
 #include <QtCore/QJsonParseError>
 #include <QtCore/QJsonObject>
@@ -12,6 +13,7 @@ PathsDataModel::PathsDataModel(GenerationMgr& genmgr) : gen_mgr_(genmgr)
 	gen_type_ = GeneratorType::CheesyPoofs;
 	default_units_ = "m";
 	gen_type_ = GeneratorType::None;
+	generation_enabled_ = true;
 }
 
 PathsDataModel::~PathsDataModel()
@@ -50,6 +52,7 @@ bool PathsDataModel::hasGroup(const QString& grname) const
 
 void PathsDataModel::addGroup(const QString& grname)
 {
+	emit beforeChange();
 	assert(hasGroup(grname) == false);
 	PathGroup *gr = new PathGroup(grname);
 	groups_.push_back(gr);
@@ -60,6 +63,7 @@ void PathsDataModel::addGroup(const QString& grname)
 
 void PathsDataModel::deleteGroup(const QString& grname)
 {
+	emit beforeChange();
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
 		groups_.erase(it);
@@ -93,6 +97,8 @@ const PathGroup* PathsDataModel::getPathGroupByName(const QString& grname)
 
 void PathsDataModel::renameGroup(const QString& oldname, const QString& newname)
 {
+	emit beforeChange();
+
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&oldname](const PathGroup* g) { return g->name() == oldname; });
 	if (it == groups_.end()) {
 		QString msg = "group '" + oldname + "' does not exist";
@@ -120,10 +126,13 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup* g) { return g->name() == path->pathGroup()->name(); });
 	if (it != groups_.end()) {
+		emit beforeChange();
+
 		(*it)->addPath(path);
 		setDirty();
-		connect(path.get(), &RobotPath::pathChanged, this, &PathsDataModel::pathChanged);
-		gen_mgr_.addPath(gen_type_, path);
+		connect(path.get(), &RobotPath::beforePathChanged, this, &PathsDataModel::beforePathChanged);
+		connect(path.get(), &RobotPath::afterPathChanged, this, &PathsDataModel::afterPathChanged);
+		this->generateTrajectory(path);
 		emit pathAdded(path);
 	}
 	else {
@@ -136,6 +145,8 @@ void PathsDataModel::deletePath(const QString& grname, const QString& pathname)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
+		emit beforeChange();
+
 		auto path = (*it)->getPathByName(pathname);
 		if (path != nullptr) {
 			gen_mgr_.removePath(path);
@@ -175,6 +186,7 @@ void PathsDataModel::renamePath(const QString& grname, const QString& oldname, c
 		throw std::runtime_error(msg.toStdString());
 	}
 
+	emit beforeChange();
 	path->setName(newname);
 	setDirty();
 	emit pathRenamed(grname, oldname, newname);
@@ -193,10 +205,40 @@ QVector<std::shared_ptr<RobotPath>> PathsDataModel::getAllPaths()
 	return paths;
 }
 
-void PathsDataModel::pathChanged(const QString& grname, const QString& pathname)
+void PathsDataModel::beforePathChanged(const QString& grname, const QString& pathname)
+{
+	emit beforeChange();
+}
+
+void PathsDataModel::afterPathChanged(const QString& grname, const QString& pathname)
 {
 	setDirty();
 	computeSplines(grname, pathname);
+}
+
+void PathsDataModel::enableGeneration(bool b)
+{
+	if (b)
+	{
+		generation_enabled_ = true;
+		for (auto path : deferred_) {
+			gen_mgr_.addPath(gen_type_, path);
+		}
+	}
+	else
+	{
+		generation_enabled_ = false;
+	}
+}
+
+void PathsDataModel::generateTrajectory(std::shared_ptr<RobotPath> path)
+{
+	if (generation_enabled_) {
+		gen_mgr_.addPath(gen_type_, path);
+	}
+	else {
+		deferred_.push_back(path);
+	}
 }
 
 void PathsDataModel::computeSplines(const QString& grname, const QString& pathname)
@@ -204,7 +246,7 @@ void PathsDataModel::computeSplines(const QString& grname, const QString& pathna
 	auto path = getPathByName(grname, pathname);
 	assert(path != nullptr);
 
-	gen_mgr_.addPath(gen_type_, path);
+	generateTrajectory(path);
 	computeSplinesForPath(path);
 	distances_.remove(path);
 }
@@ -487,35 +529,8 @@ QVector<double> PathsDataModel::getDistancesForPath(std::shared_ptr<RobotPath> p
 	if (!distances_.contains(path))
 	{
 		QVector<std::shared_ptr<SplinePair>> splines = getSplinesForPath(path);
-		if (splines.length() > 0) {
-			QVector<double> dists;
-			int steps = 1000;
-
-			dists.push_back(0.0);
-			for (size_t i = 0; i < splines.size(); i++)
-			{
-				double dist = 0;
-				auto pair = splines[i];
-				bool first = true;
-				Translation2d pos, prevpos;
-				for (float t = 0.0f; t <= 1.0f; t += 1.0f / steps)
-				{
-					pos = pair->evalPosition(t);
-					if (first)
-						first = false;
-					else
-					{
-						dist += pos.distance(prevpos);
-					}
-
-					prevpos = pos;
-				}
-
-				dists.push_back(dist);
-			}
-
-			distances_.insert(path, dists);
-		}
+		auto dists = TrajectoryUtils::getDistancesForSplines(splines);
+		distances_.insert(path, dists);
 	}
 	return distances_.value(path);
 }

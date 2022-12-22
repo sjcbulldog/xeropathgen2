@@ -13,13 +13,24 @@ RobotPath::RobotPath(const PathGroup* gr, const QString& units, const QString &n
 	units_ = units;
 }
 
-void RobotPath::emitPathChangedSignal()
+QString RobotPath::fullname() const {
+	return group_->name() + "-" + name_;
+}
+
+void RobotPath::emitBeforePathChangedSignal()
 {
-	emit pathChanged(group_->name(), name_);
+	emit beforePathChanged(group_->name(), name_);
+}
+
+void RobotPath::emitAfterPathChangedSignal()
+{
+	emit afterPathChanged(group_->name(), name_);
 }
 
 void RobotPath::convert(const QString& from, const QString& to)
 {
+	emitBeforePathChangedSignal();
+
 	for (auto con : constraints_) {
 		con->convert(from, to);
 	}
@@ -42,7 +53,7 @@ void RobotPath::convert(const QString& from, const QString& to)
 	
 	blockSignals(save);
 
-	emitPathChangedSignal();
+	emitAfterPathChangedSignal();
 }
 
 

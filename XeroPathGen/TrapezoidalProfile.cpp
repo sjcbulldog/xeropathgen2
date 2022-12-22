@@ -1,5 +1,6 @@
 #include "TrapezoidalProfile.h"
 #include "QuadraticSolver.h"
+#include <QtCore/QString>
 #include <cmath>
 #include <iostream>
 #include <cassert>
@@ -186,14 +187,14 @@ bool TrapezoidalProfile::update(double dist, double start_velocity, double end_v
 	return true;
 }
 
-std::string TrapezoidalProfile::toString() {
-	std::string ret = "[" + type_;
-	ret += ", sv " + std::to_string(start_velocity_);
-	ret += ", mv " + std::to_string(actual_max_velocity_);
-	ret += ", ev " + std::to_string(end_velocity_);
-	ret += ", ta " + std::to_string(ta_);
-	ret += ", tc " + std::to_string(tc_);
-	ret += ", td " + std::to_string(td_);
+QString TrapezoidalProfile::toString() {
+	QString ret = "[" + type_;
+	ret += ", sv " + QString::number(start_velocity_, 'f', 2);
+	ret += ", mv " + QString::number(actual_max_velocity_, 'f', 2);
+	ret += ", ev " + QString::number(end_velocity_, 'f', 2);
+	ret += ", ta " + QString::number(ta_, 'f', 2);
+	ret += ", tc " + QString::number(tc_, 'f', 2);
+	ret += ", td " + QString::number(td_, 'f', 2);
 	ret += "]";
 	return ret;
 }
