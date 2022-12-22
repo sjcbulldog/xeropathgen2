@@ -13,3 +13,13 @@ docs
 XeroPathGen/GeneratedFiles
 output
 installer/xeropath*.exe
+
+.qt
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+compile_commands.json
+xeropath2
+xeropath2_autogen
+
