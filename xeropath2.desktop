@@ -4,6 +4,6 @@ Encoding=UTF-8
 Name=XeroPath2
 Comment=XeroPathGen2
 Exec=$HOME/.local/opt/xeropath2/xeropath2
-Icon=images/icon.png
+Icon=$HOME/.local/opt/xeropath2/images/icon.png
 Categories=Utility
 Terminal=false
