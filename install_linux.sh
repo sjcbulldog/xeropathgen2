@@ -5,7 +5,7 @@ find XeroPathGen -iname "*.cpp" -or -iname "*.h" >> sources.cmake
 echo ")" >> sources.cmake
 
 cmake CMakeLists.txt
-make
+make -j "$(grep -c ^processor /proc/cpuinfo)"
 
 rm sources.cmake
 
