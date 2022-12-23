@@ -94,10 +94,10 @@ private:
     void setUnits(const QString &);
     void mouseMoved(Translation2d pos);
 
-    void waypointSelected(size_t index);
-    void waypointStartMoving(size_t index);
-    void waypointMoving(size_t index);
-    void waypointEndMoving(size_t index);
+    void waypointSelected(int index);
+    void waypointStartMoving(int index);
+    void waypointMoving(int index);
+    void waypointEndMoving(int index);
 
     void generateOnePath(std::shared_ptr<RobotPath> path, std::shared_ptr<TrajectoryGroup> group);
     void updateStatusBar();
@@ -105,8 +105,8 @@ private:
     void createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path);
 
     void showAbout();
+    void showChanges();
     void undo();
-    void beforePathModelChange();
 
     void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
     void trajectoryGeneratorChanged();

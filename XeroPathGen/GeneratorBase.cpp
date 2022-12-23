@@ -127,7 +127,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	const static double kEpsilon = 1e-6;
 
 	predecessor.setPosition(0.0);
-	predecessor.setPose(view[static_cast<size_t>(0)]);
+	predecessor.setPose(view[static_cast<int>(0)]);
 	predecessor.setVelocity(startvel);
 	predecessor.setAccelMin(-maxaccel);
 	predecessor.setAccelMax(maxaccel);
@@ -135,7 +135,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	//
 	// Forward pass
 	//
-	for (size_t i = 0; i < view.size(); i++)
+	for (int i = 0; i < view.size(); i++)
 	{
 		Pose2dConstrained state;
 		state.setPose(view[i]);
@@ -192,7 +192,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	//
 	// Backward pass
 	//
-	size_t last = view.size() - 1;
+	int last = view.size() - 1;
 	Pose2dConstrained sucessor;
 	sucessor.setPose(view[last]);
 	sucessor.setPosition(points[last].position());
@@ -200,7 +200,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	sucessor.setAccelMin(-maxaccel);
 	sucessor.setAccelMax(maxaccel);
 
-	for (size_t i = points.size() - 1; i < points.size(); i--)
+	for (int i = points.size() - 1; i < points.size(); i--)
 	{
 		Pose2dConstrained state = points[i];
 		double dist = state.position() - sucessor.position();				// Will be negative
@@ -245,7 +245,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	double v = 0.0;
 	QVector<Pose2dWithTrajectory> result;
 
-	for (size_t i = 0; i < points.size(); i++)
+	for (int i = 0; i < points.size(); i++)
 	{
 		const Pose2dConstrained& state = points[i];
 		double ds = state.position() - s;
@@ -277,7 +277,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 }
 
 
-size_t GeneratorBase::findIndex(const QVector<Pose2dWithTrajectory>& traj, double time)
+int GeneratorBase::findIndex(const QVector<Pose2dWithTrajectory>& traj, double time)
 {
 	if (time < traj[0].time())
 		return 0;
@@ -285,12 +285,12 @@ size_t GeneratorBase::findIndex(const QVector<Pose2dWithTrajectory>& traj, doubl
 	if (time > traj[traj.size() - 1].time())
 		return traj.size() - 1;
 
-	size_t low = 0;
-	size_t high = traj.size() - 1;
+	int low = 0;
+	int high = traj.size() - 1;
 
 	while (high - low > 1)
 	{
-		size_t center = (high + low) / 2;
+		int center = (high + low) / 2;
 		if (time > traj[center].time())
 		{
 			low = center;
@@ -312,7 +312,7 @@ QVector<Pose2dWithTrajectory> GeneratorBase::convertToUniformTime(const QVector<
 	{
 		Pose2dWithTrajectory newpt;
 
-		size_t low = findIndex(traj, time);
+		int low = findIndex(traj, time);
 		if (low == traj.size() - 1)
 		{
 			newpt = traj[traj.size() - 1];
@@ -330,11 +330,11 @@ QVector<Pose2dWithTrajectory> GeneratorBase::convertToUniformTime(const QVector<
 }
 
 
-size_t GeneratorBase::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc)
+int GeneratorBase::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, int start, const Translation2d& loc)
 {
 	static double tol = 0.05;
 
-	for (size_t i = start; i < traj->size(); i++)
+	for (int i = start; i < traj->size(); i++)
 	{
 		auto pt = (*traj)[i];
 		if (std::abs(pt.x() - loc.getX()) < tol && std::abs(pt.y() - loc.getY()) < tol)
@@ -343,7 +343,7 @@ size_t GeneratorBase::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj
 		}
 	}
 
-	return std::numeric_limits<size_t>::max();
+	return std::numeric_limits<int>::max();
 }
 
 Translation2d GeneratorBase::getWheelPerpendicularVector(Wheel w, double magnitude)
@@ -489,7 +489,7 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		return false;
 	}
 
-	for (size_t i = start; i < end; i++)
+	for (int i = start; i < end; i++)
 	{
 		const Pose2dWithTrajectory& pt = (*traj)[i];
 		double time = pt.time();

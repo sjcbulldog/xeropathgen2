@@ -7,7 +7,7 @@ QVector<Pose2dWithRotation> TrajectoryUtils::parameterize(const QVector<std::sha
 	QVector<Pose2dWithRotation> results;
 
 	results.push_back(splines[0]->getStartPose());
-	for (size_t i = 0; i < splines.size(); i++)
+	for (int i = 0; i < splines.size(); i++)
 		getSegmentArc(splines[i], results, 0.0, 1.0, maxDx, maxDy, maxDTheta);
 
 	return results;
@@ -90,7 +90,7 @@ QVector<double> TrajectoryUtils::getDistancesForSplines(const QVector<std::share
 		double dist = 0;
 
 		dists.push_back(0.0);
-		for (size_t i = 0; i < splines.size(); i++)
+		for (int i = 0; i < splines.size(); i++)
 		{
 			auto pair = splines[i];
 			bool first = true;

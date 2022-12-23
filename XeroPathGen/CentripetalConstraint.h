@@ -3,9 +3,10 @@
 #include "UnitConverter.h"
 #include "PathConstraint.h"
 #include "RobotPath.h"
+
 #include <QtCore/QString>
 
-class CentripetalConstraint : public PathConstraint
+class CentripetalConstraint : public PathConstraint, public std::enable_shared_from_this<CentripetalConstraint>
 {
 public:
 	CentripetalConstraint(std::shared_ptr<RobotPath> path, double maxcen) : PathConstraint(path) {
@@ -22,11 +23,7 @@ public:
 		return maxcen_;
 	}
 
-	void setMaxCenForce(double c) {
-		path()->beforeConstraintChanged();
-		maxcen_ = c;
-		path()->afterConstraintChanged();
-	}
+	void setMaxCenForce(double c, bool undoentry = true);
 
 	double getMaxVelocity(const Pose2dWithTrajectory& state, std::shared_ptr<RobotParams> robot) override {
 		//

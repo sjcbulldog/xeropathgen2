@@ -1,5 +1,6 @@
 - Undo support
 
+- Add changes document to the program						Done
 - Better robot drawing										Done
 - The ability to move through the path and see the robot	Done
 - Disable trajectory generation while moving waypoint		Done

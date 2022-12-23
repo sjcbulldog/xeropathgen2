@@ -4,15 +4,17 @@
 #include "UnitConverter.h"
 #include "RobotPath.h"
 #include "Pose2dWithTrajectory.h"
+#include "UndoDistanceVelocityConstraintChange.h"
+#include <memory>
 
-class DistanceVelocityConstraint : public PathConstraint
+class DistanceVelocityConstraint : public PathConstraint, public std::enable_shared_from_this<DistanceVelocityConstraint>
 {
 public:
 	DistanceVelocityConstraint(std::shared_ptr<RobotPath> path, double after, double before, double velocity);
 	virtual ~DistanceVelocityConstraint();
 
 	void update(double after, double before, double velocity) {
-		path()->beforeConstraintChanged();
+		path()->beforeConstraintChanged(std::make_shared<UndoDistanceVelocityConstraintChange>(velocity_, after_distance_, before_distance_, shared_from_this()));
 		after_distance_ = after;
 		before_distance_ = before;
 		velocity_ = velocity;
@@ -32,24 +34,36 @@ public:
 		return before_distance_;
 	}
 
-	void setBefore(double d) {
+	void setBefore(double d, bool undoentry) {
+		if (undoentry) {
+			path()->beforePathChanged(std::make_shared< UndoDistanceVelocityConstraintChange>(velocity_, after_distance_, before_distance_, shared_from_this()));
+		}
 		before_distance_ = d;
+		path()->afterConstraintChanged();
 	}
 
 	double getAfter() const {
 		return after_distance_;
 	}
 
-	void setAfter(double d) {
+	void setAfter(double d, bool undoentry) {
+		if (undoentry) {
+			path()->beforePathChanged(std::make_shared< UndoDistanceVelocityConstraintChange>(velocity_, after_distance_, before_distance_, shared_from_this()));
+		}
 		after_distance_ = d;
+		path()->afterConstraintChanged();
 	}
 
 	double getVelocity() const {
 		return velocity_;
 	}
 
-	void setVelocity(double d) {
+	void setVelocity(double d, bool undoentry) {
+		if (undoentry) {
+			path()->beforePathChanged(std::make_shared< UndoDistanceVelocityConstraintChange>(velocity_, after_distance_, before_distance_, shared_from_this()));
+		}
 		velocity_ = d;
+		path()->afterConstraintChanged();
 	}
 
 	QString toString() const override {

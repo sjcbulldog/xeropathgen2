@@ -44,7 +44,7 @@ bool UnitConverter::findConversion(const QString& from, const QString& to, doubl
 	}
 	else
 	{
-		for (size_t i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
+		for (int i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
 		{
 			if (fromnorm == convert_[i].from && tonorm == convert_[i].to)
 			{
@@ -112,7 +112,7 @@ QList<QString> UnitConverter::getAllLengthUnits()
 {
 	QList<QString> result;
 
-	for (size_t i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
+	for (int i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
 	{
 		if (convert_[i].type_ == UnitType::Length)
 		{
@@ -130,7 +130,7 @@ QList<QString> UnitConverter::getAllWeightUnits()
 {
 	QList<QString> result;
 
-	for (size_t i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
+	for (int i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
 	{
 		if (convert_[i].type_ == UnitType::Weight)
 		{

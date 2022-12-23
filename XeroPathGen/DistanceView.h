@@ -12,13 +12,13 @@ public:
 		return distances_.back();
 	}
 
-	double getPosition(size_t index) const {
+	double getPosition(int index) const {
 		return distances_[index];
 	}
 
 	Pose2dWithRotation operator[](double dist) const;
-	Pose2dWithRotation operator[](size_t index) const;
-	size_t size() const {
+	Pose2dWithRotation operator[](int index) const;
+	int size() const {
 		return points_.size();
 	}
 

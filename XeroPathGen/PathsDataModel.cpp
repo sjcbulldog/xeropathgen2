@@ -1,6 +1,12 @@
 #include "PathsDataModel.h"
 #include "RobotPath.h"
 #include "TrajectoryUtils.h"
+#include "UndoAddGroup.h"
+#include "UndoDeleteGroup.h"
+#include "UndoRenameGroup.h"
+#include "UndoAddPath.h"
+#include "UndoDeletePath.h"
+#include "UndoRenamePath.h"
 #include <QtCore/QFile>
 #include <QtCore/QJsonParseError>
 #include <QtCore/QJsonObject>
@@ -50,9 +56,17 @@ bool PathsDataModel::hasGroup(const QString& grname) const
 	return it != groups_.end();
 }
 
-void PathsDataModel::addGroup(const QString& grname)
+void PathsDataModel::addGroup(PathGroup* gr)
 {
-	emit beforeChange();
+	assert(getPathGroupByName(gr->name()) == nullptr);
+	groups_.push_back(gr);
+}
+
+void PathsDataModel::addGroup(const QString& grname, bool undoentry)
+{
+	if (undoentry) {
+		undo_stack_.push_back(std::make_shared<UndoAddGroup>(grname, *this));
+	}
 	assert(hasGroup(grname) == false);
 	PathGroup *gr = new PathGroup(grname);
 	groups_.push_back(gr);
@@ -61,11 +75,13 @@ void PathsDataModel::addGroup(const QString& grname)
 	emit groupAdded(grname);
 }
 
-void PathsDataModel::deleteGroup(const QString& grname)
+void PathsDataModel::deleteGroup(const QString& grname, bool undoentry)
 {
-	emit beforeChange();
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
+		if (undoentry) {
+			undo_stack_.push_back(std::make_shared<UndoDeleteGroup>(*it, *this));
+		}
 		groups_.erase(it);
 	}
 
@@ -95,14 +111,16 @@ const PathGroup* PathsDataModel::getPathGroupByName(const QString& grname)
 	return *it;
 }
 
-void PathsDataModel::renameGroup(const QString& oldname, const QString& newname)
+void PathsDataModel::renameGroup(const QString& oldname, const QString& newname, bool undoentry)
 {
-	emit beforeChange();
-
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&oldname](const PathGroup* g) { return g->name() == oldname; });
 	if (it == groups_.end()) {
 		QString msg = "group '" + oldname + "' does not exist";
 		throw std::runtime_error(msg.toStdString());
+	}
+
+	if (undoentry) {
+		undo_stack_.push_back(std::make_shared<UndoRenameGroup>(newname, oldname, *this));
 	}
 
 	(*it)->setName(newname);
@@ -122,11 +140,14 @@ bool PathsDataModel::hasPath(const QString& grname, const QString& pathname) con
 	return ret;
 }
 
-void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
+void PathsDataModel::addPath(std::shared_ptr<RobotPath> path, bool undoentry)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup* g) { return g->name() == path->pathGroup()->name(); });
 	if (it != groups_.end()) {
-		emit beforeChange();
+
+		if (undoentry) {
+			undo_stack_.push_back(std::make_shared<UndoAddPath>(path, *this));
+		}
 
 		(*it)->addPath(path);
 		setDirty();
@@ -141,14 +162,15 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path)
 	}
 }
 
-void PathsDataModel::deletePath(const QString& grname, const QString& pathname)
+void PathsDataModel::deletePath(const QString& grname, const QString& pathname, bool undoentry)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
-		emit beforeChange();
-
 		auto path = (*it)->getPathByName(pathname);
 		if (path != nullptr) {
+			if (undoentry) {
+				undo_stack_.push_back(std::make_shared<UndoDeletePath>(path, *this));
+			}
 			gen_mgr_.removePath(path);
 		}
 
@@ -172,7 +194,7 @@ std::shared_ptr<RobotPath> PathsDataModel::getPathByName(const QString& grname, 
 	return (*it)->getPathByName(pathname);
 }
 
-void PathsDataModel::renamePath(const QString& grname, const QString& oldname, const QString& newname)
+void PathsDataModel::renamePath(const QString& grname, const QString& oldname, const QString& newname, bool undoentry)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it == groups_.end()) {
@@ -186,7 +208,9 @@ void PathsDataModel::renamePath(const QString& grname, const QString& oldname, c
 		throw std::runtime_error(msg.toStdString());
 	}
 
-	emit beforeChange();
+	if (undoentry) {
+		undo_stack_.push_back(std::make_shared<UndoRenamePath>(grname, oldname, newname, *this));
+	}
 	path->setName(newname);
 	setDirty();
 	emit pathRenamed(grname, oldname, newname);
@@ -205,9 +229,9 @@ QVector<std::shared_ptr<RobotPath>> PathsDataModel::getAllPaths()
 	return paths;
 }
 
-void PathsDataModel::beforePathChanged(const QString& grname, const QString& pathname)
+void PathsDataModel::beforePathChanged(std::shared_ptr<UndoAction> undo)
 {
-	emit beforeChange();
+	undo_stack_.push_back(undo);
 }
 
 void PathsDataModel::afterPathChanged(const QString& grname, const QString& pathname)
@@ -413,7 +437,7 @@ bool PathsDataModel::readPathGroup(QFile& file, const QJsonObject& obj, QString 
 		return false;
 	}
 
-	addGroup(name);
+	addGroup(name, false);
 	const PathGroup* grobj = getPathGroupByName(name);
 
 	if (!obj.contains(RobotPath::PathsTag))
@@ -443,7 +467,7 @@ bool PathsDataModel::readPathGroup(QFile& file, const QJsonObject& obj, QString 
 		if (msg.length() > 0) {
 			return false;
 		}
-		addPath(path);
+		addPath(path, false);
 	}
 
 	return true;

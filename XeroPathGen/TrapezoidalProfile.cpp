@@ -83,7 +83,7 @@ double TrapezoidalProfile::pickRoot(const std::vector<double>& roots) const {
 	// We want the smallest root that is greater than or equal to zero
 	//
 	assert(roots.size() != 0);
-	size_t i = roots.size() - 1;
+	int i = roots.size() - 1;
 	while (i != 0) {
 		if (roots[i] >= 0.0)
 			return roots[i];

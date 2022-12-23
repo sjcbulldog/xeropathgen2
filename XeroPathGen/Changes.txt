@@ -3,6 +3,10 @@ XeroPathGen 2.2.0 Beta
 
 User Visible Changes
 --------------------
+o Added in undo support
+
+User Visible Changes
+--------------------
 o Adding in slider that control the position of a robot image along the path to
   visualize the movement of the robot through the path
 o Fixed bugs with concurrent waypoints

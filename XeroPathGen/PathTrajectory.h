@@ -30,15 +30,15 @@ public:
 		return points_.end();
 	}
 
-	size_t size() const {
+	int size() const {
 		return points_.size();
 	}
 
-	const Pose2dWithTrajectory& operator[](size_t index) const {
+	const Pose2dWithTrajectory& operator[](int index) const {
 		return points_[index];
 	}
 
-	Pose2dWithTrajectory& operator[](size_t index) {
+	Pose2dWithTrajectory& operator[](int index) {
 		return points_[index];
 	}
 
@@ -46,7 +46,7 @@ public:
 		return name_;
 	}
 
-	size_t getIndex(double time);
+	int getIndex(double time);
 
 	bool getTimeForDistance(double dist, double& time);
 

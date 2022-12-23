@@ -38,11 +38,11 @@ protected:
 		double startvel, double endvel, double maxvel, double maxaccel);
 
 	QVector<Pose2dWithTrajectory> convertToUniformTime(const QVector<Pose2dWithTrajectory>& traj, double step);
-	size_t findIndex(const QVector<Pose2dWithTrajectory>& traj, double time);
+	int findIndex(const QVector<Pose2dWithTrajectory>& traj, double time);
 
 
 	Translation2d getWheelPerpendicularVector(Wheel w, double magnitude);
-	size_t findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc);
+	int findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, int start, const Translation2d& loc);
 
 	double robotMaxAccel() const {
 		return robot_max_accel_;

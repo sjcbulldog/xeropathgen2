@@ -36,7 +36,7 @@ PathFieldView::PathFieldView(PathsDataModel&model, QWidget *parent) : QWidget(pa
 	units_ = "in";
 	setMouseTracking(true);
 	setFocusPolicy(Qt::ClickFocus);
-	selected_ = std::numeric_limits<size_t>::max();
+	selected_ = std::numeric_limits<int>::max();
 	image_scale_ = 1.0;
 	dragging_ = false;
 	rotating_ = false;
@@ -49,14 +49,14 @@ PathFieldView::~PathFieldView()
 
 void PathFieldView::setUnits(const QString& units)
 {
-	for (size_t i = 0; i < triangle_.size(); i++)
+	for (int i = 0; i < triangle_.size(); i++)
 	{
 		double x = UnitConverter::convert(triangle_[i].rx(), units_, units);
 		double y = UnitConverter::convert(triangle_[i].ry(), units_, units);
 		triangle_[i] = QPointF(x, y);
 	}
 
-	for (size_t i = 0; i < arrow_.size(); i++)
+	for (int i = 0; i < arrow_.size(); i++)
 	{
 		double x = UnitConverter::convert(arrow_[i].rx(), units_, units);
 		double y = UnitConverter::convert(arrow_[i].ry(), units_, units);
@@ -134,7 +134,7 @@ void PathFieldView::emitMouseMoved(Translation2d pos)
 	emit mouseMoved(pos);
 }
 
-void PathFieldView::emitWaypointSelected(size_t index)
+void PathFieldView::emitWaypointSelected(int index)
 {
 	emit waypointSelected(index);
 }
@@ -149,17 +149,17 @@ void PathFieldView::emitWaypointInserted()
 	emit waypointInserted();
 }
 
-void PathFieldView::emitWaypointEndMoving(size_t index)
+void PathFieldView::emitWaypointEndMoving(int index)
 {
 	emit waypointEndMoving(index);
 }
 
-void PathFieldView::emitWaypointMoving(size_t index)
+void PathFieldView::emitWaypointMoving(int index)
 {
 	emit waypointMoving(index);
 }
 
-void PathFieldView::emitWaypointStartMoving(size_t index)
+void PathFieldView::emitWaypointStartMoving(int index)
 {
 	emit waypointStartMoving(index);
 }
@@ -200,7 +200,7 @@ void PathFieldView::mousePressEvent(QMouseEvent* ev)
 		return;
 
 	if (path_ != nullptr) {
-		size_t index;
+		int index;
 		WaypointRegion region;
 		if (hitTestWaypoint(QPointF(ev->x(), ev->y()), index, region))
 		{
@@ -210,9 +210,9 @@ void PathFieldView::mousePressEvent(QMouseEvent* ev)
 			{
 				if (selected_ != index)
 				{
-					if (selected_ != std::numeric_limits<size_t>::max())
+					if (selected_ != std::numeric_limits<int>::max())
 					{
-						selected_ = std::numeric_limits<size_t>::max();
+						selected_ = std::numeric_limits<int>::max();
 						invalidateWaypoint(selected_);
 					}
 
@@ -231,10 +231,10 @@ void PathFieldView::mousePressEvent(QMouseEvent* ev)
 		}
 		else
 		{
-			if (selected_ != std::numeric_limits<size_t>::max())
+			if (selected_ != std::numeric_limits<int>::max())
 			{
-				size_t save = selected_;
-				selected_ = std::numeric_limits<size_t>::max();
+				int save = selected_;
+				selected_ = std::numeric_limits<int>::max();
 				invalidateWaypoint(save);
 				emitWaypointSelected(selected_);
 			}
@@ -266,7 +266,7 @@ void PathFieldView::deleteWaypoint()
 	repaint();
 }
 
-void PathFieldView::deleteWaypoint(const QString& group, const QString& path, size_t index)
+void PathFieldView::deleteWaypoint(const QString& group, const QString& path, int index)
 {
 	auto p = path_data_model_.getPathByName(group, path);
 	if (p != nullptr)
@@ -280,7 +280,7 @@ void PathFieldView::deleteWaypoint(const QString& group, const QString& path, si
 	}
 }
 
-void PathFieldView::addWaypoint(const QString& group, const QString& path, size_t index, const Pose2dWithRotation& pt)
+void PathFieldView::addWaypoint(const QString& group, const QString& path, int index, const Pose2dWithRotation& pt)
 {
 	auto p = path_data_model_.getPathByName(group, path);
 	if (p != nullptr)
@@ -606,7 +606,7 @@ void PathFieldView::drawPath(QPainter &paint)
 
 void PathFieldView::drawPoints(QPainter& paint)
 {
-	for (size_t i = 0; i < path_->size(); i++)
+	for (int i = 0; i < path_->size(); i++)
 		drawOnePoint(paint, path_->getPoint(i), i == selected_);
 }
 
@@ -698,7 +698,7 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 void PathFieldView::drawSplines(QPainter& paint)
 {
 	auto splines = path_data_model_.getSplinesForPath(path_) ;
-	for (size_t i = 0; i < splines.size(); i++)
+	for (int i = 0; i < splines.size(); i++)
 		drawSpline(paint, splines[i]);
 }
 
@@ -821,7 +821,7 @@ void PathFieldView::setPath(std::shared_ptr<RobotPath> path)
 	if (path_ != path)
 	{
 		path_ = path;
-		selected_ = std::numeric_limits<size_t>::max();
+		selected_ = std::numeric_limits<int>::max();
 		repaint(geometry());
 
 		if (path_ != nullptr) {
@@ -926,12 +926,12 @@ QVector<QPointF> PathFieldView::windowToWorld(const QVector<QPointF>& points)
 	return transformPoints(window_to_world_, points);
 }
 
-bool PathFieldView::hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRegion& region)
+bool PathFieldView::hitTestWaypoint(const QPointF& pt, int& index, WaypointRegion& region)
 {
 	if (path_ == nullptr)
 		return false;
 
-	for (size_t i = 0; i < path_->size(); i++)
+	for (int i = 0; i < path_->size(); i++)
 	{
 		Translation2d t2d = path_->getPoint(i).getTranslation();
 		QPointF world = worldToWindow(QPointF(t2d.getX(), t2d.getY()));
@@ -972,7 +972,7 @@ bool PathFieldView::hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRe
 	return false;
 }
 
-void PathFieldView::invalidateWaypoint(size_t index)
+void PathFieldView::invalidateWaypoint(int index)
 {
 	if (index >= path_->size())
 		return;

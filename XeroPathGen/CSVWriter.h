@@ -14,7 +14,7 @@ public:
 	template<class InputIt>
 	static bool write(std::ostream& strm, const QVector<QString> headers, InputIt first, InputIt last)
 	{
-		for (size_t i = 0; i < headers.size(); i++)
+		for (int i = 0; i < headers.size(); i++)
 		{
 			strm << '"' << headers[i].toStdString() << '"';
 			if (i != headers.size() - 1)
@@ -25,7 +25,7 @@ public:
 		for (auto it = first; it != last; it++)
 		{
 			const ICsv& cl = *it;
-			for (size_t i = 0; i < headers.size(); i++)
+			for (int i = 0; i < headers.size(); i++)
 			{
 				double v = cl.getField(headers[i]);
 				if (i != 0)

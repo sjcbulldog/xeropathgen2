@@ -80,7 +80,7 @@ void Generator::addTankDriveTrajectories()
 	double plvel = 0, prvel = 0;
 	double placc = 0, pracc = 0;
 
-	for (size_t i = 0; i < traj->size(); i++)
+	for (int i = 0; i < traj->size(); i++)
 	{
 		const Pose2dWithTrajectory& pt = (*traj)[i];
 		double time = pt.time();

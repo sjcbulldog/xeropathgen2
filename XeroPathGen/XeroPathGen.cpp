@@ -85,7 +85,6 @@ XeroPathGen::XeroPathGen(const QStringList &arglist, RobotManager& robots, GameF
 	connect(&generator_, &GenerationMgr::generationComplete, this, &XeroPathGen::trajectoryGenerationComplete);
 	connect(&paths_data_model_, &PathsDataModel::unitsChanged, this, &XeroPathGen::setUnits);
 	connect(&paths_data_model_, &PathsDataModel::trajectoryGeneratorChanged, this, &XeroPathGen::trajectoryGeneratorChanged);
-	connect(&paths_data_model_, &PathsDataModel::beforeChange, this, &XeroPathGen::beforePathModelChange);
 
 	processArguments();
 }
@@ -298,6 +297,8 @@ bool XeroPathGen::createMenus()
 	menuBar()->addMenu(help_menu_);
 	action = help_menu_->addAction(tr("About"));
 	(void)connect(action, &QAction::triggered, this, &XeroPathGen::showAbout);
+	action = help_menu_->addAction(tr("Changes"));
+	(void)connect(action, &QAction::triggered, this, &XeroPathGen::showChanges);
 
 	return true;
 }
@@ -1136,7 +1137,7 @@ void XeroPathGen::importRobot()
 	}
 }
 
-void XeroPathGen::waypointSelected(size_t index)
+void XeroPathGen::waypointSelected(int index)
 {
 	auto dists = paths_data_model_.getDistancesForPath(waypoint_win_->path());
 	double dist = 0.0;
@@ -1148,18 +1149,18 @@ void XeroPathGen::waypointSelected(size_t index)
 	waypoint_win_->setWaypoint(index, dist);
 }
 
-void XeroPathGen::waypointStartMoving(size_t index)
+void XeroPathGen::waypointStartMoving(int index)
 {
 	paths_data_model_.enableGeneration(false);
 	waypoint_win_->refresh();
 }
 
-void XeroPathGen::waypointMoving(size_t index)
+void XeroPathGen::waypointMoving(int index)
 {
 	waypoint_win_->refresh();
 }
 
-void XeroPathGen::waypointEndMoving(size_t index)
+void XeroPathGen::waypointEndMoving(int index)
 {
 	paths_data_model_.enableGeneration(true);
 	waypoint_win_->refresh();
@@ -1388,6 +1389,40 @@ void XeroPathGen::showAbout()
 	about.exec();
 }
 
+void XeroPathGen::showChanges()
+{
+	QString exedir = QCoreApplication::applicationDirPath();
+	QString textpath = exedir + "/Changes.txt";
+
+	QFile file(textpath);
+	if (!file.open(QIODeviceBase::ReadOnly))
+		return;
+
+	QByteArray data = file.readAll();
+	file.close();
+
+	QString str = QString::fromUtf8(data);
+
+	QMainWindow* win = new QMainWindow();
+	QPlainTextEdit* text = new QPlainTextEdit();
+
+	QFont font("Monospace");
+	font.setStyleHint(QFont::TypeWriter);
+
+	text->setFont(font);
+	text->appendPlainText(str);
+
+	QTextCursor cursor = text->textCursor();
+	cursor.movePosition(QTextCursor::Start);
+	text->setTextCursor(cursor);
+
+	win->setCentralWidget(text);
+
+	win->setMinimumWidth(800);
+	win->setMinimumHeight(600);
+	win->show();
+}
+
 void XeroPathGen::trajectoryGeneratorChanged()
 {
 	generator_.clear();
@@ -1431,10 +1466,6 @@ void XeroPathGen::sliderChanged(int value)
 		}
 	}
 	time_text_->setText(text);
-}
-
-void XeroPathGen::beforePathModelChange()
-{
 }
 
 void XeroPathGen::undo()

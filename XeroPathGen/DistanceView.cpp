@@ -7,10 +7,10 @@ DistanceView::DistanceView(const QVector<Pose2dWithRotation>& points, double ste
 	double d;
 
 	distances_.push_back(0.0);
-	for (size_t i = 1; i < points.size(); i++)
+	for (int i = 1; i < points.size(); i++)
 		distances_.push_back(points[i].distance(points[i - 1]) + distances_[i - 1]);
 
-	size_t index = 0;
+	int index = 0;
 	for (d = 0.0; d <= distances_.back(); d += step)
 	{
 		while (d > distances_[index + 1])
@@ -23,7 +23,7 @@ DistanceView::DistanceView(const QVector<Pose2dWithRotation>& points, double ste
 
 	distances_.clear();
 	distances_.push_back(0.0);
-	for (size_t i = 1; i < points_.size(); i++)
+	for (int i = 1; i < points_.size(); i++)
 		distances_.push_back(points_[i].distance(points_[i - 1]) + distances_[i - 1]);
 
 	TrajectoryUtils::computeCurvature(points_);
@@ -33,12 +33,12 @@ DistanceView::DistanceView(const QVector<Pose2dWithRotation>& points, double ste
 Pose2dWithRotation DistanceView::operator[](double dist) const
 {
 	Pose2d result;
-	size_t low = 0;
-	size_t high = distances_.size();
+	int low = 0;
+	int high = distances_.size();
 
 	while (high - low > 1)
 	{
-		size_t mid = (high + low) / 2;
+		int mid = (high + low) / 2;
 		if (dist > distances_[mid])
 			low = mid;
 		else
@@ -56,6 +56,6 @@ Pose2dWithRotation DistanceView::operator[](double dist) const
 	return result;
 }
 
-Pose2dWithRotation DistanceView::operator[](size_t index) const {
+Pose2dWithRotation DistanceView::operator[](int index) const {
 	return points_[index];
 }

@@ -67,11 +67,11 @@ public:
 	QVector<QPointF> windowToWorld(const QVector<QPointF>& points);
 
 	void deleteWaypoint();
-	void deleteWaypoint(const QString &group, const QString &path, size_t index);
+	void deleteWaypoint(const QString &group, const QString &path, int index);
 	void insertWaypoint();
-	void addWaypoint(const QString& group, const QString& path, size_t index, const Pose2dWithRotation &pt);
+	void addWaypoint(const QString& group, const QString& path, int index, const Pose2dWithRotation &pt);
 
-	size_t getSelected() const {
+	int getSelected() const {
 		return selected_;
 	}
 
@@ -82,10 +82,10 @@ public:
 
 signals:
 	void mouseMoved(Translation2d pos);
-	void waypointSelected(size_t index);
-	void waypointStartMoving(size_t index);
-	void waypointMoving(size_t index);
-	void waypointEndMoving(size_t index);
+	void waypointSelected(int index);
+	void waypointStartMoving(int index);
+	void waypointMoving(int index);
+	void waypointEndMoving(int index);
 	void waypointInserted();
 	void waypointDeleted();
 	void undoRequested();
@@ -133,10 +133,10 @@ private:
 	void pathChanged(const QString& grname, const QString& pathname);
 
 	void emitMouseMoved(Translation2d pos);
-	void emitWaypointSelected(size_t which);
-	void emitWaypointStartMoving(size_t which);
-	void emitWaypointMoving(size_t which);
-	void emitWaypointEndMoving(size_t which);
+	void emitWaypointSelected(int which);
+	void emitWaypointStartMoving(int which);
+	void emitWaypointMoving(int which);
+	void emitWaypointEndMoving(int which);
 	void emitWaypointDeleted();
 	void emitWaypointInserted();
 
@@ -152,8 +152,8 @@ private:
 	void drawSpline(QPainter& paint, std::shared_ptr<SplinePair> pair);
 	void drawRobot(QPainter& paint);
 	void drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithTrajectory& pt);
-	bool hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRegion& region);
-	void invalidateWaypoint(size_t index);
+	bool hitTestWaypoint(const QPointF& pt, int& index, WaypointRegion& region);
+	void invalidateWaypoint(int index);
 
 private:
 	QImage field_image_;
@@ -164,11 +164,11 @@ private:
 	QTransform world_to_window_;
 	QTransform window_to_world_;
 	std::shared_ptr<RobotParams> robot_;
-	size_t selected_;
+	int selected_;
 	QString units_;
 	bool dragging_;
 	bool rotating_;
-	size_t demo_step_;
+	int demo_step_;
 
 	double triangle_size_;
 

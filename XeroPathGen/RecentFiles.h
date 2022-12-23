@@ -32,7 +32,7 @@ public:
 
 	void initialize(XeroPathGen* app);
 
-	void setCount(size_t count);
+	void setCount(int count);
 	void addRecentFile(XeroPathGen*app, QString file, bool end = false);
 	void removeRecentFile(XeroPathGen* app, QString file);
 
@@ -41,7 +41,7 @@ private:
 	void writeRecentFiles();
 
 private:
-	size_t count_;
+	int count_;
 	QString name_;
 	std::list<QString> files_;
 	QSettings &settings_;

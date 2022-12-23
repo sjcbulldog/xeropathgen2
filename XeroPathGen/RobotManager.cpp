@@ -124,7 +124,7 @@ bool RobotManager::processJSONFile(QFile& file)
 	int drivetype_value;
 	QString text;
 	int version;
-	size_t len;
+	int len;
 	bool ok;
 
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -229,7 +229,7 @@ bool RobotManager::processJSONFile(QFile& file)
 
 bool RobotManager::getNextFile(QFileInfo &file)
 {
-	size_t i = 1;
+	int i = 1;
 	while (i < 1024)
 	{
 		QString path = getFirstDir();

@@ -27,7 +27,7 @@ RecentFiles::~RecentFiles()
 {
 }
 
-void RecentFiles::setCount(size_t c)
+void RecentFiles::setCount(int c)
 {
 	count_ = c;
 	adjustSize();
@@ -77,7 +77,7 @@ void RecentFiles::adjustSize()
 
 void RecentFiles::initialize(XeroPathGen* app)
 {
-	size_t i = 0;
+	int i = 0;
 
 	while (true)
 	{
@@ -94,7 +94,7 @@ void RecentFiles::initialize(XeroPathGen* app)
 
 void RecentFiles::writeRecentFiles()
 {
-	size_t i = 0;
+	int i = 0;
 
 	while (true)
 	{
