@@ -74,6 +74,9 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <PreBuildEvent>
       <Command>C:/cygwin64/bin/sh.exe $(ProjectDir)/incver.sh</Command>
     </PreBuildEvent>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PostBuildEvent>
@@ -90,6 +93,9 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <PreBuildEvent>
       <Command>C:/cygwin64/bin/sh.exe $(ProjectDir)/incver.sh</Command>
     </PreBuildEvent>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
@@ -172,7 +178,6 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <ClCompile Include="UndoAddGroup.cpp" />
     <ClCompile Include="UndoAddPath.cpp" />
     <ClCompile Include="UndoChangeCentripetalForceConstraint.cpp" />
-    <ClCompile Include="UndoChangePathName.cpp" />
     <ClCompile Include="UndoChangePathParams.cpp" />
     <ClCompile Include="UndoChangeWaypoint.cpp" />
     <ClCompile Include="UndoDeleteConstraint.cpp" />
@@ -254,7 +259,6 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <ClInclude Include="UndoAddGroup.h" />
     <ClInclude Include="UndoAddPath.h" />
     <ClInclude Include="UndoChangeCentripetalForceConstraint.h" />
-    <ClInclude Include="UndoChangePathName.h" />
     <ClInclude Include="UndoChangePathParams.h" />
     <ClInclude Include="UndoChangeWaypoint.h" />
     <ClInclude Include="UndoDeleteConstraint.h" />

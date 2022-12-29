@@ -13,6 +13,10 @@ public:
 
 	void apply() override;
 
+	const QString& groupName() const {
+		return grname_;
+	}
+
 private:
 	PathsDataModel& model_;
 	QString grname_;

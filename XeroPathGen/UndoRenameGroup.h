@@ -14,6 +14,14 @@ public:
 
 	void apply();
 
+	const QString& newName() const {
+		return newname_;
+	}
+
+	const QString& oldName() const {
+		return oldname_;
+	}
+
 private:
 	QString newname_;
 	QString oldname_;

@@ -3,5 +3,5 @@
 
 void UndoDeleteConstraint::apply()
 {
-	path_->addConstraint(constraint_, false);
+	path_->insertConstraint(constraint_, index_);
 }

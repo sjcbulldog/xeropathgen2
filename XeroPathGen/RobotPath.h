@@ -105,6 +105,7 @@ public:
 	void removePoint(int index, bool undoentry = true);
 	void insertPoint(int index, const Pose2dWithRotation& pt, bool undoentry = true);
 	void addConstraint(std::shared_ptr<PathConstraint> c, bool undoentry = true);
+	void insertConstraint(std::shared_ptr<PathConstraint> c, int index);
 	void deleteConstraint(std::shared_ptr<PathConstraint> c, bool undoentry = true);
 
 	void beforeConstraintChanged(std::shared_ptr<UndoAction> action) {

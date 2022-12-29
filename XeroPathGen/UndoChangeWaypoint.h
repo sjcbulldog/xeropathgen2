@@ -16,6 +16,14 @@ public:
 
 	void apply() override;
 
+	std::shared_ptr<RobotPath> path() {
+		return path_;
+	}
+
+	int index() const {
+		return index_;
+	}
+
 private:
 	std::shared_ptr<RobotPath> path_;
 	int index_;

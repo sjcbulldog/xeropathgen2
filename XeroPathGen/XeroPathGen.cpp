@@ -6,6 +6,19 @@
 #include "AboutDialog.h"
 #include "SelectRobotDialog.h"
 #include "TrajectoryNames.h"
+#include "UndoAddConstraint.h"
+#include "UndoAddGroup.h"
+#include "UndoAddPath.h"
+#include "UndoChangeCentripetalForceConstraint.h"
+#include "UndoChangeWaypoint.h"
+#include "UndoDeleteConstraint.h"
+#include "UndoDeleteGroup.h"
+#include "UndoDeletePath.h"
+#include "UndoDistanceVelocityConstraintChange.h"
+#include "UndoInsertPoint.h"
+#include "UndoRemovePoint.h"
+#include "UndoRenameGroup.h"
+#include "UndoRenamePath.h"
 #include <QtCore/QCoreApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMenu>
@@ -1139,14 +1152,16 @@ void XeroPathGen::importRobot()
 
 void XeroPathGen::waypointSelected(int index)
 {
-	auto dists = paths_data_model_.getDistancesForPath(waypoint_win_->path());
-	double dist = 0.0;
-	if (index < dists.size())
-	{
-		dist = dists[index];
-	}
+	if (index != -1) {
+		auto dists = paths_data_model_.getDistancesForPath(waypoint_win_->path());
+		double dist = 0.0;
+		if (index < dists.size())
+		{
+			dist = dists[index];
+		}
 
-	waypoint_win_->setWaypoint(index, dist);
+		waypoint_win_->setWaypoint(index, dist);
+	}
 }
 
 void XeroPathGen::waypointStartMoving(int index)
@@ -1470,4 +1485,76 @@ void XeroPathGen::sliderChanged(int value)
 
 void XeroPathGen::undo()
 {
+	auto action = paths_data_model_.popUndoStack();
+	if (action != nullptr) {
+
+		action->apply();
+
+		if (std::dynamic_pointer_cast<UndoAddConstraint>(action) != nullptr) {
+			std::shared_ptr<UndoAddConstraint> act = std::dynamic_pointer_cast<UndoAddConstraint>(action);
+			constraint_win_->deleteConstraintFromDisplay(act->getConstraint());
+		}
+		else if (std::dynamic_pointer_cast<UndoAddGroup>(action) != nullptr) {
+			std::shared_ptr<UndoAddGroup> act = std::dynamic_pointer_cast<UndoAddGroup>(action);
+			path_win_->removeGroupFromDisplay(act->groupName());
+		}
+		else if (std::dynamic_pointer_cast<UndoAddPath>(action) != nullptr) {
+			std::shared_ptr<UndoAddPath> act = std::dynamic_pointer_cast<UndoAddPath>(action);
+			path_win_->removePathFromDisplay(act->path()->pathGroup()->name(), act->path()->name());
+		}
+		else if (std::dynamic_pointer_cast<UndoChangeCentripetalForceConstraint>(action) != nullptr) {
+			std::shared_ptr<UndoChangeCentripetalForceConstraint> act = std::dynamic_pointer_cast<UndoChangeCentripetalForceConstraint>(action);
+			constraint_win_->updateConstraintInDisplay(act->constraint().get());
+		}
+		else if (std::dynamic_pointer_cast<UndoChangeWaypoint>(action) != nullptr) {
+			std::shared_ptr<UndoChangeWaypoint> act = std::dynamic_pointer_cast<UndoChangeWaypoint>(action);
+			if (act->path() == path_win_->selectedPath()) {
+				path_edit_win_->update();
+
+				if (waypoint_win_->isSelectedIndex(act->index())) {
+					waypoint_win_->refresh();
+				}
+			}
+		}
+		else if (std::dynamic_pointer_cast<UndoDeleteConstraint>(action) != nullptr) {
+			std::shared_ptr<UndoDeleteConstraint> act = std::dynamic_pointer_cast<UndoDeleteConstraint>(action);
+			constraint_win_->insertConstraint(act->constraint(), act->index());
+		}
+		else if (std::dynamic_pointer_cast<UndoDeleteGroup>(action) != nullptr) {
+			std::shared_ptr<UndoDeleteGroup> act = std::dynamic_pointer_cast<UndoDeleteGroup>(action);
+			path_win_->insertGroupInDisplay(act->group()->name(), act->index());
+		}
+		else if (std::dynamic_pointer_cast<UndoDeletePath>(action) != nullptr) {
+			std::shared_ptr<UndoDeletePath> act = std::dynamic_pointer_cast<UndoDeletePath>(action);
+			path_win_->insertPathInDisplay(act->path(), act->index());
+		}
+		else if (std::dynamic_pointer_cast<UndoDistanceVelocityConstraintChange>(action) != nullptr) {
+			std::shared_ptr<UndoDistanceVelocityConstraintChange> act = std::dynamic_pointer_cast<UndoDistanceVelocityConstraintChange>(action);
+			constraint_win_->updateConstraintInDisplay(act->constraint().get());
+		}
+		else if (std::dynamic_pointer_cast<UndoInsertPoint>(action) != nullptr) {
+			std::shared_ptr<UndoInsertPoint> act = std::dynamic_pointer_cast<UndoInsertPoint>(action);
+			if (act->path() == path_win_->selectedPath()) {
+				path_edit_win_->update();
+			}
+		}
+		else if (std::dynamic_pointer_cast<UndoRemovePoint>(action) != nullptr) {
+			std::shared_ptr<UndoRemovePoint> act = std::dynamic_pointer_cast<UndoRemovePoint>(action);
+			if (act->path() == path_win_->selectedPath()) {
+				path_edit_win_->update();
+			}
+		}
+		else if (std::dynamic_pointer_cast<UndoRenameGroup>(action) != nullptr) {
+			std::shared_ptr<UndoRenameGroup> act = std::dynamic_pointer_cast<UndoRenameGroup>(action);
+			path_win_->changeGroupNameInDisplay(act->newName(), act->oldName());
+		}
+		else if (std::dynamic_pointer_cast<UndoRenamePath>(action) != nullptr) {
+			std::shared_ptr<UndoRenamePath> act = std::dynamic_pointer_cast<UndoRenamePath>(action);
+			path_win_->changePathNameInDisplay(act->groupName(), act->newName(), act->oldName());
+		}
+		else
+		{
+			assert(false);
+		}
+	}
 }

@@ -12,6 +12,10 @@ class WaypointWindow : public QTreeWidget
 public:
 	WaypointWindow(QWidget* parent);
 
+	bool isSelectedIndex(int index) const {
+		return index == index_;
+	}
+
 	void setPath(std::shared_ptr<RobotPath> path) {
 		if (path_ != path) {
 			path_ = path;

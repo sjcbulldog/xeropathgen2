@@ -14,6 +14,10 @@ public:
 
 	void apply() override;
 
+	std::shared_ptr<CentripetalConstraint> constraint() {
+		return constraint_;
+	}
+
 private:
 	double maxcen_;
 	std::shared_ptr<CentripetalConstraint> constraint_;

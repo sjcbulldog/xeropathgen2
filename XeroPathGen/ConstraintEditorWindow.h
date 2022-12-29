@@ -19,6 +19,10 @@ public:
 
 	void refresh();
 
+	void deleteConstraintFromDisplay(std::shared_ptr<PathConstraint> c);
+	void updateConstraintInDisplay(void *);
+	void insertConstraint(std::shared_ptr<PathConstraint> c, int index);
+
 protected:
 	void prepareCustomMenu(const QPoint& pos);
 
@@ -30,10 +34,10 @@ private:
 	void constraintDoubleClicked(QTreeWidgetItem* item, int column);
 	void addConstraintToTree(std::shared_ptr<PathConstraint> c);
 
+
 private:
-	int index_;
 	std::shared_ptr<RobotPath> path_;
 	QTreeWidgetItem* menuItem_;
-	QMap<int, std::shared_ptr<PathConstraint>> constraint_index_map_;
+	QVector<std::shared_ptr<PathConstraint>> constraints_;
 };
 

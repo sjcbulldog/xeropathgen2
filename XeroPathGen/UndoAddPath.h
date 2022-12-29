@@ -14,6 +14,10 @@ public:
 
 	void apply() override;
 
+	std::shared_ptr<RobotPath> path() {
+		return path_;
+	}
+
 private:
 	PathsDataModel& model_;
 	std::shared_ptr<RobotPath> path_;

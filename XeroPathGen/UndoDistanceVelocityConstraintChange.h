@@ -16,6 +16,11 @@ public:
 
 	void apply() override;
 
+	std::shared_ptr<DistanceVelocityConstraint> constraint() {
+		return constraint_;
+	}
+
+
 private:
 	std::shared_ptr<DistanceVelocityConstraint> constraint_;
 	double before_;

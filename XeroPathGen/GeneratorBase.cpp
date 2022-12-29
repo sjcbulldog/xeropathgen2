@@ -200,7 +200,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	sucessor.setAccelMin(-maxaccel);
 	sucessor.setAccelMax(maxaccel);
 
-	for (int i = points.size() - 1; i < points.size(); i--)
+	for (int i = points.size() - 1; i >= 0 ; i--)
 	{
 		Pose2dConstrained state = points[i];
 		double dist = state.position() - sucessor.position();				// Will be negative

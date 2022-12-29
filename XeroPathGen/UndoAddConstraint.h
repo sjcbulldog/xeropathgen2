@@ -15,6 +15,10 @@ public:
 
 	void apply() override;
 
+	std::shared_ptr<PathConstraint> getConstraint() {
+		return constraint_;
+	}
+
 private:
 	std::shared_ptr<RobotPath> path_;
 	std::shared_ptr<PathConstraint> constraint_;

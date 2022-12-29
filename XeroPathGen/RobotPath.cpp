@@ -3,7 +3,7 @@
 #include "CentripetalConstraint.h"
 #include "DistanceVelocityConstraint.h"
 #include "UndoAction.h"
-#include "UndoChangePathName.h"
+#include "UndoRenamePath.h"
 #include "UndoChangePathParams.h"
 #include "UndoChangeWaypoint.h"
 #include "UndoRemovePoint.h"
@@ -27,14 +27,12 @@ QString RobotPath::fullname() const {
 
 void RobotPath::setName(const QString& name, bool undoentry) 
 {
-	if (undoentry) {
-		emitBeforePathChangedSignal(std::make_shared<UndoChangePathName>(name_, shared_from_this()));
-	}
 	name_ = name;
 	emitAfterPathChangedSignal();
 }
 
-void RobotPath::setParams(const PathParameters& p, bool undoentry) {
+void RobotPath::setParams(const PathParameters& p, bool undoentry) 
+{
 	if (undoentry) {
 		emitBeforePathChangedSignal(std::make_shared<UndoChangePathParams>(params_, shared_from_this()));
 	}
@@ -42,16 +40,16 @@ void RobotPath::setParams(const PathParameters& p, bool undoentry) {
 	emitAfterPathChangedSignal();
 }
 
-
 void RobotPath::replacePoint(int index, const Pose2dWithRotation& pt, bool undoentry) {
 	if (undoentry) {
-		emitBeforePathChangedSignal(std::make_shared<UndoChangeWaypoint>(index, pt, shared_from_this()));
+		emitBeforePathChangedSignal(std::make_shared<UndoChangeWaypoint>(index, waypoints_[index], shared_from_this()));
 	}
 	waypoints_[index] = pt;
 	emitAfterPathChangedSignal();
 }
 
-void RobotPath::removePoint(int index, bool undoentry) {
+void RobotPath::removePoint(int index, bool undoentry) 
+{
 	if (undoentry) {
 		emitBeforePathChangedSignal(std::make_shared<UndoRemovePoint>(index, waypoints_[index], shared_from_this()));
 	}
@@ -60,15 +58,17 @@ void RobotPath::removePoint(int index, bool undoentry) {
 
 }
 
-void RobotPath::insertPoint(int index, const Pose2dWithRotation& pt, bool undoentry) {
+void RobotPath::insertPoint(int index, const Pose2dWithRotation& pt, bool undoentry) 
+{
 	if (undoentry) {
-		emitBeforePathChangedSignal(std::make_shared<UndoInsertPoint>(index, shared_from_this()));
+		emitBeforePathChangedSignal(std::make_shared<UndoInsertPoint>(index + 1, shared_from_this()));
 	}
 	waypoints_.insert(index + 1, pt);
 	emitAfterPathChangedSignal();
 }
 
-void RobotPath::addConstraint(std::shared_ptr<PathConstraint> c, bool undoentry) {
+void RobotPath::addConstraint(std::shared_ptr<PathConstraint> c, bool undoentry) 
+{
 	if (undoentry) {
 		emitBeforePathChangedSignal(std::make_shared<UndoAddConstraint>(c, shared_from_this()));
 	}
@@ -76,10 +76,19 @@ void RobotPath::addConstraint(std::shared_ptr<PathConstraint> c, bool undoentry)
 	emitAfterPathChangedSignal();
 }
 
+void RobotPath::insertConstraint(std::shared_ptr<PathConstraint> c, int index)
+{
+	constraints_.insert(index, c);
+	emitAfterPathChangedSignal();
+}
+
 void RobotPath::deleteConstraint(std::shared_ptr<PathConstraint> c, bool undoentry) {
 	auto it = std::find(constraints_.begin(), constraints_.end(), c);
 	if (it != constraints_.end()) {
-		emitBeforePathChangedSignal(std::make_shared<UndoDeleteConstraint>(c, shared_from_this()));
+		if (undoentry) {
+			int index = constraints_.indexOf(c);
+			emitBeforePathChangedSignal(std::make_shared<UndoDeleteConstraint>(c, index, shared_from_this()));
+		}
 		constraints_.erase(it);
 		emitAfterPathChangedSignal();
 	}

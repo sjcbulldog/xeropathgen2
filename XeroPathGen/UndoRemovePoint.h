@@ -16,6 +16,11 @@ public:
 
 	void apply() override;
 
+	std::shared_ptr<RobotPath> path() {
+		return path_;
+	}
+
+
 private:
 	int index_;
 	Pose2dWithRotation waypoint_;

@@ -56,16 +56,10 @@ bool PathsDataModel::hasGroup(const QString& grname) const
 	return it != groups_.end();
 }
 
-void PathsDataModel::addGroup(PathGroup* gr)
-{
-	assert(getPathGroupByName(gr->name()) == nullptr);
-	groups_.push_back(gr);
-}
-
 void PathsDataModel::addGroup(const QString& grname, bool undoentry)
 {
 	if (undoentry) {
-		undo_stack_.push_back(std::make_shared<UndoAddGroup>(grname, *this));
+		addUndoStackEntry(std::make_shared<UndoAddGroup>(grname, *this));
 	}
 	assert(hasGroup(grname) == false);
 	PathGroup *gr = new PathGroup(grname);
@@ -75,12 +69,21 @@ void PathsDataModel::addGroup(const QString& grname, bool undoentry)
 	emit groupAdded(grname);
 }
 
+void PathsDataModel::insertGroup(PathGroup *gr, int index)
+{
+	groups_.insert(index, gr);
+
+	setDirty();
+	emit groupAdded(gr->name());
+}
+
 void PathsDataModel::deleteGroup(const QString& grname, bool undoentry)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
 	if (it != groups_.end()) {
 		if (undoentry) {
-			undo_stack_.push_back(std::make_shared<UndoDeleteGroup>(*it, *this));
+			int index = std::distance(groups_.begin(), it);
+			addUndoStackEntry(std::make_shared<UndoDeleteGroup>(*it, index, *this));
 		}
 		groups_.erase(it);
 	}
@@ -120,7 +123,7 @@ void PathsDataModel::renameGroup(const QString& oldname, const QString& newname,
 	}
 
 	if (undoentry) {
-		undo_stack_.push_back(std::make_shared<UndoRenameGroup>(newname, oldname, *this));
+		addUndoStackEntry(std::make_shared<UndoRenameGroup>(newname, oldname, *this));
 	}
 
 	(*it)->setName(newname);
@@ -146,7 +149,7 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path, bool undoentry)
 	if (it != groups_.end()) {
 
 		if (undoentry) {
-			undo_stack_.push_back(std::make_shared<UndoAddPath>(path, *this));
+			addUndoStackEntry(std::make_shared<UndoAddPath>(path, *this));
 		}
 
 		(*it)->addPath(path);
@@ -162,6 +165,19 @@ void PathsDataModel::addPath(std::shared_ptr<RobotPath> path, bool undoentry)
 	}
 }
 
+void PathsDataModel::insertPath(std::shared_ptr<RobotPath> path, int index)
+{
+	auto it = std::find_if(groups_.begin(), groups_.end(), [&path](const PathGroup* g) { return g->name() == path->pathGroup()->name(); });
+	if (it != groups_.end()) {
+		(*it)->insertPath(path, index);
+		setDirty();
+		connect(path.get(), &RobotPath::beforePathChanged, this, &PathsDataModel::beforePathChanged);
+		connect(path.get(), &RobotPath::afterPathChanged, this, &PathsDataModel::afterPathChanged);
+		this->generateTrajectory(path);
+		emit pathAdded(path);
+	}
+}
+
 void PathsDataModel::deletePath(const QString& grname, const QString& pathname, bool undoentry)
 {
 	auto it = std::find_if(groups_.begin(), groups_.end(), [&grname](const PathGroup* g) { return g->name() == grname; });
@@ -169,7 +185,8 @@ void PathsDataModel::deletePath(const QString& grname, const QString& pathname, 
 		auto path = (*it)->getPathByName(pathname);
 		if (path != nullptr) {
 			if (undoentry) {
-				undo_stack_.push_back(std::make_shared<UndoDeletePath>(path, *this));
+				int index = (*it)->getPathIndexByName(pathname);
+				addUndoStackEntry(std::make_shared<UndoDeletePath>(path, index, *this));
 			}
 			gen_mgr_.removePath(path);
 		}
@@ -209,7 +226,7 @@ void PathsDataModel::renamePath(const QString& grname, const QString& oldname, c
 	}
 
 	if (undoentry) {
-		undo_stack_.push_back(std::make_shared<UndoRenamePath>(grname, oldname, newname, *this));
+		addUndoStackEntry(std::make_shared<UndoRenamePath>(grname, oldname, newname, *this));
 	}
 	path->setName(newname);
 	setDirty();
@@ -231,7 +248,7 @@ QVector<std::shared_ptr<RobotPath>> PathsDataModel::getAllPaths()
 
 void PathsDataModel::beforePathChanged(std::shared_ptr<UndoAction> undo)
 {
-	undo_stack_.push_back(undo);
+	addUndoStackEntry(undo);
 }
 
 void PathsDataModel::afterPathChanged(const QString& grname, const QString& pathname)
@@ -303,6 +320,8 @@ bool PathsDataModel::load(const QString& filename, QString& msg)
 {
 	QFile file(filename);
 	QString text;
+
+	undo_stack_.clear();
 
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
@@ -557,4 +576,20 @@ QVector<double> PathsDataModel::getDistancesForPath(std::shared_ptr<RobotPath> p
 		distances_.insert(path, dists);
 	}
 	return distances_.value(path);
+}
+
+void PathsDataModel::addUndoStackEntry(std::shared_ptr<UndoAction> undo)
+{
+	undo_stack_.push_back(undo);
+}
+
+std::shared_ptr<UndoAction> PathsDataModel::popUndoStack()
+{
+	if (undo_stack_.size() == 0) {
+		return nullptr;
+	}
+
+	auto action = undo_stack_.back();
+	undo_stack_.pop_back();
+	return action;
 }

@@ -339,3 +339,103 @@ QString PathWindow::newPathName(const QString& grname)
 
 	return name;
 }
+
+QTreeWidgetItem* PathWindow::getGroupItem(const QString& name)
+{
+	for (int i = 0; i < topLevelItemCount(); i++) {
+		QTreeWidgetItem* item = topLevelItem(i);
+		if (item->text(0) == name) {
+			return item;
+		}
+	}
+
+	return nullptr;
+}
+
+void PathWindow::removeGroupFromDisplay(const QString& name)
+{
+	QTreeWidgetItem* item = getGroupItem(name);
+	if (item != nullptr) {
+		delete item;
+	}
+}
+
+void PathWindow::insertGroupInDisplay(const QString& name, int index)
+{
+	QTreeWidgetItem* item = newItem(name);
+
+	for (const QString& pathName : model_.pathNames(name))
+	{
+		QTreeWidgetItem* pathitem = newItem(pathName);
+		item->addChild(pathitem);
+	}
+
+	insertTopLevelItem(index, item);
+}
+
+void PathWindow::insertPathInDisplay(std::shared_ptr<RobotPath> path, int index)
+{
+	QTreeWidgetItem* which = nullptr;
+
+	for (int i = 0; i < topLevelItemCount(); i++) {
+		QTreeWidgetItem* item = topLevelItem(i);
+		if (item->text(0) == path->pathGroup()->name()) {
+			which = item;
+			break;
+		}
+	}
+
+	if (which) {
+		QTreeWidgetItem* pathitem = newItem(path->name());
+		which->insertChild(index, pathitem);
+	}
+}
+
+QTreeWidgetItem* PathWindow::getPathItem(const QString& grname, const QString& pathname)
+{
+	for (int i = 0; i < topLevelItemCount(); i++) {
+		QTreeWidgetItem* item = topLevelItem(i);
+		if (item->text(0) == grname) {
+			for (int j = 0; j < item->childCount(); j++) {
+				QTreeWidgetItem* pitem = item->child(j);
+				if (pitem->text(0) == pathname)
+				{
+					return pitem;
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+void PathWindow::removePathFromDisplay(const QString& grname, const QString &pathname)
+{
+	QTreeWidgetItem* item = getPathItem(grname, pathname);
+	if (item) {
+		delete item;
+	}
+}
+
+void PathWindow::changePathNameInDisplay(const QString& grname, const QString& pathname, const QString& newname)
+{
+	QTreeWidgetItem* item = getPathItem(grname, pathname);
+	if (item != nullptr) {
+		blockSignals(true);
+		item->setText(0, newname);
+		blockSignals(false);
+	}
+}
+
+void PathWindow::changeGroupNameInDisplay(const QString& existingname, const QString& newname)
+{
+	for (int i = 0; i < topLevelItemCount(); i++) {
+		QTreeWidgetItem* item = topLevelItem(i);
+		if (item->text(0) == existingname) 
+		{
+			blockSignals(true);
+			item->setText(0, newname);
+			blockSignals(false);
+		}
+	}
+}

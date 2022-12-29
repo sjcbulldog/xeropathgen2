@@ -34,6 +34,10 @@ public:
 		paths_.push_back(path);
 	}
 
+	void insertPath(std::shared_ptr<RobotPath> path, int index) {
+		paths_.insert(index, path);
+	}
+
 	void deletePath(const QString& name) {
 		auto it = std::find_if(paths_.begin(), paths_.end(), [&name](const std::shared_ptr<RobotPath> p) { return p->name() == name; });
 		if (it != paths_.end()) {
@@ -44,6 +48,11 @@ public:
 	std::shared_ptr<RobotPath> getPathByName(const QString& name) const {
 		auto it = std::find_if(paths_.begin(), paths_.end(), [&name](const std::shared_ptr<RobotPath> p) { return p->name() == name; });
 		return (it == paths_.end()) ? nullptr : *it;
+	}
+
+	int getPathIndexByName(const QString& name) const {
+		auto it = std::find_if(paths_.begin(), paths_.end(), [&name](const std::shared_ptr<RobotPath> p) { return p->name() == name; });
+		return std::distance(paths_.begin(), it);
 	}
 
 	const QList<std::shared_ptr<RobotPath>>& paths() const {

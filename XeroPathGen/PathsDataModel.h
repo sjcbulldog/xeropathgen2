@@ -28,7 +28,7 @@ public:
 	void setGeneratorType(GeneratorType type, bool undoentry = true) {
 		if (undoentry) {
 			auto undo = std::make_shared<UndoSetGeneratorType>(gen_type_, *this);
-			undo_stack_.push_back(undo);
+			addUndoStackEntry(undo);
 		}
 		gen_type_ = type;
 		dirty_ = true;
@@ -48,7 +48,7 @@ public:
 	void setUnits(const QString& units, bool undoentry = true) {
 		if (undoentry) {
 			auto undo = std::make_shared<UndoSetUnits>(units, *this);
-			undo_stack_.push_back(undo);
+			addUndoStackEntry(undo);
 		}
 		convert(units);
 		emit unitsChanged(units_);
@@ -95,7 +95,7 @@ public:
 
 	bool hasGroup(const QString& grname) const ;
 	void addGroup(const QString& grname, bool undoentry = true);
-	void addGroup(PathGroup *group);
+	void insertGroup(PathGroup *gr, int index) ;
 	void deleteGroup(const QString& grname, bool undoentry = true);
 	QStringList groupNames() const ;
 	const PathGroup* getPathGroupByName(const QString& grname);
@@ -103,6 +103,7 @@ public:
 
 	bool hasPath(const QString& grname, const QString& pathname) const;
 	void addPath(std::shared_ptr<RobotPath> path, bool undoentry = true);
+	void insertPath(std::shared_ptr<RobotPath> path, int index);
 	void deletePath(const QString& grname, const QString& pathname, bool undoentry = true);
 	QStringList pathNames(const QString& grname) const;
 	std::shared_ptr<RobotPath> getPathByName(const QString& grname, const QString& pathname);
@@ -112,6 +113,8 @@ public:
 	QVector<double> getDistancesForPath(std::shared_ptr<RobotPath> path);
 
 	QVector<std::shared_ptr<RobotPath>> getAllPaths();
+
+	std::shared_ptr<UndoAction> popUndoStack();
 
 private:
 	void computeSplinesForPath(std::shared_ptr<RobotPath> path);
@@ -129,6 +132,8 @@ private:
 
 	void beforePathChanged(std::shared_ptr<UndoAction> undo);
 	void afterPathChanged(const QString& grname, const QString& pathname);
+
+	void addUndoStackEntry(std::shared_ptr<UndoAction> undo);
 
 signals:
 	void groupAdded(const QString& grname);

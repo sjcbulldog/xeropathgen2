@@ -25,6 +25,14 @@ public:
 
 	void trajectoryGenerationError(std::shared_ptr<RobotPath> path, bool error);
 
+	void removeGroupFromDisplay(const QString& grname);
+	void removePathFromDisplay(const QString& grname, const QString& pathname);
+	void changePathNameInDisplay(const QString& grname, const QString& pathname, const QString& newname);
+	void changeGroupNameInDisplay(const QString& pathname, const QString& newname);
+
+	void insertGroupInDisplay(const QString& grname, int index);
+	void insertPathInDisplay(std::shared_ptr<RobotPath> path, int index);
+
 signals:
 	void groupSelected(const QString& grname);
 	void pathSelected(std::shared_ptr<RobotPath> path);
@@ -54,6 +62,9 @@ private:
 	}
 
 	void itemRenamed(QTreeWidgetItem* item, int column);
+
+	QTreeWidgetItem* getGroupItem(const QString& name);
+	QTreeWidgetItem* getPathItem(const QString& grname, const QString& pathname);
 
 private:
 	QTreeWidgetItem* menuItem_;

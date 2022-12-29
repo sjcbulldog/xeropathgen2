@@ -3,5 +3,7 @@
 
 void UndoDeletePath::apply()
 {
-	model_.addPath(path_, false);
+	model_.blockSignals(true);
+	model_.insertPath(path_, index_);
+	model_.blockSignals(false);
 }

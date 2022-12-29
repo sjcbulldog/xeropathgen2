@@ -3,5 +3,7 @@
 
 void UndoDeleteGroup::apply()
 {
-	model_.addGroup(group_);
+	model_.blockSignals(true);
+	model_.insertGroup(group_, index_);
+	model_.blockSignals(false);
 }
