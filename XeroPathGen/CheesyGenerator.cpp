@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "CheesyGenerator.h"
 #include "RobotPath.h"
 #include "PathGroup.h"
@@ -81,8 +96,10 @@ CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path
 		{
 			double startTime, endTime;
 			int startIndex, endIndex;
-			double startRot = path->getPoint(i).swrot().toDegrees();
-			double endRot = path->getPoint(i + 1).swrot().toDegrees();
+			double startRot = path->getPoint(i).getSwrot().toDegrees();
+			double endRot = path->getPoint(i + 1).getSwrot().toDegrees();
+			double startRotVel = path->getPoint(i).getSwrotVelocity();
+			double endRotVel = path->getPoint(i + 1).getSwrotVelocity();
 
 			if (!traj->getTimeForDistance(dists[i], startTime))
 			{
@@ -117,7 +134,7 @@ CheesyGenerator::generateSwervePerWaypointRotate(std::shared_ptr<RobotPath> path
 			// We now need the trajectory points for the times range
 			//
 
-			if (!modifySegmentForRotation(path, traj, 1.0 - percents[i], startIndex, endIndex, startRot, endRot))
+			if (!modifySegmentForRotation(path, traj, 1.0 - percents[i], startIndex, endIndex, startRot, startRotVel, endRot, endRotVel))
 			{
 				percents[i] -= 0.01;
 				running = true;
@@ -188,7 +205,7 @@ CheesyGenerator::generateTankDrive(std::shared_ptr<RobotPath> path)
 	// heading so that it still represents the direction the robot is pointing
 	//
 	for (int i = 0; i < traj->size(); i++) {
-		(*traj)[i].setSwRotation((*traj)[i].rotation());
+		(*traj)[i].pose().setSwrot((*traj)[i].rotation());
 	}
 
 	return traj;

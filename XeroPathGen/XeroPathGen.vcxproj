@@ -32,12 +32,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>6.3.1_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets;charts</QtModules>
+    <QtModules>core;gui;widgets;printsupport;charts</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>6.3.1_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets;charts</QtModules>
+    <QtModules>core;gui;widgets;printsupport;charts</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -124,11 +124,14 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BasePlotWindow.cpp" />
     <ClCompile Include="CentripetalConstraint.cpp" />
     <ClCompile Include="GeneratorBase.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="LoggerWindow.cpp" />
+    <ClCompile Include="qcustomplot.cpp" />
     <ClCompile Include="QuadraticSolver.cpp" />
+    <ClCompile Include="TrajectoryCustomPlotWindow.cpp" />
     <ClCompile Include="TrapezoidalProfile.cpp" />
     <QtRcc Include="XeroPathGen.qrc" />
     <QtUic Include="AboutDialog.ui" />
@@ -150,7 +153,6 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <ClCompile Include="MathUtils.cpp" />
     <ClCompile Include="NodesListWindow.cpp" />
     <ClCompile Include="PathFieldView.cpp" />
-    <ClCompile Include="PathParameters.cpp" />
     <ClCompile Include="PathParametersWindow.cpp" />
     <ClCompile Include="PathsDataModel.cpp" />
     <ClCompile Include="PathTrajectory.cpp" />
@@ -170,7 +172,7 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <ClCompile Include="SelectRobotDialog.cpp" />
     <ClCompile Include="SplinePair.cpp" />
     <ClCompile Include="TrajectoryGroup.cpp" />
-    <ClCompile Include="TrajectoryPlotWindow.cpp" />
+    <ClCompile Include="TrajectoryQtChartPlotWindow.cpp" />
     <ClCompile Include="TrajectoryUtils.cpp" />
     <ClCompile Include="Translation2d.cpp" />
     <ClCompile Include="Twist2d.cpp" />
@@ -196,12 +198,15 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BasePlotWindow.h" />
     <ClInclude Include="GeneratorBase.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="LoggerWindow.h" />
+    <QtMoc Include="qcustomplot.h" />
     <ClInclude Include="QuadraticSolver.h" />
     <ClInclude Include="SpeedProfileGenerator.h" />
     <ClInclude Include="SwerveWheels.h" />
+    <ClInclude Include="TrajectoryCustomPlotWindow.h" />
     <ClInclude Include="TrapezoidalProfile.h" />
     <QtMoc Include="AboutDialog.h" />
     <ClInclude Include="build.h" />
@@ -250,7 +255,7 @@ copy $(ProjectDir)Changes.txt $(OutDir)
     <ClInclude Include="SplinePair.h" />
     <ClInclude Include="TrajectoryGroup.h" />
     <ClInclude Include="TrajectoryNames.h" />
-    <ClInclude Include="TrajectoryPlotWindow.h" />
+    <ClInclude Include="TrajectoryQtChartPlotWindow.h" />
     <ClInclude Include="TrajectoryUtils.h" />
     <ClInclude Include="Translation2d.h" />
     <ClInclude Include="Twist2d.h" />

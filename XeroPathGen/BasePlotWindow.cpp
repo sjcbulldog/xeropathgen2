@@ -13,37 +13,33 @@
 // See the License for the specific language governing permissionsand
 // limitations under the License.
 //
-#pragma once
+#include "BasePlotWindow.h"
+#include "RobotPath.h"
 
-/// \brief This class represents a location and an angle
-class Twist2d
+BasePlotWindow::AxisType BasePlotWindow::mapVariableToAxis(const QString& var)
 {
-public:
-	Twist2d();
-	Twist2d(double dx, double dy, double dtheta);
-	~Twist2d();
+	AxisType ret = AxisType::Distance;
 
-	double getX() const {
-		return dx_;
+	if (var == RobotPath::HeadingTag || var == RobotPath::RotationTag)
+	{
+		ret = AxisType::Angle;
+	}
+	else if (var == RobotPath::SwerveRotationVelocityTag)
+	{
+		ret = AxisType::AngleVelocity;
+	}
+	else if (var == RobotPath::CurvatureTag)
+	{
+		ret = AxisType::Curvature;
+	}
+	else if (var == RobotPath::VelocityTag)
+	{
+		ret = AxisType::Speed;
+	}
+	else if (var == RobotPath::AccelerationTag)
+	{
+		ret = AxisType::Acceleration;
 	}
 
-	double getY() const {
-		return dy_;
-	}
-
-	double getTheta() const {
-		return dtheta_;
-	}
-
-	static Twist2d kIdentity;
-
-	Twist2d scaled(double scale) const;
-	double normal() const;
-	double curvature() const;
-
-private:
-	double dx_;
-	double dy_;
-	double dtheta_;
-};
-
+	return ret;
+}

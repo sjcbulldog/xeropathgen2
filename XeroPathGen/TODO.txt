@@ -1,5 +1,6 @@
-- Undo support
+- Velocities on swerve rotations at waypoints
 
+- Undo support												Done
 - Add changes document to the program						Done
 - Better robot drawing										Done
 - The ability to move through the path and see the robot	Done

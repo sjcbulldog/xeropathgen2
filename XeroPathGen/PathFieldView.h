@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Jack W. Griffin
+// Copyright 2022 Jack W. Griffin
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ private:
 	static constexpr double TriangleSize = 16.0;
 	static constexpr double SplinePathDiameter = 3.0;
 	static constexpr double CenterHitDistance = 8.0;
-	static constexpr double RotateBubbleHalo = 5.0;
+	static constexpr double RotateHitDistance = 40.0;
 	static constexpr double CircleRadius = 4.0;
 	static constexpr double BigWaypointMove = 12.0;
 	static constexpr double SmallWaypointMove = 1.0;
@@ -151,7 +151,8 @@ private:
 	void drawSplines(QPainter &paint);
 	void drawSpline(QPainter& paint, std::shared_ptr<SplinePair> pair);
 	void drawRobot(QPainter& paint);
-	void drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithTrajectory& pt);
+	void drawWheel(QPainter& paint, QBrush& brush, const Translation2d& loc, const Pose2dWithRotation& pt);
+	void drawRobot(QPainter& paint, const Pose2dWithRotation& pose, QColor body, QColor wheel);
 	bool hitTestWaypoint(const QPointF& pt, int& index, WaypointRegion& region);
 	void invalidateWaypoint(int index);
 
@@ -168,6 +169,7 @@ private:
 	QString units_;
 	bool dragging_;
 	bool rotating_;
+	bool heading_;
 	int demo_step_;
 
 	double triangle_size_;

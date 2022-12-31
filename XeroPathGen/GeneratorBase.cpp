@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "GeneratorBase.h"
 #include "Pose2dConstrained.h"
 #include "TrapezoidalProfile.h"
@@ -388,8 +403,10 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 	{
 		double startTime, endTime;
 		int startIndex, endIndex;
-		double startRot = path->getPoint(i).swrot().toDegrees();
-		double endRot = path->getPoint(i + 1).swrot().toDegrees();
+		double startRot = path->getPoint(i).getSwrot().toDegrees();
+		double startRotVel = path->getPoint(i).getSwrotVelocity();
+		double endRot = path->getPoint(i + 1).getSwrot().toDegrees();
+		double endRotVel = path->getPoint(i + 1).getSwrotVelocity();
 		
 		if (!traj->getTimeForDistance(dists[i], startTime))
 		{
@@ -423,7 +440,7 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 		//
 		// We now need the trajectory points for the times range
 		//
-		if (!modifySegmentForRotation(path, traj, percent , startIndex, endIndex, startRot, endRot))
+		if (!modifySegmentForRotation(path, traj, percent , startIndex, endIndex, startRot, startRotVel, endRot, endRotVel))
 		{
 			return false;
 		}
@@ -432,7 +449,7 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 	return true;
 }
 
-bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double endRot)
+bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double startRotVel, double endRot, double endRotVel)
 {
 	QString logmsg;
 
@@ -473,7 +490,7 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 	logMessage(logmsg);
 
 	tp = std::make_shared<TrapezoidalProfile>(maxaccel, -maxaccel, maxvel);
-	if (!tp->update(diff, 0.0, 0.0)) {
+	if (!tp->update(diff, startRotVel, endRotVel)) {
 		logMessage("modifySegmentForRotation: cannot create TrapezoidalProfile - failed");
 		return false;
 	}
@@ -498,11 +515,14 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		// Get the rotation of the swerve drive at this point in time in the segment
 		//
 		Rotation2d angle;
+		double rotvel = 0.0;
 		if (time - startTime > tp->getTotalTime()) {
 			angle = Rotation2d::fromDegrees(endRot);
+			rotvel = endRotVel;
 		}
 		else {
 			angle = Rotation2d::fromDegrees(MathUtils::boundDegrees(startRot + tp->getDistance(time - startTime)));
+			rotvel = tp->getVelocity(time - startTime);
 		}
 
 		//
@@ -651,7 +671,8 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		prevbl = blpos;
 		prevbr = brpos;
 
-		(*traj)[i].setSwRotation(angle);
+		(*traj)[i].pose().setSwrot(angle);
+		(*traj)[i].setRotVel(rotvel);
 	}
 
 	return true;

@@ -1,9 +1,31 @@
-XeroPathGen 2.2.0 Beta
+XeroPathGen 2.4.0 Beta
+-----------------------------------------------------------------------------------
+
+User Visible Changes
+--------------------
+o Added in the option to use a new plot package (QCustomPlot) for plots as the new
+  packs performs much better with large amounts of data.
+  - The version can be picked via the Windows menu
+
+XeroPathGen 2.3.0 Beta
 -----------------------------------------------------------------------------------
 
 User Visible Changes
 --------------------
 o Added in undo support
+o Changed how the path editing window works to better reflect a swerve drive
+  - Waypoints are drawn with the point of the triangle pointing in the direction of the path
+  - When a waypoint is selected, the robot is drawn around that waypoint based on the rotation
+    of the robot (not the path heading)
+  - When a waypoint is selected, the heading can be rotated by coming near the waypoint, but not
+    in it and dragging the mouse around the waypoint center.
+  - When a waypoint is selected, the swerve rotation can be rotated by coming near the waypoint, 
+    but not in it with the shift button down and dragging the mouse around the waypoint center.
+o Added in rotational velocity constraints when defining swerve rotations that happen at a waypoint
+  along a path (beta).
+
+XeroPathGen 2.3 Beta
+-----------------------------------------------------------------------------------
 
 User Visible Changes
 --------------------

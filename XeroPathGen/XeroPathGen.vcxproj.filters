@@ -88,9 +88,6 @@
     <ClCompile Include="Pose2dWithTrajectory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PathParameters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PathFieldView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -145,7 +142,7 @@
     <ClCompile Include="PlotWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TrajectoryPlotWindow.cpp">
+    <ClCompile Include="TrajectoryQtChartPlotWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NodesListWindow.cpp">
@@ -221,6 +218,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UndoRenamePath.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="qcustomplot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BasePlotWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TrajectoryCustomPlotWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -336,7 +342,7 @@
     <ClInclude Include="PlotWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TrajectoryPlotWindow.h">
+    <ClInclude Include="TrajectoryQtChartPlotWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NodesListWindow.h">
@@ -423,6 +429,12 @@
     <ClInclude Include="UndoRenamePath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BasePlotWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TrajectoryCustomPlotWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="PathWindow.h">
@@ -459,6 +471,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="SelectRobotDialog.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="qcustomplot.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

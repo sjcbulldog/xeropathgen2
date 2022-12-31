@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #pragma once
 #include "Pose2dWithRotation.h"
 #include <QtCore/QString>
@@ -45,7 +60,7 @@ public:
 	}
 
 	const Rotation2d& swrot() const {
-		return pose_.swrot();
+		return pose_.getSwrot();
 	}
 
 	double x() const {
@@ -68,14 +83,6 @@ public:
 		return pose_.curvature();
 	}
 
-	void setSwRotation(Rotation2d d) {
-		pose_.setSwrot(d);
-	}
-
-	const Rotation2d &swrotation() const {
-		return pose_.swrot();
-	}
-
 	double velocity() const {
 		return velocity_;
 	}
@@ -96,6 +103,14 @@ public:
 		acceleration_ = a;
 	}
 
+	void setRotVel(double v) {
+		rotvel_ = v;
+	}
+
+	double rotVel() const {
+		return rotvel_;
+	}
+
 	double getField(const QString& field) const;
 
 	Pose2dWithTrajectory interpolate(const Pose2dWithTrajectory& other, double percent) const;
@@ -106,4 +121,5 @@ private:
 	double position_;
 	double velocity_;
 	double acceleration_;
+	double rotvel_;
 };

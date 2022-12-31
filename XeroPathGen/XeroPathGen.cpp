@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "XeroPathGen.h"
 #include "CSVWriter.h"
 #include "PropertyEditor.h"
@@ -58,6 +73,12 @@ XeroPathGen::XeroPathGen(const QStringList &arglist, RobotManager& robots, GameF
 	dock_plot_win_ = nullptr;
 	dock_constraint_win_ = nullptr;
 	dock_logwin_ = nullptr;
+
+	custom_plot_ = true;
+
+	if (settings_.contains("plottype")) {
+		custom_plot_ = settings_.value("plottype").toBool();
+	}
 
 	createWindows();
 	createMenus();
@@ -177,7 +198,7 @@ bool XeroPathGen::createWindows()
 		}
 	}
 
-	plot_win_ = new PlotWindow(nullptr, sizes);
+	plot_win_ = new PlotWindow(custom_plot_, nullptr, sizes);
 	dock_plot_win_ = new QDockWidget(tr("Plot"));
 	dock_plot_win_->setObjectName("plot");
 	dock_plot_win_->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
@@ -305,6 +326,22 @@ bool XeroPathGen::createMenus()
 	window_menu_->addAction(dock_constraint_win_->toggleViewAction());
 	window_menu_->addAction(dock_plot_win_->toggleViewAction());
 	window_menu_->addAction(dock_logwin_->toggleViewAction());
+	window_menu_->addSeparator();
+
+	QActionGroup* gr = new QActionGroup(this);
+	action = window_menu_->addAction("QtChart Plots");
+	action->setCheckable(true);
+	if (!custom_plot_)
+		action->setChecked(true);
+	(void)connect(action, &QAction::triggered, this, &XeroPathGen::qtChartPlots);
+	gr->addAction(action);
+	action = window_menu_->addAction("QCustomPlot Plots");
+	action->setCheckable(true);
+	if (custom_plot_)
+		action->setChecked(true);
+	(void)connect(action, &QAction::triggered, this, &XeroPathGen::customPlotPlots);
+	gr->addAction(action);
+
 
 	help_menu_ = new QMenu(tr("&Help"));
 	menuBar()->addMenu(help_menu_);
@@ -314,6 +351,24 @@ bool XeroPathGen::createMenus()
 	(void)connect(action, &QAction::triggered, this, &XeroPathGen::showChanges);
 
 	return true;
+}
+
+void XeroPathGen::customPlotPlots()
+{
+	if (!custom_plot_) {
+		custom_plot_ = true;
+		settings_.setValue("plottype", true);
+		plot_win_->setCustomPlot();
+	}
+}
+
+void XeroPathGen::qtChartPlots()
+{
+	if (custom_plot_) {
+		custom_plot_ = false;
+		settings_.setValue("plottype", false);
+		plot_win_->setQChartPlot();
+	}
 }
 
 bool XeroPathGen::createToolbar()
