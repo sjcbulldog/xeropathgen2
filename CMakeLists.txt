@@ -11,8 +11,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets Charts)
-find_package(Qt6 REQUIRED COMPONENTS Widgets Charts)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets Charts PrintSupport)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Charts PrintSupport)
 
 include(sources.cmake)
 
@@ -23,6 +23,7 @@ qt_add_executable(xeropath2
 
 target_link_libraries(xeropath2 PRIVATE Qt6::Widgets)
 target_link_libraries(xeropath2 PRIVATE Qt6::Charts)
+target_link_libraries(xeropath2 PRIVATE Qt6::PrintSupport)
 
 set_target_properties(xeropath2 PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER xeropath2
