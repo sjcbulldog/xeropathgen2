@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Jack W. Griffin
+// Copyright 2022 Jack W. Griffin
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ bool RobotManager::processJSONFile(QFile& file)
 	int drivetype_value;
 	QString text;
 	int version;
-	size_t len;
+	int len;
 	bool ok;
 
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -229,7 +229,7 @@ bool RobotManager::processJSONFile(QFile& file)
 
 bool RobotManager::getNextFile(QFileInfo &file)
 {
-	size_t i = 1;
+	int i = 1;
 	while (i < 1024)
 	{
 		QString path = getFirstDir();

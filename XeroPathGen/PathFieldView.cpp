@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Jack W. Griffin
+// Copyright 2022 Jack W. Griffin
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,11 +36,12 @@ PathFieldView::PathFieldView(PathsDataModel&model, QWidget *parent) : QWidget(pa
 	units_ = "in";
 	setMouseTracking(true);
 	setFocusPolicy(Qt::ClickFocus);
-	selected_ = std::numeric_limits<size_t>::max();
+	selected_ = std::numeric_limits<int>::max();
 	image_scale_ = 1.0;
 	dragging_ = false;
 	rotating_ = false;
 	traj_time_ = 0.0;
+	heading_ = false;
 }
 
 PathFieldView::~PathFieldView()
@@ -49,14 +50,14 @@ PathFieldView::~PathFieldView()
 
 void PathFieldView::setUnits(const QString& units)
 {
-	for (size_t i = 0; i < triangle_.size(); i++)
+	for (int i = 0; i < triangle_.size(); i++)
 	{
 		double x = UnitConverter::convert(triangle_[i].rx(), units_, units);
 		double y = UnitConverter::convert(triangle_[i].ry(), units_, units);
 		triangle_[i] = QPointF(x, y);
 	}
 
-	for (size_t i = 0; i < arrow_.size(); i++)
+	for (int i = 0; i < arrow_.size(); i++)
 	{
 		double x = UnitConverter::convert(arrow_[i].rx(), units_, units);
 		double y = UnitConverter::convert(arrow_[i].ry(), units_, units);
@@ -134,7 +135,7 @@ void PathFieldView::emitMouseMoved(Translation2d pos)
 	emit mouseMoved(pos);
 }
 
-void PathFieldView::emitWaypointSelected(size_t index)
+void PathFieldView::emitWaypointSelected(int index)
 {
 	emit waypointSelected(index);
 }
@@ -149,17 +150,17 @@ void PathFieldView::emitWaypointInserted()
 	emit waypointInserted();
 }
 
-void PathFieldView::emitWaypointEndMoving(size_t index)
+void PathFieldView::emitWaypointEndMoving(int index)
 {
 	emit waypointEndMoving(index);
 }
 
-void PathFieldView::emitWaypointMoving(size_t index)
+void PathFieldView::emitWaypointMoving(int index)
 {
 	emit waypointMoving(index);
 }
 
-void PathFieldView::emitWaypointStartMoving(size_t index)
+void PathFieldView::emitWaypointStartMoving(int index)
 {
 	emit waypointStartMoving(index);
 }
@@ -172,7 +173,7 @@ void PathFieldView::mouseMoveEvent(QMouseEvent* ev)
 	{
 		const Pose2dWithRotation& pt = path_->getPoint(selected_);
 		Translation2d t(world_.rx(), world_.ry());
-		Pose2dWithRotation newpt(t, pt.getRotation(), pt.swrot());
+		Pose2dWithRotation newpt(t, pt.getRotation(), pt.getSwrot());
 		path_->replacePoint(selected_, newpt);
 
 		emitWaypointMoving(selected_);
@@ -185,8 +186,15 @@ void PathFieldView::mouseMoveEvent(QMouseEvent* ev)
 		double dx = world_.rx() - pt.getTranslation().getX();
 		double angle = std::atan2(dy, dx) - MathUtils::kPI / 2;
 		Rotation2d r = Rotation2d::fromRadians(angle);
-		Pose2dWithRotation newpt(pt.getTranslation(), r, pt.swrot());
-		path_->replacePoint(selected_, newpt);
+
+		if (heading_) {
+			Pose2dWithRotation newpt(pt.getTranslation(), r, pt.getSwrot());
+			path_->replacePoint(selected_, newpt);
+		}
+		else {
+			Pose2dWithRotation newpt(pt.getTranslation(), pt.getRotation(), r);
+			path_->replacePoint(selected_, newpt);
+		}
 
 		emitWaypointMoving(selected_);
 		repaint(geometry());
@@ -199,8 +207,10 @@ void PathFieldView::mousePressEvent(QMouseEvent* ev)
 	if (ev->buttons() != Qt::LeftButton)
 		return;
 
+	bool shift = (ev->modifiers() == Qt::KeyboardModifier::ShiftModifier);
+
 	if (path_ != nullptr) {
-		size_t index;
+		int index;
 		WaypointRegion region;
 		if (hitTestWaypoint(QPointF(ev->x(), ev->y()), index, region))
 		{
@@ -210,9 +220,9 @@ void PathFieldView::mousePressEvent(QMouseEvent* ev)
 			{
 				if (selected_ != index)
 				{
-					if (selected_ != std::numeric_limits<size_t>::max())
+					if (selected_ != std::numeric_limits<int>::max())
 					{
-						selected_ = std::numeric_limits<size_t>::max();
+						selected_ = std::numeric_limits<int>::max();
 						invalidateWaypoint(selected_);
 					}
 
@@ -226,15 +236,16 @@ void PathFieldView::mousePressEvent(QMouseEvent* ev)
 			else
 			{
 				rotating_ = true;
+				heading_ = !shift;
 				emitWaypointStartMoving(selected_);
 			}
 		}
 		else
 		{
-			if (selected_ != std::numeric_limits<size_t>::max())
+			if (selected_ != std::numeric_limits<int>::max())
 			{
-				size_t save = selected_;
-				selected_ = std::numeric_limits<size_t>::max();
+				int save = selected_;
+				selected_ = std::numeric_limits<int>::max();
 				invalidateWaypoint(save);
 				emitWaypointSelected(selected_);
 			}
@@ -266,7 +277,7 @@ void PathFieldView::deleteWaypoint()
 	repaint();
 }
 
-void PathFieldView::deleteWaypoint(const QString& group, const QString& path, size_t index)
+void PathFieldView::deleteWaypoint(const QString& group, const QString& path, int index)
 {
 	auto p = path_data_model_.getPathByName(group, path);
 	if (p != nullptr)
@@ -280,7 +291,7 @@ void PathFieldView::deleteWaypoint(const QString& group, const QString& path, si
 	}
 }
 
-void PathFieldView::addWaypoint(const QString& group, const QString& path, size_t index, const Pose2dWithRotation& pt)
+void PathFieldView::addWaypoint(const QString& group, const QString& path, int index, const Pose2dWithRotation& pt)
 {
 	auto p = path_data_model_.getPathByName(group, path);
 	if (p != nullptr)
@@ -304,7 +315,7 @@ void PathFieldView::insertWaypoint()
 
 	Rotation2d r = Rotation2d::fromRadians((p1.getRotation().toRadians() + p2.getRotation().toRadians()) / 2.0);
 	Translation2d t((p1.getTranslation().getX() + p2.getTranslation().getX()) / 2.0, (p1.getTranslation().getY() + p2.getTranslation().getY()) / 2.0);
-	Pose2dWithRotation newpt(t, r, p1.swrot());
+	Pose2dWithRotation newpt(t, r, p1.getSwrot());
 
 	path_->insertPoint(selected_, newpt) ;
 
@@ -328,7 +339,7 @@ void PathFieldView::moveWaypoint(bool shift, int dx, int dy)
 		const Pose2dWithRotation& pt = path_->getPoint(selected_);
 
 		Translation2d t(pt.getTranslation().getX() + dx * delta, pt.getTranslation().getY() + dy * delta);
-		Pose2dWithRotation newpt(t, pt.getRotation(), pt.swrot());
+		Pose2dWithRotation newpt(t, pt.getRotation(), pt.getSwrot());
 		path_->replacePoint(selected_, newpt);
 
 		emitWaypointEndMoving(selected_);
@@ -348,7 +359,7 @@ void PathFieldView::rotateWaypoint(bool shift, int dir)
 		const Pose2dWithRotation& pt = path_->getPoint(selected_);
 
 		Rotation2d r = Rotation2d::fromDegrees(MathUtils::boundDegrees(pt.getRotation().toDegrees() + delta));
-		Pose2dWithRotation newpt(pt.getTranslation(), r, pt.swrot());
+		Pose2dWithRotation newpt(pt.getTranslation(), r, pt.getSwrot());
 		path_->replacePoint(selected_, newpt);
 		emitWaypointEndMoving(selected_);
 		repaint(geometry());
@@ -429,7 +440,7 @@ void PathFieldView::copyCoordinates()
 		str += QString::number(pt.getTranslation().getX());
 		str += "," + QString::number(pt.getTranslation().getY());
 		str += "," + QString::number(pt.getRotation().toDegrees());
-		str += "," + QString::number(pt.swrot().toDegrees());
+		str += "," + QString::number(pt.getSwrot().toDegrees());
 		str += "%%%%";
 		clip->setText(str);
 	}
@@ -507,7 +518,7 @@ QVector<QPointF> PathFieldView::transformPoints(QTransform& trans, const QVector
 	return result;
 }
 
-void PathFieldView::drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithTrajectory& pose)
+void PathFieldView::drawWheel(QPainter& paint, QBrush &brush, const Translation2d& loc, const Pose2dWithRotation& pose)
 {
 	static const double wheelWidth = UnitConverter::convert(2.0, "in", units_);
 	static const double wheelLength = UnitConverter::convert(4.0, "in", units_);
@@ -518,10 +529,10 @@ void PathFieldView::drawWheel(QPainter& paint, QBrush &brush, const Translation2
 	bl = Translation2d(-wheelWidth, wheelLength);
 	br = Translation2d(-wheelWidth, -wheelLength);
 
-	fl = fl.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
-	fr = fr.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
-	bl = bl.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
-	br = br.rotateBy(pose.swrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	fl = fl.rotateBy(pose.getSwrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	fr = fr.rotateBy(pose.getSwrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	bl = bl.rotateBy(pose.getSwrot()).rotateBy(Rotation2d::fromDegrees(90.0));
+	br = br.rotateBy(pose.getSwrot()).rotateBy(Rotation2d::fromDegrees(90.0));
 
 	fl = fl.translateBy(loc);
 	fr = fr.translateBy(loc);
@@ -555,18 +566,22 @@ void PathFieldView::drawRobot(QPainter& paint)
 		return;
 
 	const Pose2dWithTrajectory& pose = (*traj_)[index];
+	drawRobot(paint, pose.pose(), QColor(0, 153, 0), QColor(255, 128, 0));
+}
 
+void PathFieldView::drawRobot(QPainter& paint, const Pose2dWithRotation& pose, QColor body, QColor wheel)
+{
 	Translation2d fl, fr, bl, br;
 	robot_->getLocations(path_->units(), fl, fr, bl, br);
-	fl = fl.rotateBy(pose.swrot());
-	fr = fr.rotateBy(pose.swrot());
-	bl = bl.rotateBy(pose.swrot());
-	br = br.rotateBy(pose.swrot());
+	fl = fl.rotateBy(pose.getSwrot());
+	fr = fr.rotateBy(pose.getSwrot());
+	bl = bl.rotateBy(pose.getSwrot());
+	br = br.rotateBy(pose.getSwrot());
 
-	fl = fl.translateBy(pose.pose().getTranslation());
-	fr = fr.translateBy(pose.pose().getTranslation());
-	bl = bl.translateBy(pose.pose().getTranslation());
-	br = br.translateBy(pose.pose().getTranslation());
+	fl = fl.translateBy(pose.getTranslation());
+	fr = fr.translateBy(pose.getTranslation());
+	bl = bl.translateBy(pose.getTranslation());
+	br = br.translateBy(pose.getTranslation());
 
 	QVector<QPointF> corners;
 	corners.push_back(QPointF(fl.getX(), fl.getY()));
@@ -576,7 +591,7 @@ void PathFieldView::drawRobot(QPainter& paint)
 
 	auto winloc = worldToWindow(corners);
 
-	QBrush brush(QColor(255, 128, 0));
+	QBrush brush(wheel);
 	paint.setBrush(brush);
 
 	drawWheel(paint, brush, fl, pose);
@@ -584,7 +599,7 @@ void PathFieldView::drawRobot(QPainter& paint)
 	drawWheel(paint, brush, bl, pose);
 	drawWheel(paint, brush, br, pose);
 
-	QPen pen(QColor(0, 153, 0));
+	QPen pen(body);
 	paint.setPen(pen);
 	pen.setWidthF(2.0f);
 	paint.setPen(pen);
@@ -606,7 +621,7 @@ void PathFieldView::drawPath(QPainter &paint)
 
 void PathFieldView::drawPoints(QPainter& paint)
 {
-	for (size_t i = 0; i < path_->size(); i++)
+	for (int i = 0; i < path_->size(); i++)
 		drawOnePoint(paint, path_->getPoint(i), i == selected_);
 }
 
@@ -627,78 +642,33 @@ void PathFieldView::drawOnePoint(QPainter& paint, const Pose2dWithRotation& pt, 
 	QBrush brush(QColor(0xFF, 0xA5, 0x00, 0xFF));
 	paint.setBrush(brush);
 
-	QTransform mm;
-	mm.translate(pt.getTranslation().getX(), pt.getTranslation().getY());
-	mm.rotateRadians(pt.getRotation().toRadians());
+	QTransform swrot, hding;
 
-	QVector<QPointF> mapped = worldToWindow(transformPoints(mm, triangle_));
+	swrot.translate(pt.getTranslation().getX(), pt.getTranslation().getY());
+	swrot.rotateRadians(pt.getSwrot().toRadians());
+
+	hding.translate(pt.getTranslation().getX(), pt.getTranslation().getY());
+	hding.rotateRadians(pt.getRotation().toRadians());
+
+	//
+	// Draw the triangle that represents the path waypoint
+	//
+	QVector<QPointF> mapped = worldToWindow(transformPoints(hding, triangle_));
 	paint.drawPolygon(&mapped[0], 3);
 
+	//
+	// Draw the robot outline showing the angle of the robot
+	//
 	if (selected)
 	{
-		double rl = robot_length_;
-		double rw = robot_width_;
-
-		QVector<QPointF> robot =
-		{
-			{ rl / 2.0, rw / 2.0 },
-			{ -rl / 2.0, rw / 2.0 },
-			{ -rl / 2.0, -rw / 2.0 },
-			{ rl / 2.0, -rw / 2.0 },
-		};
-
-		QVector<QPointF> line =
-		{
-			{ 0.0, rw / 2.0},
-			{ 0.0, rw * 3.0 / 4.0 },
-		};
-
-		paint.setBrush(Qt::BrushStyle::NoBrush);
-		QPen pen(QColor(0xff, 0xff, 0x00, 0xff));
-		pen.setWidthF(2.0f);
-		paint.setPen(pen);
-
-		QVector<QPointF> robotsel = worldToWindow(transformPoints(mm, robot));
-		paint.drawPolygon(&robotsel[0], static_cast<int>(robotsel.size()));
-
-		QVector<QPointF> linesel = worldToWindow(transformPoints(mm, line));
-		paint.drawLine(linesel[0], linesel[1]);
-
-		paint.setBrush(QBrush(QColor(0xff, 0xff, 0x00, 0xff)));
-		QPointF tip(0.0, rw * 3.0 / 4.0);
-		QPointF tipsel = worldToWindow(mm.map(tip));
-		QRectF circle(tipsel.rx() - CircleRadius, tipsel.ry() - CircleRadius, CircleRadius * 2.0, CircleRadius * 2.0);
-		paint.drawEllipse(circle);
-	}
-
-	if (drive_type_ == RobotParams::DriveType::SwerveDrive)
-	{
-		QTransform mmswrot;
-		mmswrot.translate(pt.getTranslation().getX(), pt.getTranslation().getY());
-		mmswrot.rotateRadians(pt.swrot().toRadians());
-
-		//
-		// Draw a vector showing the direction of the robot
-		//
-		QVector<QPointF> mapped = worldToWindow(transformPoints(mmswrot, arrow_));
-
-		QPen pen(QColor(0x00, 0xff, 0x00));
-		pen.setWidth(2);
-		paint.setPen(pen);
-
-		assert((mapped.size() % 2) == 0);
-
-		for (int i = 0; i < mapped.size(); i += 2)
-		{
-			paint.drawLine(mapped[i], mapped[i + 1]);
-		}
+		drawRobot(paint, pt, QColor(255, 255, 0), QColor(255, 255, 0));
 	}
 }
 
 void PathFieldView::drawSplines(QPainter& paint)
 {
 	auto splines = path_data_model_.getSplinesForPath(path_) ;
-	for (size_t i = 0; i < splines.size(); i++)
+	for (int i = 0; i < splines.size(); i++)
 		drawSpline(paint, splines[i]);
 }
 
@@ -821,7 +791,7 @@ void PathFieldView::setPath(std::shared_ptr<RobotPath> path)
 	if (path_ != path)
 	{
 		path_ = path;
-		selected_ = std::numeric_limits<size_t>::max();
+		selected_ = std::numeric_limits<int>::max();
 		repaint(geometry());
 
 		if (path_ != nullptr) {
@@ -926,12 +896,12 @@ QVector<QPointF> PathFieldView::windowToWorld(const QVector<QPointF>& points)
 	return transformPoints(window_to_world_, points);
 }
 
-bool PathFieldView::hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRegion& region)
+bool PathFieldView::hitTestWaypoint(const QPointF& pt, int& index, WaypointRegion& region)
 {
 	if (path_ == nullptr)
 		return false;
 
-	for (size_t i = 0; i < path_->size(); i++)
+	for (int i = 0; i < path_->size(); i++)
 	{
 		Translation2d t2d = path_->getPoint(i).getTranslation();
 		QPointF world = worldToWindow(QPointF(t2d.getX(), t2d.getY()));
@@ -951,28 +921,22 @@ bool PathFieldView::hitTestWaypoint(const QPointF& pt, size_t& index, WaypointRe
 
 	if (selected_ < path_->size())
 	{
-		//
-		// Now see if we hit the rotation bubble on a
-		//
-		QTransform mm;
-		const Pose2dWithRotation& ppt = path_->getPoint(selected_);
-		mm.translate(ppt.getTranslation().getX(), ppt.getTranslation().getY());
-		mm.rotateRadians(ppt.getRotation().toRadians());
+		Translation2d t2d = path_->getPoint(selected_).getTranslation();
+		QPointF world = worldToWindow(QPointF(t2d.getX(), t2d.getY()));
+		double dist = QVector2D(pt - world).length();
 
-		QPointF bubble = mm.map(QPointF(0.0, robot_width_ * 3.0 / 4.0));
-		QRectF rect(bubble.rx() - RotateBubbleHalo, bubble.ry() - RotateBubbleHalo, RotateBubbleHalo * 2.0, RotateBubbleHalo * 2.0);
-		QPointF wpt = windowToWorld(pt);
-		if (rect.contains(wpt))
+		if (dist < RotateHitDistance)
 		{
 			index = selected_;
 			region = WaypointRegion::Rotate;
 			return true;
 		}
+
 	}
 	return false;
 }
 
-void PathFieldView::invalidateWaypoint(size_t index)
+void PathFieldView::invalidateWaypoint(int index)
 {
 	if (index >= path_->size())
 		return;

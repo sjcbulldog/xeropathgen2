@@ -1,20 +1,35 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "PathTrajectory.h"
 #include <cmath>
 
-size_t PathTrajectory::getIndex(double time)
+int PathTrajectory::getIndex(double time)
 {
 	if (size() == 0)
-		return std::numeric_limits<size_t>::max();
+		return std::numeric_limits<int>::max();
 
 	if (time < points_.front().time())
-		return std::numeric_limits<size_t>::max();
+		return std::numeric_limits<int>::max();
 
 	if (time > points_.back().time())
-		return std::numeric_limits<size_t>::max();
+		return std::numeric_limits<int>::max();
 
 	double delta = std::numeric_limits<double>::max();
-	size_t ret = 0;
-	for (size_t i = 0; i < size(); i++)
+	int ret = 0;
+	for (int i = 0; i < size(); i++)
 	{
 		double dt = std::fabs(points_[i].time() - time);
 		if (dt < delta)
@@ -44,12 +59,12 @@ bool PathTrajectory::getTimeForDistance(double dist, double& time)
 	//
 	// Do a binary search to find the time for the distance given
 	//
-	size_t low = 0;
-	size_t high = points_.size() - 1;
+	int low = 0;
+	int high = points_.size() - 1;
 
 	while (high - low > 1)
 	{
-		size_t mid = (high + low) / 2;
+		int mid = (high + low) / 2;
 		if (dist > points_[mid].position())
 		{
 			low = mid;

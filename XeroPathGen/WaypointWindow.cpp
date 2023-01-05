@@ -1,4 +1,20 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "WaypointWindow.h"
+#include "RobotPath.h"
 #include <QtWidgets/QMessageBox>
 
 WaypointWindow::WaypointWindow(QWidget* parent) : QTreeWidget(parent)
@@ -31,21 +47,30 @@ void WaypointWindow::waypointParamChanged(QTreeWidgetItem* item, int column)
 		const Pose2dWithRotation pt = path_->getPoint(index_);
 		Pose2dWithRotation newpt;
 
-		if (item->text(0) == XTag) 
+		if (item->text(0) == RobotPath::XTag)
 		{
-			newpt = Pose2dWithRotation(Translation2d(value, pt.getTranslation().getY()), pt.getRotation(), pt.swrot());
+			newpt = Pose2dWithRotation(Translation2d(value, pt.getTranslation().getY()), pt.getRotation(), pt.getSwrot());
+			newpt.setRotVelocity(pt.getSwrotVelocity());
 		}
-		else if (item->text(0) == YTag) 
+		else if (item->text(0) == RobotPath::YTag)
 		{
-			newpt = Pose2dWithRotation(Translation2d(pt.getTranslation().getX(), value), pt.getRotation(), pt.swrot());
+			newpt = Pose2dWithRotation(Translation2d(pt.getTranslation().getX(), value), pt.getRotation(), pt.getSwrot());
+			newpt.setRotVelocity(pt.getSwrotVelocity());
 		}
-		else if (item->text(0) == HeadingTag) 
+		else if (item->text(0) == RobotPath::HeadingTag) 
 		{
-			newpt = Pose2dWithRotation(Translation2d(pt.getTranslation().getX(), pt.getTranslation().getY()), Rotation2d::fromDegrees(value), pt.swrot());
+			newpt = Pose2dWithRotation(Translation2d(pt.getTranslation().getX(), pt.getTranslation().getY()), Rotation2d::fromDegrees(value), pt.getSwrot());
+			newpt.setRotVelocity(pt.getSwrotVelocity());
 		}
-		else if (item->text(0) == RotationTag) 
+		else if (item->text(0) == RobotPath::RotationTag) 
 		{
 			newpt = Pose2dWithRotation(Translation2d(pt.getTranslation().getX(), pt.getTranslation().getY()), pt.getRotation(), Rotation2d::fromDegrees(value));
+			newpt.setRotVelocity(pt.getSwrotVelocity());
+		}
+		else if (item->text(0) == RobotPath::SwerveRotationVelocityTag)
+		{
+			newpt = Pose2dWithRotation(Translation2d(pt.getTranslation().getX(), pt.getTranslation().getY()), pt.getRotation(), pt.getSwrot());
+			newpt.setRotVelocity(value);
 		}
 		path_->replacePoint(index_, newpt);
 	}
@@ -75,20 +100,24 @@ void WaypointWindow::refresh()
 		item->setText(1, QString::number(index_));
 		addTopLevelItem(item);
 
-		item = newItem(XTag);
+		item = newItem(RobotPath::XTag);
 		item->setText(1, QString::number(pt.getTranslation().getX(), 'f', 2));
 		addTopLevelItem(item);
 
-		item = newItem(YTag);
+		item = newItem(RobotPath::YTag);
 		item->setText(1, QString::number(pt.getTranslation().getY(), 'f', 2));
 		addTopLevelItem(item);
 
-		item = newItem(HeadingTag);
+		item = newItem(RobotPath::HeadingTag);
 		item->setText(1, QString::number(pt.getRotation().toDegrees(), 'f', 2));
 		addTopLevelItem(item);
 
-		item = newItem(RotationTag);
-		item->setText(1, QString::number(pt.swrot().toDegrees(), 'f', 2));
+		item = newItem(RobotPath::RotationTag);
+		item->setText(1, QString::number(pt.getSwrot().toDegrees(), 'f', 2));
+		addTopLevelItem(item);
+
+		item = newItem(RobotPath::SwerveRotationVelocityTag);
+		item->setText(1, QString::number(pt.getSwrotVelocity(), 'f', 2));
 		addTopLevelItem(item);
 
 		item = newItem(DistanceTag, false);

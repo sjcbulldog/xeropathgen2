@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "GeneratorBase.h"
 #include "Pose2dConstrained.h"
 #include "TrapezoidalProfile.h"
@@ -127,7 +142,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	const static double kEpsilon = 1e-6;
 
 	predecessor.setPosition(0.0);
-	predecessor.setPose(view[static_cast<size_t>(0)]);
+	predecessor.setPose(view[static_cast<int>(0)]);
 	predecessor.setVelocity(startvel);
 	predecessor.setAccelMin(-maxaccel);
 	predecessor.setAccelMax(maxaccel);
@@ -135,7 +150,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	//
 	// Forward pass
 	//
-	for (size_t i = 0; i < view.size(); i++)
+	for (int i = 0; i < view.size(); i++)
 	{
 		Pose2dConstrained state;
 		state.setPose(view[i]);
@@ -192,7 +207,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	//
 	// Backward pass
 	//
-	size_t last = view.size() - 1;
+	int last = view.size() - 1;
 	Pose2dConstrained sucessor;
 	sucessor.setPose(view[last]);
 	sucessor.setPosition(points[last].position());
@@ -200,7 +215,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	sucessor.setAccelMin(-maxaccel);
 	sucessor.setAccelMax(maxaccel);
 
-	for (size_t i = points.size() - 1; i < points.size(); i--)
+	for (int i = points.size() - 1; i >= 0 ; i--)
 	{
 		Pose2dConstrained state = points[i];
 		double dist = state.position() - sucessor.position();				// Will be negative
@@ -245,7 +260,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 	double v = 0.0;
 	QVector<Pose2dWithTrajectory> result;
 
-	for (size_t i = 0; i < points.size(); i++)
+	for (int i = 0; i < points.size(); i++)
 	{
 		const Pose2dConstrained& state = points[i];
 		double ds = state.position() - s;
@@ -277,7 +292,7 @@ GeneratorBase::timeParameterize(const DistanceView& view, const QVector<std::sha
 }
 
 
-size_t GeneratorBase::findIndex(const QVector<Pose2dWithTrajectory>& traj, double time)
+int GeneratorBase::findIndex(const QVector<Pose2dWithTrajectory>& traj, double time)
 {
 	if (time < traj[0].time())
 		return 0;
@@ -285,12 +300,12 @@ size_t GeneratorBase::findIndex(const QVector<Pose2dWithTrajectory>& traj, doubl
 	if (time > traj[traj.size() - 1].time())
 		return traj.size() - 1;
 
-	size_t low = 0;
-	size_t high = traj.size() - 1;
+	int low = 0;
+	int high = traj.size() - 1;
 
 	while (high - low > 1)
 	{
-		size_t center = (high + low) / 2;
+		int center = (high + low) / 2;
 		if (time > traj[center].time())
 		{
 			low = center;
@@ -312,7 +327,7 @@ QVector<Pose2dWithTrajectory> GeneratorBase::convertToUniformTime(const QVector<
 	{
 		Pose2dWithTrajectory newpt;
 
-		size_t low = findIndex(traj, time);
+		int low = findIndex(traj, time);
 		if (low == traj.size() - 1)
 		{
 			newpt = traj[traj.size() - 1];
@@ -330,11 +345,11 @@ QVector<Pose2dWithTrajectory> GeneratorBase::convertToUniformTime(const QVector<
 }
 
 
-size_t GeneratorBase::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc)
+int GeneratorBase::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, int start, const Translation2d& loc)
 {
 	static double tol = 0.05;
 
-	for (size_t i = start; i < traj->size(); i++)
+	for (int i = start; i < traj->size(); i++)
 	{
 		auto pt = (*traj)[i];
 		if (std::abs(pt.x() - loc.getX()) < tol && std::abs(pt.y() - loc.getY()) < tol)
@@ -343,7 +358,7 @@ size_t GeneratorBase::findIndexFromLocation(std::shared_ptr<PathTrajectory> traj
 		}
 	}
 
-	return std::numeric_limits<size_t>::max();
+	return std::numeric_limits<int>::max();
 }
 
 Translation2d GeneratorBase::getWheelPerpendicularVector(Wheel w, double magnitude)
@@ -388,8 +403,10 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 	{
 		double startTime, endTime;
 		int startIndex, endIndex;
-		double startRot = path->getPoint(i).swrot().toDegrees();
-		double endRot = path->getPoint(i + 1).swrot().toDegrees();
+		double startRot = path->getPoint(i).getSwrot().toDegrees();
+		double startRotVel = path->getPoint(i).getSwrotVelocity();
+		double endRot = path->getPoint(i + 1).getSwrot().toDegrees();
+		double endRotVel = path->getPoint(i + 1).getSwrotVelocity();
 		
 		if (!traj->getTimeForDistance(dists[i], startTime))
 		{
@@ -423,7 +440,7 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 		//
 		// We now need the trajectory points for the times range
 		//
-		if (!modifySegmentForRotation(path, traj, percent , startIndex, endIndex, startRot, endRot))
+		if (!modifySegmentForRotation(path, traj, percent , startIndex, endIndex, startRot, startRotVel, endRot, endRotVel))
 		{
 			return false;
 		}
@@ -432,7 +449,7 @@ bool GeneratorBase::modifyForRotation(std::shared_ptr<RobotPath> path, std::shar
 	return true;
 }
 
-bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double endRot)
+bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double startRotVel, double endRot, double endRotVel)
 {
 	QString logmsg;
 
@@ -473,7 +490,7 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 	logMessage(logmsg);
 
 	tp = std::make_shared<TrapezoidalProfile>(maxaccel, -maxaccel, maxvel);
-	if (!tp->update(diff, 0.0, 0.0)) {
+	if (!tp->update(diff, startRotVel, endRotVel)) {
 		logMessage("modifySegmentForRotation: cannot create TrapezoidalProfile - failed");
 		return false;
 	}
@@ -489,7 +506,7 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		return false;
 	}
 
-	for (size_t i = start; i < end; i++)
+	for (int i = start; i < end; i++)
 	{
 		const Pose2dWithTrajectory& pt = (*traj)[i];
 		double time = pt.time();
@@ -498,11 +515,14 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		// Get the rotation of the swerve drive at this point in time in the segment
 		//
 		Rotation2d angle;
+		double rotvel = 0.0;
 		if (time - startTime > tp->getTotalTime()) {
 			angle = Rotation2d::fromDegrees(endRot);
+			rotvel = endRotVel;
 		}
 		else {
 			angle = Rotation2d::fromDegrees(MathUtils::boundDegrees(startRot + tp->getDistance(time - startTime)));
+			rotvel = tp->getVelocity(time - startTime);
 		}
 
 		//
@@ -651,7 +671,8 @@ bool GeneratorBase::modifySegmentForRotation(std::shared_ptr<RobotPath> path, st
 		prevbl = blpos;
 		prevbr = brpos;
 
-		(*traj)[i].setSwRotation(angle);
+		(*traj)[i].pose().setSwrot(angle);
+		(*traj)[i].setRotVel(rotvel);
 	}
 
 	return true;

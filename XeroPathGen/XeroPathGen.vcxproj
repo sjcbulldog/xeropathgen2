@@ -32,12 +32,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>6.3.1_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets;charts</QtModules>
+    <QtModules>core;gui;widgets;printsupport;charts</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>6.3.1_msvc2019_64</QtInstall>
-    <QtModules>core;gui;widgets;charts</QtModules>
+    <QtModules>core;gui;widgets;printsupport;charts</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -68,11 +68,15 @@ $(QTDIR)\bin\windeployqt $(OutDir)$(ProjectName).exe
 echo ===============================================================
 mkdir $(OutDir)\fields
 copy $(SolutionDir)fields\* $(OutDir)\fields\
+copy $(ProjectDir)Changes.txt $(OutDir)
 </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>C:/cygwin64/bin/sh.exe $(ProjectDir)/incver.sh</Command>
     </PreBuildEvent>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PostBuildEvent>
@@ -83,11 +87,15 @@ $(QTDIR)\bin\windeployqt $(OutDir)$(ProjectName).exe
 echo ===============================================================
 mkdir $(OutDir)\fields
 copy $(SolutionDir)fields\* $(OutDir)\fields\
+copy $(ProjectDir)Changes.txt $(OutDir)
 </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>C:/cygwin64/bin/sh.exe $(ProjectDir)/incver.sh</Command>
     </PreBuildEvent>
+    <ClCompile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
@@ -116,10 +124,14 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BasePlotWindow.cpp" />
+    <ClCompile Include="CentripetalConstraint.cpp" />
     <ClCompile Include="GeneratorBase.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="LoggerWindow.cpp" />
+    <ClCompile Include="qcustomplot.cpp" />
     <ClCompile Include="QuadraticSolver.cpp" />
+    <ClCompile Include="TrajectoryCustomPlotWindow.cpp" />
     <ClCompile Include="TrapezoidalProfile.cpp" />
     <QtRcc Include="XeroPathGen.qrc" />
     <QtUic Include="AboutDialog.ui" />
@@ -141,7 +153,6 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="MathUtils.cpp" />
     <ClCompile Include="NodesListWindow.cpp" />
     <ClCompile Include="PathFieldView.cpp" />
-    <ClCompile Include="PathParameters.cpp" />
     <ClCompile Include="PathParametersWindow.cpp" />
     <ClCompile Include="PathsDataModel.cpp" />
     <ClCompile Include="PathTrajectory.cpp" />
@@ -161,22 +172,41 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClCompile Include="SelectRobotDialog.cpp" />
     <ClCompile Include="SplinePair.cpp" />
     <ClCompile Include="TrajectoryGroup.cpp" />
-    <ClCompile Include="TrajectoryPlotWindow.cpp" />
+    <ClCompile Include="TrajectoryQtChartPlotWindow.cpp" />
     <ClCompile Include="TrajectoryUtils.cpp" />
     <ClCompile Include="Translation2d.cpp" />
     <ClCompile Include="Twist2d.cpp" />
+    <ClCompile Include="UndoAddConstraint.cpp" />
+    <ClCompile Include="UndoAddGroup.cpp" />
+    <ClCompile Include="UndoAddPath.cpp" />
+    <ClCompile Include="UndoChangeCentripetalForceConstraint.cpp" />
+    <ClCompile Include="UndoChangePathParams.cpp" />
+    <ClCompile Include="UndoChangeWaypoint.cpp" />
+    <ClCompile Include="UndoDeleteConstraint.cpp" />
+    <ClCompile Include="UndoDeleteGroup.cpp" />
+    <ClCompile Include="UndoDeletePath.cpp" />
+    <ClCompile Include="UndoDistanceVelocityConstraintChange.cpp" />
+    <ClCompile Include="UndoInsertPoint.cpp" />
+    <ClCompile Include="UndoRemovePoint.cpp" />
+    <ClCompile Include="UndoRenameGroup.cpp" />
+    <ClCompile Include="UndoRenamePath.cpp" />
+    <ClCompile Include="UndoSetGeneratorType.cpp" />
+    <ClCompile Include="UndoSetUnits.cpp" />
     <ClCompile Include="UnitConverter.cpp" />
     <ClCompile Include="WaypointWindow.cpp" />
     <ClCompile Include="XeroPathGen.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BasePlotWindow.h" />
     <ClInclude Include="GeneratorBase.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="LoggerWindow.h" />
+    <QtMoc Include="qcustomplot.h" />
     <ClInclude Include="QuadraticSolver.h" />
     <ClInclude Include="SpeedProfileGenerator.h" />
     <ClInclude Include="SwerveWheels.h" />
+    <ClInclude Include="TrajectoryCustomPlotWindow.h" />
     <ClInclude Include="TrapezoidalProfile.h" />
     <QtMoc Include="AboutDialog.h" />
     <ClInclude Include="build.h" />
@@ -225,10 +255,27 @@ copy $(SolutionDir)fields\* $(OutDir)\fields\
     <ClInclude Include="SplinePair.h" />
     <ClInclude Include="TrajectoryGroup.h" />
     <ClInclude Include="TrajectoryNames.h" />
-    <ClInclude Include="TrajectoryPlotWindow.h" />
+    <ClInclude Include="TrajectoryQtChartPlotWindow.h" />
     <ClInclude Include="TrajectoryUtils.h" />
     <ClInclude Include="Translation2d.h" />
     <ClInclude Include="Twist2d.h" />
+    <ClInclude Include="UndoAction.h" />
+    <ClInclude Include="UndoAddConstraint.h" />
+    <ClInclude Include="UndoAddGroup.h" />
+    <ClInclude Include="UndoAddPath.h" />
+    <ClInclude Include="UndoChangeCentripetalForceConstraint.h" />
+    <ClInclude Include="UndoChangePathParams.h" />
+    <ClInclude Include="UndoChangeWaypoint.h" />
+    <ClInclude Include="UndoDeleteConstraint.h" />
+    <ClInclude Include="UndoDeleteGroup.h" />
+    <ClInclude Include="UndoDeletePath.h" />
+    <ClInclude Include="UndoDistanceVelocityConstraintChange.h" />
+    <ClInclude Include="UndoInsertPoint.h" />
+    <ClInclude Include="UndoRemovePoint.h" />
+    <ClInclude Include="UndoRenameGroup.h" />
+    <ClInclude Include="UndoRenamePath.h" />
+    <ClInclude Include="UndoSetGeneratorType.h" />
+    <ClInclude Include="UndoSetUnits.h" />
     <ClInclude Include="UnitConverter.h" />
     <QtMoc Include="WaypointWindow.h" />
   </ItemGroup>

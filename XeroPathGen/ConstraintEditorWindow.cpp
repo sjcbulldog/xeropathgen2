@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "ConstraintEditorWindow.h"
 #include "CentripetalConstraint.h"
 #include "DistanceVelocityConstraint.h"
@@ -12,25 +27,20 @@ ConstraintEditorWindow::ConstraintEditorWindow(QWidget* parent) : QTreeWidget(pa
 	connect(this, &QTreeWidget::itemDoubleClicked, this, &ConstraintEditorWindow::constraintDoubleClicked);
 
 	menuItem_ = nullptr;
-	index_ = 0;
 }
 
 void ConstraintEditorWindow::addConstraintToTree(std::shared_ptr<PathConstraint> c)
 {
-	constraint_index_map_.insert(index_, c);
 	QTreeWidgetItem* item = new QTreeWidgetItem();
 	item->setText(0, c->toString());
-	item->setData(0, Qt::UserRole, QVariant(index_));
 	addTopLevelItem(item);
-
-	index_++;
+	constraints_.push_back(c);
 }
 
 void ConstraintEditorWindow::refresh()
 {
 	clear();
-	constraint_index_map_.clear();
-	index_ = 0;
+	constraints_.clear();
 
 	if (path_ != nullptr)
 	{
@@ -92,9 +102,10 @@ void ConstraintEditorWindow::addDistanceVelocityConstraint()
 	double maxvel = UnitConverter::convert(10.0, "m", path()->units());
 	double velocity = QInputDialog::getDouble(this, "Enter Velocity Limit", label, 0.0, 0.0, maxvel, 3, &ok, flags, 0.01);
 
-	label = "Distance (" + path_->units() + ")";
+	label = "After Distance (" + path_->units() + ")";
 	double maxdist = UnitConverter::convert(50.0, "m", path()->units());
 	double after = QInputDialog::getDouble(this, "Apply Velocity After Distance", label, 0.0, 0.0, maxdist, 3, &ok, flags, 0.01);
+	label = "Before Distance (" + path_->units() + ")";
 	double before = QInputDialog::getDouble(this, "Apply Velocity Before Distance", label, after, after, maxdist, 3, &ok, flags, 0.01);
 
 	auto c = std::make_shared<DistanceVelocityConstraint>(path_, after, before, velocity);
@@ -104,9 +115,9 @@ void ConstraintEditorWindow::addDistanceVelocityConstraint()
 
 void ConstraintEditorWindow::deleteConstraint()
 {
-	int index = menuItem_->data(0, Qt::UserRole).toInt();
-	path_->deleteConstraint(constraint_index_map_.value(index));
-	constraint_index_map_.remove(index);
+	int index = indexOfTopLevelItem(menuItem_);
+	path_->deleteConstraint(constraints_.at(index));
+	constraints_.removeAt(index);
 	delete menuItem_;
 }
 
@@ -116,12 +127,9 @@ void ConstraintEditorWindow::constraintDoubleClicked(QTreeWidgetItem* item, int 
 	Qt::WindowFlags flags;
 	bool ok;
 
-	int index = item->data(0, Qt::UserRole).toInt();
-	if (index < 0 || index >= index_ || !constraint_index_map_.contains(index)) {
-		return;
-	}
+	int index = indexOfTopLevelItem(item);
 
-	std::shared_ptr<PathConstraint> c = constraint_index_map_.value(index);
+	std::shared_ptr<PathConstraint> c = constraints_[index];
 
 	std::shared_ptr<CentripetalConstraint> cent = std::dynamic_pointer_cast<CentripetalConstraint>(c);
 	if (cent != nullptr) {
@@ -136,13 +144,56 @@ void ConstraintEditorWindow::constraintDoubleClicked(QTreeWidgetItem* item, int 
 			QString label = "Velocity (" + path_->units() + "/s)";
 			double velocity = QInputDialog::getDouble(this, "Enter Velocity Limit", label, dist->getVelocity(), 0.0, maxvel, 3, &ok, flags, 0.01);
 
-			label = "Distance (" + path_->units() + ")";
+			label = "After Distance (" + path_->units() + ")";
 			double maxdist = UnitConverter::convert(50.0, "m", path()->units());
 			double after = QInputDialog::getDouble(this, "Apply Velocity After Distance", label, dist->getAfter(), 0.0, maxdist, 2, &ok, flags, 0.01);
+
+			label = "Before Distance (" + path_->units() + ")";
 			double before = QInputDialog::getDouble(this, "Apply Velocity Before Distance", label, dist->getBefore(), after, maxdist, 2, &ok, flags, 0.01);
 
 			dist->update(after, before, velocity);
 			item->setText(0, dist->toString());
 		}
 	}
+}
+
+void ConstraintEditorWindow::deleteConstraintFromDisplay(std::shared_ptr<PathConstraint> c)
+{
+	int which = -1;
+
+	for (int i = 0; i < constraints_.size(); i++) {
+		if (constraints_[i] == c) {
+			which = i;
+			break;
+		}
+	}
+
+	if (which != -1) {
+		QTreeWidgetItem* item = topLevelItem(which);
+		delete item;
+	}
+}
+
+void ConstraintEditorWindow::updateConstraintInDisplay(void *ptr)
+{
+	int which = -1;
+
+	for (int i = 0; i < constraints_.size(); i++) {
+		if (constraints_[i].get() == ptr) {
+			which = i;
+			break;
+		}
+	}
+
+	if (which != -1) {
+		topLevelItem(which)->setText(0, constraints_[which]->toString());
+	}
+}
+
+void ConstraintEditorWindow::insertConstraint(std::shared_ptr<PathConstraint> c, int index)
+{
+	constraints_.insert(index, c);
+	QTreeWidgetItem* item = new QTreeWidgetItem();
+	item->setText(0, c->toString());
+	insertTopLevelItem(index, item);
 }

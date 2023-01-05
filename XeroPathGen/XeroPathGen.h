@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #pragma once
 
 #include "Logger.h"
@@ -94,10 +109,10 @@ private:
     void setUnits(const QString &);
     void mouseMoved(Translation2d pos);
 
-    void waypointSelected(size_t index);
-    void waypointStartMoving(size_t index);
-    void waypointMoving(size_t index);
-    void waypointEndMoving(size_t index);
+    void waypointSelected(int index);
+    void waypointStartMoving(int index);
+    void waypointMoving(int index);
+    void waypointEndMoving(int index);
 
     void generateOnePath(std::shared_ptr<RobotPath> path, std::shared_ptr<TrajectoryGroup> group);
     void updateStatusBar();
@@ -105,14 +120,17 @@ private:
     void createEditRobot(std::shared_ptr<RobotParams> robot, const QString &path);
 
     void showAbout();
+    void showChanges();
     void undo();
-    void beforePathModelChange();
 
     void trajectoryGenerationComplete(std::shared_ptr<RobotPath> path);
     void trajectoryGeneratorChanged();
 
     void sliderChanged(int change);
     void processArguments();
+
+    void customPlotPlots();
+    void qtChartPlots();
 
 private:
     static constexpr const char* RobotDialogName = "Name";
@@ -195,4 +213,6 @@ private:
     Logger logger_;
 
     QList<PathsDataModel> undo_stack_;
+
+    bool custom_plot_;
 };

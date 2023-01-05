@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Jack W. Griffin
+// Copyright 2022 Jack W. Griffin
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public:
 
 	void initialize(XeroPathGen* app);
 
-	void setCount(size_t count);
+	void setCount(int count);
 	void addRecentFile(XeroPathGen*app, QString file, bool end = false);
 	void removeRecentFile(XeroPathGen* app, QString file);
 
@@ -41,7 +41,7 @@ private:
 	void writeRecentFiles();
 
 private:
-	size_t count_;
+	int count_;
 	QString name_;
 	std::list<QString> files_;
 	QSettings &settings_;

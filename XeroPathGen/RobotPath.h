@@ -1,8 +1,24 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #pragma once
 
 #include "Pose2dWithRotation.h"
 #include "PathConstraint.h"
 #include "PathParameters.h"
+
 #include <QtCore/QObject>
 #include <QtCore/QString>
 #include <QtCore/QVector>
@@ -10,8 +26,9 @@
 #include <memory>
 
 class PathGroup;
+class UndoAction;
 
-class RobotPath : public QObject
+class RobotPath : public QObject, public std::enable_shared_from_this<RobotPath>
 {
 	friend class CentripetalConstraint;
 	friend class DistanceVelocityConstraint;
@@ -53,6 +70,7 @@ public:
 	static constexpr const char* SwerveRotationTag = "swrot";
 	static constexpr const char* HeadingTag = "heading";
 	static constexpr const char* RotationTag = "rotation";
+	static constexpr const char* SwerveRotationVelocityTag = "swrotvel";
 
 public:
 	RobotPath(const PathGroup *gr, const QString &units, const QString &name, const PathParameters &params);
@@ -63,11 +81,7 @@ public:
 
 	QString fullname() const;
 
-	void setName(const QString& name) {
-		emitBeforePathChangedSignal();
-		name_ = name;
-		emitAfterPathChangedSignal();
-	}
+	void setName(const QString& name, bool undoentry = true);
 
 	const QString& units() const {
 		return units_;
@@ -77,11 +91,7 @@ public:
 		return params_;
 	}
 
-	void setParams(const PathParameters& p) {
-		emitBeforePathChangedSignal();
-		params_ = p;
-		emitAfterPathChangedSignal();
-	}
+	void setParams(const PathParameters& p, bool undoentry = true);
 
 	const PathGroup* pathGroup() const {
 		return group_;
@@ -92,60 +102,30 @@ public:
 	}
 
 	void addWayPoint(const Pose2dWithRotation& waypoint) {
-		emitBeforePathChangedSignal();
 		waypoints_.push_back(waypoint);
-		emitAfterPathChangedSignal();
 	}
 
 	bool isEmpty() const {
 		return waypoints_.size() == 0;
 	}
 
-	size_t size() const {
+	int size() const {
 		return waypoints_.size();
 	}
 
-	const Pose2dWithRotation& getPoint(size_t index) const {
+	const Pose2dWithRotation& getPoint(int index) const {
 		return waypoints_[index];
 	}
 
-	void replacePoint(size_t index, const Pose2dWithRotation& pt) {
-		emitBeforePathChangedSignal();
-		waypoints_[index] = pt;
-		emitAfterPathChangedSignal();
+	void replacePoint(int index, const Pose2dWithRotation& pt, bool undoentry = true);
+	void removePoint(int index, bool undoentry = true);
+	void insertPoint(int index, const Pose2dWithRotation& pt, bool undoentry = true);
+	void addConstraint(std::shared_ptr<PathConstraint> c, bool undoentry = true);
+	void insertConstraint(std::shared_ptr<PathConstraint> c, int index);
+	void deleteConstraint(std::shared_ptr<PathConstraint> c, bool undoentry = true);
 
-	}
-
-	void removePoint(size_t index) {
-		emitBeforePathChangedSignal();
-		waypoints_.remove(index, 1);
-		emitAfterPathChangedSignal();
-
-	}
-
-	void insertPoint(size_t index, const Pose2dWithRotation& pt) {
-		emitBeforePathChangedSignal();
-		waypoints_.insert(index + 1, pt);
-		emitAfterPathChangedSignal();
-	}
-
-	void addConstraint(std::shared_ptr<PathConstraint> c) {
-		emitBeforePathChangedSignal();
-		constraints_.push_back(c);
-		emitAfterPathChangedSignal();
-	}
-
-	void deleteConstraint(std::shared_ptr<PathConstraint> c) {
-		auto it = std::find(constraints_.begin(), constraints_.end(), c);
-		if (it != constraints_.end()) {
-			emitBeforePathChangedSignal();
-			constraints_.erase(it);
-			emitAfterPathChangedSignal();
-		}
-	}
-
-	void beforeConstraintChanged() {
-		emitBeforePathChangedSignal();
+	void beforeConstraintChanged(std::shared_ptr<UndoAction> action) {
+		emitBeforePathChangedSignal(action);
 	}
 
 	void afterConstraintChanged() {
@@ -163,10 +143,10 @@ public:
 
 signals:
 	void afterPathChanged(const QString& groupName, const QString& pathName);
-	void beforePathChanged(const QString& groupName, const QString& pathName);
+	void beforePathChanged(std::shared_ptr<UndoAction> action);
 
 private:
-	void emitBeforePathChangedSignal();
+	void emitBeforePathChangedSignal(std::shared_ptr<UndoAction> action);
 	void emitAfterPathChangedSignal();
 
 	static bool readPoints(std::shared_ptr<RobotPath> path, const QJsonArray& obj, QString &msg);

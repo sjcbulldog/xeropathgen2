@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "TrapezoidalProfile.h"
 #include "QuadraticSolver.h"
 #include <QtCore/QString>
@@ -83,7 +98,7 @@ double TrapezoidalProfile::pickRoot(const std::vector<double>& roots) const {
 	// We want the smallest root that is greater than or equal to zero
 	//
 	assert(roots.size() != 0);
-	size_t i = roots.size() - 1;
+	int i = roots.size() - 1;
 	while (i != 0) {
 		if (roots[i] >= 0.0)
 			return roots[i];

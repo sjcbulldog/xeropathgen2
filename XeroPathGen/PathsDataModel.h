@@ -1,13 +1,33 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #pragma once
 
 #include "GenerationMgr.h"
 #include "GeneratorType.h"
 #include "PathGroup.h"
 #include "SplinePair.h"
+#include "UndoSetGeneratorType.h"
+#include "UndoSetUnits.h"
 #include <QtCore/QObject>
 #include <QtCore/QList>
 #include <QtCore/QFile>
 #include <QtCore/QJsonObject>
+#include <memory>
+
+class RobotPath;
 
 class PathsDataModel : public QObject
 {
@@ -20,8 +40,11 @@ public:
 
 	void enableGeneration(bool);
 
-	void setGeneratorType(GeneratorType type) {
-		emit beforeChange();
+	void setGeneratorType(GeneratorType type, bool undoentry = true) {
+		if (undoentry) {
+			auto undo = std::make_shared<UndoSetGeneratorType>(gen_type_, *this);
+			addUndoStackEntry(undo);
+		}
 		gen_type_ = type;
 		dirty_ = true;
 		emit trajectoryGeneratorChanged();
@@ -37,8 +60,11 @@ public:
 		return units_;
 	}
 
-	void setUnits(const QString& units) {
-		emit beforeChange();
+	void setUnits(const QString& units, bool undoentry = true) {
+		if (undoentry) {
+			auto undo = std::make_shared<UndoSetUnits>(units, *this);
+			addUndoStackEntry(undo);
+		}
 		convert(units);
 		emit unitsChanged(units_);
 	}
@@ -83,23 +109,27 @@ public:
 	void convert(const QString& units);
 
 	bool hasGroup(const QString& grname) const ;
-	void addGroup(const QString& grname);
-	void deleteGroup(const QString& grname);
+	void addGroup(const QString& grname, bool undoentry = true);
+	void insertGroup(PathGroup *gr, int index) ;
+	void deleteGroup(const QString& grname, bool undoentry = true);
 	QStringList groupNames() const ;
 	const PathGroup* getPathGroupByName(const QString& grname);
-	void renameGroup(const QString& oldname, const QString& newname);
+	void renameGroup(const QString& oldname, const QString& newname, bool undoentry = true);
 
 	bool hasPath(const QString& grname, const QString& pathname) const;
-	void addPath(std::shared_ptr<RobotPath> path);
-	void deletePath(const QString& grname, const QString& pathname);
+	void addPath(std::shared_ptr<RobotPath> path, bool undoentry = true);
+	void insertPath(std::shared_ptr<RobotPath> path, int index);
+	void deletePath(const QString& grname, const QString& pathname, bool undoentry = true);
 	QStringList pathNames(const QString& grname) const;
 	std::shared_ptr<RobotPath> getPathByName(const QString& grname, const QString& pathname);
-	void renamePath(const QString &grname, const QString& oldname, const QString& newname);
+	void renamePath(const QString &grname, const QString& oldname, const QString& newname, bool undoentry = true);
 
 	QVector<std::shared_ptr<SplinePair>> getSplinesForPath(std::shared_ptr<RobotPath> path);
 	QVector<double> getDistancesForPath(std::shared_ptr<RobotPath> path);
 
 	QVector<std::shared_ptr<RobotPath>> getAllPaths();
+
+	std::shared_ptr<UndoAction> popUndoStack();
 
 private:
 	void computeSplinesForPath(std::shared_ptr<RobotPath> path);
@@ -115,11 +145,12 @@ private:
 		dirty_ = true;
 	}
 
-	void beforePathChanged(const QString& grname, const QString& pathname);
+	void beforePathChanged(std::shared_ptr<UndoAction> undo);
 	void afterPathChanged(const QString& grname, const QString& pathname);
 
+	void addUndoStackEntry(std::shared_ptr<UndoAction> undo);
+
 signals:
-	void beforeChange();
 	void groupAdded(const QString& grname);
 	void groupDeleted(const QString& grname);
 	void groupRenamed(const QString& oldname, const QString& newname);
@@ -148,4 +179,7 @@ private:
 
 	QVector<std::shared_ptr<RobotPath>> deferred_;
 	bool generation_enabled_;
+
+	// The list of undoable actions
+	QVector<std::shared_ptr<UndoAction>> undo_stack_;
 };

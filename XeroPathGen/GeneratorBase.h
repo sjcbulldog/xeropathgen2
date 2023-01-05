@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #pragma once
 
 #include "SplinePair.h"
@@ -38,11 +53,11 @@ protected:
 		double startvel, double endvel, double maxvel, double maxaccel);
 
 	QVector<Pose2dWithTrajectory> convertToUniformTime(const QVector<Pose2dWithTrajectory>& traj, double step);
-	size_t findIndex(const QVector<Pose2dWithTrajectory>& traj, double time);
+	int findIndex(const QVector<Pose2dWithTrajectory>& traj, double time);
 
 
 	Translation2d getWheelPerpendicularVector(Wheel w, double magnitude);
-	size_t findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, size_t start, const Translation2d& loc);
+	int findIndexFromLocation(std::shared_ptr<PathTrajectory> traj, int start, const Translation2d& loc);
 
 	double robotMaxAccel() const {
 		return robot_max_accel_;
@@ -60,7 +75,7 @@ protected:
 		return robot_length_;
 	}
 
-	bool modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double endRot);
+	bool modifySegmentForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent, int start, int end, double startRot, double startRotVel, double endRot, double endRotVel);
 	bool modifyForRotation(std::shared_ptr<RobotPath> path, std::shared_ptr<PathTrajectory> traj, double percent);
 
 	void logMessage(const QString& msg);

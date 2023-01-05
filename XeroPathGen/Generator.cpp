@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "Generator.h"
 #include "RobotPath.h"
 #include "PathGroup.h"
@@ -80,7 +95,7 @@ void Generator::addTankDriveTrajectories()
 	double plvel = 0, prvel = 0;
 	double placc = 0, pracc = 0;
 
-	for (size_t i = 0; i < traj->size(); i++)
+	for (int i = 0; i < traj->size(); i++)
 	{
 		const Pose2dWithTrajectory& pt = (*traj)[i];
 		double time = pt.time();

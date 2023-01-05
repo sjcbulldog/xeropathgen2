@@ -1,3 +1,18 @@
+//
+// Copyright 2022 Jack W. Griffin
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+// http ://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissionsand
+// limitations under the License.
+//
 #include "UnitConverter.h"
 #include <stdexcept>
 #include <algorithm>
@@ -44,7 +59,7 @@ bool UnitConverter::findConversion(const QString& from, const QString& to, doubl
 	}
 	else
 	{
-		for (size_t i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
+		for (int i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
 		{
 			if (fromnorm == convert_[i].from && tonorm == convert_[i].to)
 			{
@@ -112,7 +127,7 @@ QList<QString> UnitConverter::getAllLengthUnits()
 {
 	QList<QString> result;
 
-	for (size_t i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
+	for (int i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
 	{
 		if (convert_[i].type_ == UnitType::Length)
 		{
@@ -130,7 +145,7 @@ QList<QString> UnitConverter::getAllWeightUnits()
 {
 	QList<QString> result;
 
-	for (size_t i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
+	for (int i = 0; i < sizeof(convert_) / sizeof(convert_[0]); i++)
 	{
 		if (convert_[i].type_ == UnitType::Weight)
 		{
