@@ -16,6 +16,16 @@
 #include "CentripetalConstraint.h"
 #include "UndoChangeCentripetalForceConstraint.h"
 
+std::shared_ptr<PathConstraint> CentripetalConstraint::clone(std::shared_ptr<RobotPath> tpath)
+{
+	if (tpath == nullptr) {
+		tpath = path();
+
+	}
+	auto ret = std::make_shared<CentripetalConstraint>(tpath, maxcen_);
+	return ret;
+}
+
 void CentripetalConstraint::setMaxCenForce(double c, bool undoentry) {
 	if (undoentry) {
 		path()->beforeConstraintChanged(std::make_shared<UndoChangeCentripetalForceConstraint>(maxcen_, shared_from_this()));

@@ -38,6 +38,7 @@ public:
 	virtual void convert(const QString& from, const QString &to) = 0;
 	virtual QJsonObject toJSON() const = 0;
 	virtual QString toString() const = 0;
+	virtual std::shared_ptr<PathConstraint> clone(const std::shared_ptr<RobotPath> path) = 0;
 
 	std::shared_ptr<RobotPath> path() const {
 		return path_;

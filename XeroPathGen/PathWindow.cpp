@@ -13,7 +13,9 @@
 // See the License for the specific language governing permissionsand
 // limitations under the License.
 //
+
 #include "PathWindow.h"
+#include "GameField.h"
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QInputDialog>
 #include <QtWidgets/QMessageBox>
@@ -186,6 +188,18 @@ void PathWindow::prepareCustomMenu(const QPoint& pos)
 		act = new QAction(tr("Delete Group"));
 		connect(act, &QAction::triggered, this, &PathWindow::deleteGroup);
 		menu.addAction(act);
+
+		act = new QAction(tr("Paste Path"));
+		connect(act, &QAction::triggered, this, &PathWindow::pastePathNormal);
+		menu.addAction(act);
+
+		act = new QAction(tr("Paste Path MirrorX"));
+		connect(act, &QAction::triggered, this, &PathWindow::pastePathMirrorX);
+		menu.addAction(act);
+
+		act = new QAction(tr("Paste Path MirrorY"));
+		connect(act, &QAction::triggered, this, &PathWindow::pastePathMirrorY);
+		menu.addAction(act);
 	}
 	else {
 		//
@@ -193,6 +207,10 @@ void PathWindow::prepareCustomMenu(const QPoint& pos)
 		//
 		act = new QAction(tr("Delete Path"));
 		connect(act, &QAction::triggered, this, &PathWindow::deletePath);
+		menu.addAction(act);
+
+		act = new QAction(tr("Copy Path"));
+		connect(act, &QAction::triggered, this, &PathWindow::copyPath);
 		menu.addAction(act);
 	}
 
@@ -291,6 +309,63 @@ void PathWindow::addPath()
 	model_.blockSignals(true);
 	model_.addPath(path);
 	model_.blockSignals(false);
+}
+
+void PathWindow::pastePath(const QString &grname, PasteMode mode)
+{
+	QString name = newPathName(grname);
+
+	auto other = model_.getPathByName(copy_group_, copy_path_);
+	if (other == nullptr) {
+		QMessageBox::warning(this, "Missing Path", "The copied path is no longer part of the path set");
+		return;
+	}
+
+	QTreeWidgetItem* pitem = newItem(name);
+	menuItem_->addChild(pitem);
+
+	const PathGroup* group = model_.getPathGroupByName(grname);
+
+	auto path = std::make_shared<RobotPath>(group, name, *other);
+
+	if (mode == PasteMode::MirrorX) {
+		model_.mirrorPathAboutX(field_->getSize().getX(), path);
+	}
+	else if (mode == PasteMode::MirrorY) {
+		model_.mirrorPathAboutY(field_->getSize().getY(), path);
+	}
+
+	model_.blockSignals(true);
+	model_.addPath(path);
+	model_.blockSignals(false);
+}
+
+void PathWindow::pastePathNormal()
+{
+	assert(menuItem_ != nullptr);
+	QString grname = menuItem_->text(0);
+	pastePath(grname, PasteMode::Normal);
+}
+
+void PathWindow::pastePathMirrorY()
+{
+	assert(menuItem_ != nullptr);
+	QString grname = menuItem_->text(0);
+	pastePath(grname, PasteMode::MirrorY);
+}
+
+void PathWindow::pastePathMirrorX()
+{
+	assert(menuItem_ != nullptr);
+	QString grname = menuItem_->text(0);
+	pastePath(grname, PasteMode::MirrorX);
+}
+
+void PathWindow::copyPath()
+{
+	assert(menuItem_ != nullptr);
+	copy_group_ = menuItem_->parent()->text(0);
+	copy_path_ = menuItem_->text(0);
 }
 
 void PathWindow::deletePath()

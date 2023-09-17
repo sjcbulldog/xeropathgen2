@@ -26,6 +26,16 @@ DistanceVelocityConstraint::~DistanceVelocityConstraint()
 {
 }
 
+std::shared_ptr<PathConstraint> DistanceVelocityConstraint::clone(std::shared_ptr<RobotPath> tpath)
+{
+	if (tpath == nullptr) {
+		tpath = path();
+	}
+
+	auto ret = std::make_shared<DistanceVelocityConstraint>(tpath, after_distance_, before_distance_, velocity_);
+	return ret;
+}
+
 double DistanceVelocityConstraint::getMaxVelocity(const Pose2dWithTrajectory& state, std::shared_ptr<RobotParams> robot)
 {
 	if (state.position() > after_distance_ && state.position() < before_distance_)

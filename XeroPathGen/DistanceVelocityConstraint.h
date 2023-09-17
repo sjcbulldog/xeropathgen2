@@ -28,6 +28,8 @@ public:
 	DistanceVelocityConstraint(std::shared_ptr<RobotPath> path, double after, double before, double velocity);
 	virtual ~DistanceVelocityConstraint();
 
+	virtual std::shared_ptr<PathConstraint> clone(std::shared_ptr<RobotPath> path);
+
 	void update(double after, double before, double velocity) {
 		path()->beforeConstraintChanged(std::make_shared<UndoDistanceVelocityConstraintChange>(velocity_, after_distance_, before_distance_, shared_from_this()));
 		after_distance_ = after;

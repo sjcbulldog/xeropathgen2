@@ -131,6 +131,9 @@ public:
 
 	std::shared_ptr<UndoAction> popUndoStack();
 
+	void mirrorPathAboutX(double dim, std::shared_ptr<RobotPath> path);
+	void mirrorPathAboutY(double dim, std::shared_ptr<RobotPath> path);
+
 private:
 	void computeSplinesForPath(std::shared_ptr<RobotPath> path);
 	void computeSplines(const QString &grname, const QString &pathname);
@@ -182,4 +185,7 @@ private:
 
 	// The list of undoable actions
 	QVector<std::shared_ptr<UndoAction>> undo_stack_;
+
+	QString copy_group_name_;
+	QString copy_path_name_;
 };

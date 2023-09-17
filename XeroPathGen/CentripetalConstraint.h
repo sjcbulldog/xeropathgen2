@@ -34,6 +34,8 @@ public:
 		maxcen_ = maxcen;
 	}
 
+	virtual std::shared_ptr<PathConstraint> clone(std::shared_ptr<RobotPath> path);
+
 	double maxCenForce() const {
 		return maxcen_;
 	}

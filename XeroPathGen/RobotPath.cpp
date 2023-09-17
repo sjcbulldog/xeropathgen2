@@ -36,6 +36,22 @@ RobotPath::RobotPath(const PathGroup* gr, const QString& units, const QString &n
 	units_ = units;
 }
 
+RobotPath::RobotPath(const PathGroup* gr, const QString &name, const RobotPath& other)
+{
+	group_ = gr;
+	name_ = name;
+	params_ = other.params_;
+	units_ = other.units_;
+
+	for (const Pose2dWithRotation& pt : other.waypoints()) {
+		addWayPoint(pt);
+	}
+
+	for (const std::shared_ptr<PathConstraint> con : other.constraints()) {
+		addConstraint(con->clone(shared_from_this()));
+	}
+}
+
 QString RobotPath::fullname() const {
 	return group_->name() + "-" + name_;
 }

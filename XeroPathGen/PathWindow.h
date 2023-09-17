@@ -18,11 +18,19 @@
 #include "PathsDataModel.h"
 #include <QtWidgets/QTreeWidget>
 
+class GameField;
+
 class PathWindow : public QTreeWidget
 {
 	Q_OBJECT
 
 public:
+	enum class PasteMode {
+		Normal,
+		MirrorX,
+		MirrorY
+	};
+
 	PathWindow(PathsDataModel&model, QWidget* parent);
 	void refresh();
 
@@ -32,6 +40,10 @@ public:
 
 	void setRobot(std::shared_ptr<RobotParams> robot) {
 		robot_ = robot;
+	}
+
+	void setField(std::shared_ptr<GameField> field) {
+		field_ = field;
 	}
 
 	std::shared_ptr<RobotPath> selectedPath() {
@@ -60,6 +72,11 @@ private:
 	void deleteGroup();
 	void addPath();
 	void deletePath();
+	void copyPath();
+	void pastePath(const QString &grname, PasteMode mode);
+	void pastePathNormal();
+	void pastePathMirrorX();
+	void pastePathMirrorY();
 	void changePathUnits();
 
 	QString newGroupName();
@@ -87,8 +104,12 @@ private:
 	QString units_;
 	std::shared_ptr<RobotParams> robot_;
 	std::shared_ptr<RobotPath> selected_path_;
+	std::shared_ptr<GameField> field_;
 
 	QBrush unknown_;
 	QBrush good_;
 	QBrush bad_;
+
+	QString copy_group_;
+	QString copy_path_;
 };

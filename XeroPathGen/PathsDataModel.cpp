@@ -609,3 +609,33 @@ std::shared_ptr<UndoAction> PathsDataModel::popUndoStack()
 	undo_stack_.pop_back();
 	return action;
 }
+
+void PathsDataModel::mirrorPathAboutX(double dim, std::shared_ptr<RobotPath> path)
+{
+	for (int i = 0; i < path->waypoints().size(); i++) {
+		const Pose2dWithRotation& pt = path->getPoint(i);
+
+		Translation2d ntr(dim - pt.getTranslation().getX(), pt.getTranslation().getY());
+		Rotation2d trt = Rotation2d::fromDegrees(180.0 - pt.getRotation().toDegrees());
+		Rotation2d rot = Rotation2d::fromDegrees(180.0 - pt.getSwrot().toDegrees());
+
+
+		const Pose2dWithRotation npt(ntr, trt, rot);
+		path->replacePoint(i, npt, false);
+	}
+}
+
+void PathsDataModel::mirrorPathAboutY(double dim, std::shared_ptr<RobotPath> path)
+{
+	for (int i = 0; i < path->waypoints().size(); i++) {
+		const Pose2dWithRotation& pt = path->getPoint(i);
+
+		Translation2d ntr(pt.getTranslation().getX(), dim - pt.getTranslation().getY());
+		Rotation2d trt = Rotation2d::fromDegrees(-pt.getRotation().toDegrees());
+		Rotation2d rot = Rotation2d::fromDegrees(-pt.getSwrot().toDegrees());
+
+
+		const Pose2dWithRotation npt(ntr, trt, rot);
+		path->replacePoint(i, npt, false);
+	}
+}

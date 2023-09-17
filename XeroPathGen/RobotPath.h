@@ -74,6 +74,7 @@ public:
 
 public:
 	RobotPath(const PathGroup *gr, const QString &units, const QString &name, const PathParameters &params);
+	RobotPath(const PathGroup* gr, const QString &name, const RobotPath& other);
 
 	const QString& name() const {
 		return name_;

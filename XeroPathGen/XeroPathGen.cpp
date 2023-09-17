@@ -919,6 +919,7 @@ void XeroPathGen::setField(const QString &name)
 		action->setChecked(false);
 	}
 	path_edit_win_->setField(current_field_);
+	path_win_->setField(current_field_);
 
 	if (current_field_ != nullptr)
 	{
